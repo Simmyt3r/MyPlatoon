@@ -8,7 +8,7 @@ from app.models.feed import AnnouncementReaction, AnnouncementComment, REACTION_
 from app.models.dating import DatingPersona, DatingMatch, GENDER_CHOICES, PERSONA_STATUSES, MATCH_STATUSES, score_label
 
 __all__ = [
-    "User",
+    "User", "Platoon", "SERVICE_STAGES", "NYSC_STATES", "BATCH_CHOICES", "STREAM_CHOICES",
     "Profile", "VISIBILITY_LEVELS", "ADDRESS_VISIBILITY_LEVELS", "PROFILE_STATES",
     "Skill", "profile_skills",
     "Business", "BusinessCategory", "DEFAULT_CATEGORIES",
