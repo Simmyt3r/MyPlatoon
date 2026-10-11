@@ -44,6 +44,12 @@ def index():
                             reaction_types=REACTION_TYPES)
 
 
+@bp.route("/nerd")
+def nerd():
+    """Public guidance to the official NERD process; not a NERD API proxy."""
+    return render_template("main/nerd.html")
+
+
 @bp.route("/about")
 def about():
     return render_template("main/about.html")
