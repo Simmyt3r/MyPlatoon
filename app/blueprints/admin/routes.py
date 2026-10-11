@@ -301,8 +301,8 @@ def dating_remove_persona(persona_id):
     from app.models import DatingPersona
     persona = DatingPersona.query.get_or_404(persona_id)
     owner_name = persona.profile.user.full_name
-    db.session.delete(persona)
-    db.session.commit()
+    from app.services.dating_service import delete_dating_persona
+    delete_dating_persona(persona)
     log_action(current_user, "dating.persona_removed", "DatingPersona", persona_id,
                detail=f"removed persona belonging to {owner_name}")
     flash(f"Removed the dating persona belonging to {owner_name}.", "info")
