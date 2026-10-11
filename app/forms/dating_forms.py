@@ -32,3 +32,23 @@ class DatingReportForm(FlaskForm):
     reason = TextAreaField("Why are you reporting this person?",
                             validators=[DataRequired(), Length(min=5, max=500)])
     submit = SubmitField("Submit Report")
+
+
+
+class DatingMessageForm(FlaskForm):
+    body = TextAreaField(
+        "Message",
+        validators=[DataRequired(message="Write a message before sending."),
+                    Length(min=1, max=1500)],
+        description="Messages are private between consenting Dating connections. Avoid sharing contact information or sensitive details."
+    )
+    submit = SubmitField("Send message")
+
+
+class DatingMessageReportForm(FlaskForm):
+    reason = TextAreaField(
+        "Why are you reporting this message?",
+        validators=[DataRequired(), Length(min=10, max=500)],
+        description="Only administrators can view this report."
+    )
+    submit = SubmitField("Send private report")
