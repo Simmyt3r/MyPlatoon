@@ -168,6 +168,9 @@
       <a href="{{ url_for('main.services') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.services' }}">
         <i class="fa-solid fa-layer-group"></i>Services &amp; Careers
       </a>
+      <a href="{{ url_for('jobs.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'jobs' }}">
+        <i class="fa-solid fa-briefcase"></i>Jobs &amp; Gigs
+      </a>
       <a href="{{ url_for('ppa.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'ppa' }}">
         <i class="fa-solid fa-map-location-dot"></i>PPA Lookup
       </a>
