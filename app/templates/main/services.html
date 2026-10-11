@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Services & Career Tools{% endblock %}
+{% block meta_description %}Explore MyPlatoon services for NYSC mobilisation, PPA discovery and CV preparation, including independent CareerMirror.{% endblock %}
+
+{% block content %}
+<div class="container my-4" style="max-width:1100px">
+  <section class="p5-card p-4 p-md-5 mb-4" aria-labelledby="services-heading">
+    <div class="text-success text-uppercase fw-bold small mb-2">Explore MyPlatoon</div>
+    <h1 class="fw-bold mb-2" id="services-heading">Services &amp; Career Tools</h1>
+    <p class="text-muted mb-0">Useful resources from the mobilisation stage through service year and life after NYSC. Choose the tool that fits where you are in your journey.</p>
+  </section>
+
+  <section class="mb-4" aria-labelledby="career-services-heading">
+    <h2 class="h5 fw-bold mb-3" id="career-services-heading">Career development</h2>
+    <div class="p5-card p-4">
+      <div class="d-flex flex-column flex-md-row align-items-start gap-3">
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+             style="width:56px;height:56px;background:#e8f4ec;color:#0b7a3b">
+          <i class="fa-solid fa-file-lines fa-xl" aria-hidden="true"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+            <h3 class="h5 fw-bold mb-0">CareerMirror</h3>
+            <span class="badge text-bg-light border">External service</span>
+          </div>
+          <p class="mb-2">Get started with CV and résumé preparation for job applications, internships and opportunities after NYSC.</p>
+          <p class="text-muted small mb-3">CareerMirror is a separate website. Opening it takes you outside MyPlatoon; your MyPlatoon profile and login information are not automatically transferred.</p>
+          <a class="btn btn-p5" href="https://mycareermirror.vercel.app/"
+             target="_blank" rel="noopener noreferrer"
+             aria-label="Open CareerMirror in a new tab">
+            Open CareerMirror <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i>
+          </a>
+          <p class="small text-muted mt-2 mb-0">mycareermirror.vercel.app</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="nysc-services-heading">
+    <h2 class="h5 fw-bold mb-3" id="nysc-services-heading">NYSC journey resources</h2>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <article class="p5-card p-4 h-100">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="fa-solid fa-map-location-dot fa-lg text-success" aria-hidden="true"></i>
+            <h3 class="h5 fw-bold mb-0">PPA Lookup &amp; GIS</h3>
+          </div>
+          <p>Explore member-reported Places of Primary Assignment by state, location or sector, and view reviewed workplace map pins.</p>
+          <a href="{{ url_for('ppa.index') }}" class="btn btn-p5-outline mt-auto">Find a PPA</a>
+        </article>
+      </div>
+      <div class="col-md-6">
+        <article class="p5-card p-4 h-100">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="fa-solid fa-graduation-cap fa-lg text-success" aria-hidden="true"></i>
+            <h3 class="h5 fw-bold mb-0">NERD &amp; Mobilisation Guide</h3>
+          </div>
+          <p>Find information about NERD academic records, mobilisation preparation and links to official registration resources.</p>
+          <a href="{{ url_for('main.nerd') }}" class="btn btn-p5-outline mt-auto">Read the NERD guide</a>
+        </article>
+      </div>
+    </div>
+  </section>
+  <p class="small text-muted mt-4 mb-0">MyPlatoon is an independent NYSC community platform. External tools are linked for convenience and are subject to their own terms and privacy policies.</p>
+</div>
+{% endblock %}
