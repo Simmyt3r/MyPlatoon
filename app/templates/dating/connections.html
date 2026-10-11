@@ -24,7 +24,10 @@
             <div class="small text-success fw-semibold">Mutual interest</div>
             <h2 class="h5 fw-bold mb-1">{{ other.display_name or 'A member' }}</h2>
             {% if other.tagline %}<p class="small text-muted mb-2">{{ other.tagline }}</p>{% endif %}
-            <a href="{{ url_for('dating.person_detail', persona_id=other.id) }}" class="btn btn-p5 btn-sm">View persona</a>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="{{ url_for('dating.conversation', persona_id=other.id) }}" class="btn btn-p5 btn-sm"><i class="fa-regular fa-comment-dots me-1" aria-hidden="true"></i>Message</a>
+              <a href="{{ url_for('dating.person_detail', persona_id=other.id) }}" class="btn btn-p5-outline btn-sm">View persona</a>
+            </div>
           </div>
         </div>
       </article>
