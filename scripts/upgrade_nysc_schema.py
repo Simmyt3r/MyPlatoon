@@ -10,6 +10,9 @@ import os
 import subprocess
 import sys
 
+# Running `python scripts/...` must resolve the repository's app package.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 os.environ["AUTO_CREATE_TABLES"] = "false"
 
 from sqlalchemy import inspect
