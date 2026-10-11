@@ -46,6 +46,12 @@ def edit():
 
     if form.validate_on_submit():
         from app.utils.urls import ensure_scheme
+        previous_platoon_id = profile.platoon_id
+        assign_platoon(profile, form)
+        if previous_platoon_id != (profile.platoon.id if profile.platoon else None):
+            # Do not silently keep an approved member in a different platoon.
+            if profile.status == "approved":
+                profile.status = "pending"
 
         for field in ("nickname", "gender", "state_of_origin", "lga", "phone_number",
                       "whatsapp_number", "current_location", "address", "profession",
