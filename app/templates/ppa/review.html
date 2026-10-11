@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}PPA Moderation{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1050px">
+  <h1 class="h3 fw-bold">PPA moderation</h1>
+  <p class="text-muted">Review community-submitted organisation details and workplace locations. Approval is MyPlatoon content review, not NYSC certification.</p>
+  <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Submission review status">
+    {% for value in ['pending','verified','rejected'] %}
+    <a href="{{ url_for('ppa.review_queue', status=value) }}" class="btn btn-sm {{ 'btn-p5' if value == status else 'btn-p5-outline' }}">{{ value|capitalize }}</a>
+    {% endfor %}
+  </nav>
+  {% for p in entries %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <h2 class="h5 fw-bold"><a href="{{ url_for('ppa.detail', ppa_id=p.id) }}">{{ p.name }}</a></h2>
+      <span class="text-muted small">{{ p.updated_at.strftime('%d %b %Y') }}</span>
+    </div>
+    <p class="small mb-2">{{ p.lga }}, {{ p.state }} · {{ p.sector_label }}</p>
+    <p class="small text-muted mb-2">Submitted by: {{ p.submitter.full_name if p.submitter else 'Deleted member' }} · Map pin: {{ 'Provided' if p.has_location else 'Not provided' }}</p>
+    {% if p.address %}<p class="mb-2"><strong>Address:</strong> {{ p.address }}</p>{% endif %}
+    {% if p.experience_notes %}<p class="mb-3" style="white-space:pre-line">{{ p.experience_notes }}</p>{% endif %}
+    {% if p.status == 'rejected' and p.rejection_reason %}<p class="small text-danger">Reason: {{ p.rejection_reason }}</p>{% endif %}
+    <form method="POST" action="{{ url_for('ppa.review', ppa_id=p.id) }}">
+      {{ review_form.csrf_token }}
+      <label for="reason-{{ p.id }}" class="form-label small">Reason (required for rejection)</label>
+      <textarea class="form-control mb-2" name="reason" id="reason-{{ p.id }}" maxlength="500" rows="2" placeholder="Provide a useful correction note when rejecting"></textarea>
+      <div class="d-flex gap-2">
+        <button type="submit" name="decision" value="verified" class="btn btn-p5 btn-sm">Approve listing</button>
+        <button type="submit" name="decision" value="rejected" class="btn btn-outline-danger btn-sm">Reject / Request correction</button>
+      </div>
+    </form>
+  </article>
+  {% else %}
+    <div class="p5-card p-4 text-muted">No {{ status }} PPA entries.</div>
+  {% endfor %}
+</div>
+{% endblock %}
