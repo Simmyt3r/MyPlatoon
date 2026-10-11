@@ -6,6 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db, limiter
 from app.forms.auth_forms import RegistrationForm, LoginForm
 from app.models import User, Profile
+from app.services.platoon_membership import assign_platoon
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
 
