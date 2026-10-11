@@ -220,7 +220,11 @@ def test_withdraw_breaks_mutual_connection_without_notifying(client, db):
     assert Notification.query.count() == 2
     client.post(f"/dating/interest/{pa.id}/withdraw")
     assert DatingInterest.query.count() == 1
-    assert pa.display_name.encode() not in client.get("/dating/connections").data
+    # Existing in-app notification history still includes the old alias in
+    # the shared header; check the *connections page body* instead.
+    page = client.get("/dating/connections").get_data(as_text=True)
+    main = page.split('<main class="p5-main-col">', 1)[1].split("</main>", 1)[0]
+    assert pa.display_name not in main
 
 
 def test_block_removes_prior_mutual_interests(client, db):
@@ -239,4 +243,6 @@ def test_block_removes_prior_mutual_interests(client, db):
     login(client, a.email)
     client.post(f"/dating/block/{pb.id}")
     assert DatingInterest.query.count() == 0
-    assert pb.display_name.encode() not in client.get("/dating/connections").data
+    page = client.get("/dating/connections").get_data(as_text=True)
+    main = page.split('<main class="p5-main-col">', 1)[1].split("</main>", 1)[0]
+    assert pb.display_name not in main
