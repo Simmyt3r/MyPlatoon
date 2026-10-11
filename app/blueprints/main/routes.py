@@ -67,6 +67,20 @@ def nerd():
     return render_template("main/nerd.html")
 
 
+@bp.route("/nerd/requirements")
+def nerd_requirements():
+    """A read-only checklist; no identity fields, files or records are collected."""
+    from app.services.nerd_requirements import (
+        NERD_REQUIREMENT_SECTIONS, REQUIREMENT_TOTAL
+    )
+
+    return render_template(
+        "main/nerd_requirements.html",
+        sections=NERD_REQUIREMENT_SECTIONS,
+        total=REQUIREMENT_TOTAL,
+    )
+
+
 @bp.route("/platoons/guide")
 def platoon_guide():
     return render_template("main/platoon_guide.html")
