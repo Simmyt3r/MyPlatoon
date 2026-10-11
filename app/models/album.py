@@ -8,6 +8,9 @@ class AlbumVersion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     version_label = db.Column(db.String(20), nullable=False)  # e.g. "1.0"
+    # NULL means legacy nationwide album; ONLY admins can retrieve it.
+    platoon_id = db.Column(db.Integer, db.ForeignKey("platoons.id"), nullable=True, index=True)
+    platoon = db.relationship("Platoon")
     # pdf_data is the source of truth for in-app downloads (see
     # app/services/album_service.py) -- it means downloads never depend on
     # Cloudinary's delivery rules for raw/PDF files, which some accounts
