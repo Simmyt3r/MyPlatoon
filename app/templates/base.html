@@ -94,6 +94,7 @@
           <li><a class="dropdown-item" href="{{ url_for('profile.edit') }}"><i class="fa-solid fa-user-pen me-2 text-success"></i>Edit Profile</a></li>
           <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
           <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('ppa.mine') }}"><i class="fa-solid fa-location-dot me-2 text-success"></i>My PPA Reports</a></li>
           {% if current_user.is_admin %}
           <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-success"></i>Admin</a></li>
           {% endif %}
