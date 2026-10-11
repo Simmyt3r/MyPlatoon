@@ -18,6 +18,18 @@ class Profile(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
                          unique=True, nullable=False)
 
+    # --- NYSC journey ---
+    # A PCM must not be assigned a fictional platoon. Every serving or
+    # former corps member provides their actual orientation platoon.
+    service_stage = db.Column(db.String(12), nullable=False, default="pcm", index=True)
+    platoon_id = db.Column(db.Integer, db.ForeignKey("platoons.id"),
+                           nullable=True, index=True)
+    platoon = db.relationship("Platoon", back_populates="members")
+
+    @property
+    def platoon_label(self):
+        return self.platoon.label if self.platoon else "Awaiting camp assignment"
+
     # --- Personal information ---
     nickname = db.Column(db.String(80))
     photo_url = db.Column(db.String(500))
