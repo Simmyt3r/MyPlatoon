@@ -159,6 +159,9 @@
       <a href="{{ url_for('directory.members') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.members' }}">
         <i class="fa-solid fa-users"></i>Members
       </a>
+      <a href="{{ url_for('platoons.rankings') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'platoons' }}">
+        <i class="fa-solid fa-trophy"></i>Platoon Rankings
+      </a>
       <a href="{{ url_for('main.platoon_guide') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.platoon_guide' }}">
         <i class="fa-solid fa-people-group"></i>Platoon Guide
       </a>
