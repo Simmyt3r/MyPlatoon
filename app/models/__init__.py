@@ -10,7 +10,7 @@ from app.models.dating import DatingPersona, DatingMatch, GENDER_CHOICES, PERSON
 
 __all__ = [
     "User", "Platoon", "SERVICE_STAGES", "NYSC_STATES", "BATCH_CHOICES", "STREAM_CHOICES",
-    "PPA", "PPA_SECTORS", "PPA_STATUSES", "PPA_YES_NO",
+    "PPA", "PPAExperience", "PPA_SECTORS", "PPA_STATUSES", "PPA_YES_NO",
     "Profile", "VISIBILITY_LEVELS", "ADDRESS_VISIBILITY_LEVELS", "PROFILE_STATES",
     "Skill", "profile_skills",
     "Business", "BusinessCategory", "DEFAULT_CATEGORIES",
