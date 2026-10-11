@@ -18,6 +18,20 @@ publications, not official NYSC documents.
 
 ---
 
+## PPA lookup and GIS
+
+The [PPA Lookup](/ppas/) helps PCMs and corps members find community-reported
+Places of Primary Assignment nationwide. Approved corps members and alumni
+can submit workplaces and add historical experiences to existing listings;
+moderators must review both before they become public. Browse by state,
+town, sector or distance. The GIS map is powered by Leaflet and PostGIS and
+never maps private member residences.
+
+**Aiven database:** service `pg-31f7f560` in project `simmyt3r`, dedicated
+`myplatoon` database with PostGIS. To deploy, see
+[PPA_GIS_AIVEN.md](PPA_GIS_AIVEN.md). Data from an earlier Neon or SQLite
+deployment has **not** been automatically transferred.
+
 ## Nationwide membership rules
 
 - Every member has a **platoon assignment state**.
