@@ -47,7 +47,7 @@ def index():
     featured = visible_query.order_by(Profile.updated_at.desc()).limit(6).all()
 
     return render_template("main/index.html", member_count=member_count,
-                            business_count=business_count, stories=stories,
+                            business_count=business_count, platoon_count=platoon_count, stories=stories,
                             feed_announcements=feed_announcements, featured=featured,
                             reaction_types=REACTION_TYPES)
 
