@@ -159,3 +159,84 @@ def test_shared_interests_not_random_state_origin(db):
     b.profile.state_of_origin = "Borno"
     db.session.commit()
     assert compute_compatibility(pa, pb) == score_before
+
+
+
+def test_one_sided_interest_is_private_and_notifications_are_silent(client, db):
+    from app.models import DatingInterest, Notification
+    a = _approved(db, "oneway-a@example.com", "A Member")
+    b = _approved(db, "oneway-b@example.com", "B Member")
+    pa = _persona(db, a, gender="male")
+    pb = _persona(db, b, gender="female", looking_for="male")
+    generate_matches_for_persona(pa)
+    assert Notification.query.count() == 0
+    login(client, a.email)
+    response = client.post(f"/dating/interest/{pb.id}", follow_redirects=True)
+    assert response.status_code == 200
+    assert DatingInterest.query.count() == 1
+    assert Notification.query.count() == 0
+    assert b"Interest sent" not in client.get("/dating/connections").data
+
+
+def test_mutual_interest_notifies_both_and_shows_consented_connections(client, db):
+    from app.models import DatingInterest, Notification
+    a = _approved(db, "mutual-a@example.com", "A Member")
+    b = _approved(db, "mutual-b@example.com", "B Member")
+    pa = _persona(db, a, gender="male")
+    pb = _persona(db, b, gender="female", looking_for="male")
+
+    login(client, a.email)
+    client.post(f"/dating/interest/{pb.id}")
+    assert DatingInterest.query.count() == 1
+    assert Notification.query.count() == 0
+    client.get("/auth/logout")
+    login(client, b.email)
+    response = client.post(f"/dating/interest/{pa.id}", follow_redirects=True)
+    assert response.status_code == 200
+    assert DatingInterest.query.count() == 2
+    assert Notification.query.count() == 2
+    assert {n.user_id for n in Notification.query.all()} == {a.id, b.id}
+    page = client.get("/dating/connections")
+    assert page.status_code == 200
+    assert pa.display_name.encode() in page.data
+
+    # Idempotent duplicate request must not notify again.
+    client.post(f"/dating/interest/{pa.id}")
+    assert DatingInterest.query.count() == 2
+    assert Notification.query.count() == 2
+
+
+def test_withdraw_breaks_mutual_connection_without_notifying(client, db):
+    from app.models import DatingInterest, Notification
+    a = _approved(db, "withdraw-a@example.com", "A Member")
+    b = _approved(db, "withdraw-b@example.com", "B Member")
+    pa = _persona(db, a, gender="male")
+    pb = _persona(db, b, gender="female", looking_for="male")
+    login(client, a.email)
+    client.post(f"/dating/interest/{pb.id}")
+    client.get("/auth/logout")
+    login(client, b.email)
+    client.post(f"/dating/interest/{pa.id}")
+    assert Notification.query.count() == 2
+    client.post(f"/dating/interest/{pa.id}/withdraw")
+    assert DatingInterest.query.count() == 1
+    assert pa.display_name.encode() not in client.get("/dating/connections").data
+
+
+def test_block_removes_prior_mutual_interests(client, db):
+    from app.models import DatingInterest
+    a = _approved(db, "blocklikes-a@example.com", "A Member")
+    b = _approved(db, "blocklikes-b@example.com", "B Member")
+    pa = _persona(db, a, gender="male")
+    pb = _persona(db, b, gender="female", looking_for="male")
+    login(client, a.email)
+    client.post(f"/dating/interest/{pb.id}")
+    client.get("/auth/logout")
+    login(client, b.email)
+    client.post(f"/dating/interest/{pa.id}")
+    assert DatingInterest.query.count() == 2
+    client.get("/auth/logout")
+    login(client, a.email)
+    client.post(f"/dating/block/{pb.id}")
+    assert DatingInterest.query.count() == 0
+    assert pb.display_name.encode() not in client.get("/dating/connections").data
