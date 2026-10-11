@@ -26,7 +26,7 @@
           <a href="https://wa.me/{{ contact.whatsapp_number|replace('+','')|replace(' ','')|replace('-','') }}"
              target="_blank" rel="noopener" class="p5-contact-btn p5-contact-whatsapp"><i class="fa-brands fa-whatsapp"></i>WhatsApp</a>
           {% endif %}
-          {% if profile.user.email and (current_user.is_authenticated) %}
+          {% if profile.user.email and current_user.is_authenticated and (current_user.is_admin or current_user.id == profile.user_id) %}
           <a href="mailto:{{ profile.user.email }}" class="p5-contact-btn p5-contact-email"><i class="fa-solid fa-envelope"></i>Email</a>
           {% endif %}
           {% if profile.website %}
