@@ -9,8 +9,8 @@ from flask_login import current_user, login_required
 from sqlalchemy import func
 
 from app.extensions import db, limiter
-from app.forms.ppa_forms import PPAForm, PPAReviewForm
-from app.models import PPA, PPA_SECTORS, NYSC_STATES, User
+from app.forms.ppa_forms import PPAForm, PPAReviewForm, PPAExperienceForm
+from app.models import PPA, PPAExperience, PPA_SECTORS, NYSC_STATES
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
 from app.services.ppa_geo import (
@@ -28,8 +28,7 @@ def _filters():
     lng = request.args.get("lng", type=float)
     radius = request.args.get("radius", 20, type=float)
 
-    geographic_input = any(k in request.args for k in ("lat", "lng", "radius"))
-    # Radius alone is harmless: the form pre-selects a radius but has no
+      # Radius alone is harmless: the form pre-selects a radius but has no
     # "nearby" search until both coordinates are explicitly given.
     if "lat" in request.args or "lng" in request.args:
         if not valid_near(lat, lng, radius):
@@ -122,7 +121,10 @@ def detail(ppa_id):
     admin = current_user.is_authenticated and current_user.is_admin
     if ppa.status != "verified" and not (owned or admin):
         abort(404)
-    return render_template("ppa/detail.html", ppa=ppa, owned=owned, admin=admin)
+    experiences = (ppa.experiences.filter_by(status="verified")
+                   .order_by(PPAExperience.service_year.desc()).limit(20).all())
+    return render_template("ppa/detail.html", ppa=ppa, owned=owned, admin=admin,
+                           experiences=experiences, can_submit=_can_submit())
 
 
 @bp.route("/mine")
@@ -222,3 +224,83 @@ def review(ppa_id):
             category="success" if decision == "verified" else "warning")
     flash("PPA " + ("approved" if decision == "verified" else "rejected") + ".", "success")
     return redirect(url_for("ppa.review_queue"))
+
+
+
+@bp.route("/<int:ppa_id>/experience", methods=["GET", "POST"])
+@login_required
+@limiter.limit("15 per day", methods=["POST"])
+def contribute_experience(ppa_id):
+    ppa = PPA.query.get_or_404(ppa_id)
+    if ppa.status != "verified":
+        abort(404)
+    if not _can_submit():
+        flash("Only approved serving corps members and alumni can contribute PPA experiences.", "warning")
+        return redirect(url_for("ppa.detail", ppa_id=ppa_id))
+
+    existing = PPAExperience.query.filter_by(
+        ppa_id=ppa.id, submitted_by_id=current_user.id).first()
+    form = PPAExperienceForm(obj=existing)
+    if form.validate_on_submit():
+        report = existing or PPAExperience(
+            ppa_id=ppa.id, submitted_by_id=current_user.id)
+        report.service_year = form.service_year.data
+        report.accommodation = form.accommodation.data
+        report.allowance = form.allowance.data
+        report.notes = (form.notes.data or "").strip() or None
+        report.status = "pending"
+        report.rejection_reason = None
+        report.verified_by_id = None
+        if existing is None:
+            db.session.add(report)
+        db.session.commit()
+        log_action(current_user, "ppa.experience_submit", "PPAExperience", report.id)
+        flash("Your experience has been sent for moderation.", "success")
+        return redirect(url_for("ppa.detail", ppa_id=ppa.id))
+    return render_template("ppa/experience_form.html", form=form, ppa=ppa,
+                           existing=existing)
+
+
+@bp.route("/review/experiences")
+@login_required
+def experience_queue():
+    if not current_user.is_admin:
+        abort(403)
+    status = request.args.get("status", "pending")
+    if status not in ("pending", "verified", "rejected"):
+        status = "pending"
+    reports = (PPAExperience.query.filter_by(status=status)
+               .order_by(PPAExperience.updated_at.asc()).limit(100).all())
+    return render_template("ppa/review_experiences.html", reports=reports,
+                           status=status, review_form=PPAReviewForm())
+
+
+@bp.route("/experience/<int:report_id>/review", methods=["POST"])
+@login_required
+@limiter.limit("120 per hour", methods=["POST"])
+def review_experience(report_id):
+    if not current_user.is_admin:
+        abort(403)
+    form = PPAReviewForm()
+    if not form.validate_on_submit():
+        abort(400)
+    report = PPAExperience.query.get_or_404(report_id)
+    decision = request.form.get("decision")
+    if decision not in ("verified", "rejected"):
+        abort(400)
+    reason = (form.reason.data or "").strip()
+    if decision == "rejected" and not reason:
+        flash("Provide a reason for rejecting a report.", "warning")
+        return redirect(url_for("ppa.experience_queue"))
+    report.status = decision
+    report.verified_by_id = current_user.id
+    report.rejection_reason = reason if decision == "rejected" else None
+    db.session.commit()
+    log_action(current_user, "ppa.experience_review_" + decision,
+               "PPAExperience", report.id)
+    if report.submitter:
+        notify(report.submitter, "Your experience report for {} was {}.".format(
+            report.ppa.name, "approved" if decision == "verified" else "returned for correction"),
+            category="success" if decision == "verified" else "warning")
+    flash("Experience reviewed.", "success")
+    return redirect(url_for("ppa.experience_queue"))
