@@ -57,6 +57,7 @@ def _register_blueprints(app):
     from app.blueprints.ppa.routes import bp as ppa_bp
     from app.blueprints.dating.routes import bp as dating_bp
     from app.blueprints.jobs.routes import bp as jobs_bp
+    from app.blueprints.platoons.routes import bp as platoons_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -68,6 +69,7 @@ def _register_blueprints(app):
     app.register_blueprint(ppa_bp, url_prefix="/ppas")
     app.register_blueprint(dating_bp, url_prefix="/dating")
     app.register_blueprint(jobs_bp, url_prefix="/jobs")
+    app.register_blueprint(platoons_bp, url_prefix="/platoons")
 
 
 def _register_error_handlers(app):
