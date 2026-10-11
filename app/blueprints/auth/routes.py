@@ -77,7 +77,7 @@ def login():
         next_page = request.args.get("next")
         if next_page and not next_page.startswith("/"):
             next_page = None
-        return redirect(next_page or url_for("profile.dashboard"))
+        return redirect(next_page or url_for("jobs.employer_dashboard" if user.role == "employer" else "profile.dashboard"))
 
     return render_template("auth/login.html", form=form)
 
