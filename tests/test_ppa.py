@@ -132,3 +132,76 @@ def test_admin_rejection_requires_reason(client, admin_user, db):
                 data={"decision": "rejected", "reason": "Insufficient details"})
     assert ppa.status == "rejected"
     assert ppa.rejection_reason == "Insufficient details"
+
+
+
+def test_other_corps_member_can_add_moderated_experience(
+    client, member_user, approved_member, admin_user, db
+):
+    from app.models import PPAExperience
+    _reporter(db, member_user)
+    _reporter(db, approved_member)
+    ppa = PPA(name="Klinik Community", name_key="klinik community", state="Benue",
+              lga="Makurdi", sector="health", status="verified",
+              submitted_by_id=approved_member.id)
+    db.session.add(ppa)
+    db.session.commit()
+
+    login(client, member_user.email)
+    submitted = client.post("/ppas/" + str(ppa.id) + "/experience", data={
+        "service_year": "2026", "accommodation": "yes", "allowance": "no",
+        "notes": "Accommodation was available during my placement."
+    })
+    assert submitted.status_code == 302
+    report = PPAExperience.query.one()
+    assert report.status == "pending"
+    assert report.submitted_by_id == member_user.id
+    page = client.get("/ppas/" + str(ppa.id))
+    assert b"Accommodation was available" not in page.data
+
+    client.get("/auth/logout")
+    login(client, admin_user.email)
+    assert client.get("/ppas/review/experiences").status_code == 200
+    approved = client.post("/ppas/experience/" + str(report.id) + "/review",
+                           data={"decision": "verified"})
+    assert approved.status_code == 302
+    assert report.status == "verified"
+    client.get("/auth/logout")
+    public = client.get("/ppas/" + str(ppa.id))
+    assert b"Accommodation was available" in public.data
+    assert member_user.email.encode() not in public.data
+
+
+def test_experience_edit_requires_ownership_and_resets_review(
+    client, member_user, approved_member, db
+):
+    from app.models import PPAExperience
+    _reporter(db, member_user)
+    _reporter(db, approved_member)
+    ppa = PPA(name="Oju School", name_key="oju school", state="Benue",
+              lga="Oju", sector="education", status="verified")
+    db.session.add(ppa)
+    db.session.flush()
+    report = PPAExperience(ppa_id=ppa.id, submitted_by_id=member_user.id,
+                           service_year=2025, status="verified", allowance="no",
+                           accommodation="no", notes="Shared.")
+    db.session.add(report)
+    db.session.commit()
+
+    login(client, approved_member.email)
+    assert client.get("/ppas/" + str(ppa.id) + "/experience").status_code == 200
+    # A second member's submission creates a separate record, never edits the first.
+    client.post("/ppas/" + str(ppa.id) + "/experience", data={
+        "service_year": "2026", "accommodation": "unknown",
+        "allowance": "unknown", "notes": "Different year."
+    })
+    assert PPAExperience.query.filter_by(ppa_id=ppa.id).count() == 2
+    client.get("/auth/logout")
+    login(client, member_user.email)
+    client.post("/ppas/" + str(ppa.id) + "/experience", data={
+        "service_year": "2025", "accommodation": "yes", "allowance": "no",
+        "notes": "Updated observations."
+    })
+    assert PPAExperience.query.filter_by(ppa_id=ppa.id).count() == 2
+    assert report.status == "pending"
+    assert report.notes == "Updated observations."
