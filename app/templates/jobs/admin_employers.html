@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Review Employers{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1080px">
+  <h1 class="h3 fw-bold">Employer verification queue</h1>
+  <p class="text-muted">Check organisation identity, business or school address and independent legitimacy before approving. Approval is MyPlatoon moderation, not NYSC accreditation.</p>
+  <a href="{{ url_for('jobs.admin_listings') }}" class="btn btn-p5-outline btn-sm mb-4">Review job listings</a>
+  {% for e in employers %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <h2 class="h5 fw-bold">{{ e.name }} <span class="small text-muted">({{ e.kind_label }})</span></h2>
+    <p class="small text-muted">{{ e.address }}, {{ e.lga }}, {{ e.state }}</p>
+    <p style="white-space:pre-wrap">{{ e.description }}</p>
+    <p class="small"><strong>Contact:</strong> {{ e.owner.full_name }} · {{ e.owner.email }} · {{ e.contact_email }}{% if e.contact_phone %} · {{ e.contact_phone }}{% endif %}{% if e.website %} · <a href="{{ e.website }}" target="_blank" rel="noopener noreferrer">Website</a>{% endif %}</p>
+    <form method="POST" action="{{ url_for('jobs.review_employer', employer_id=e.id) }}" class="border-top pt-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label">Review notes / reason for rejection</label>
+      <textarea name="note" class="form-control mb-2" maxlength="500" rows="2"></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" name="decision" value="approved" class="btn btn-p5 btn-sm">Approve</button>
+        <button type="submit" name="decision" value="rejected" class="btn btn-outline-danger btn-sm">Reject</button>
+        <button type="submit" name="decision" value="suspended" class="btn btn-outline-danger btn-sm">Suspend</button>
+      </div>
+    </form>
+  </article>
+  {% else %}<div class="p5-card p-4 text-muted">No pending employers.</div>{% endfor %}
+</div>
+{% endblock %}
