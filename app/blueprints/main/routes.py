@@ -52,6 +52,15 @@ def index():
                             reaction_types=REACTION_TYPES)
 
 
+@bp.route("/services")
+def services():
+    """Discover built-in MyPlatoon tools and clearly identified external services.
+
+    No SSO, profile sharing or cross-service API integration is implied.
+    """
+    return render_template("main/services.html")
+
+
 @bp.route("/nerd")
 def nerd():
     """Public guidance to the official NERD process; not a NERD API proxy."""
