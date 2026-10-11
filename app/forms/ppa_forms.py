@@ -1,7 +1,7 @@
 """PPA submission and review forms. No third-party geocoding or private location collection."""
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, SelectField, TextAreaField, DecimalField, SubmitField
+    StringField, SelectField, TextAreaField, DecimalField, IntegerField, SubmitField
 )
 from wtforms.validators import DataRequired, Length, Optional, NumberRange, URL, Regexp
 from app.models.platoon import NYSC_STATES
@@ -55,7 +55,7 @@ class PPAReviewForm(FlaskForm):
 
 
 class PPAExperienceForm(FlaskForm):
-    service_year = DecimalField("Year you served at this PPA", places=0, validators=[
+    service_year = IntegerField("Year you served at this PPA", validators=[
         DataRequired(), NumberRange(min=1973, max=2100)])
     accommodation = SelectField("Accommodation while you served",
         choices=PPA_YES_NO, validators=[DataRequired()], default="unknown")
