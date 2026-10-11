@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Optional, Length
 
 GENDER_FORM_CHOICES = [("male", "Man"), ("female", "Woman")]
@@ -17,6 +17,9 @@ class DatingPersonaForm(FlaskForm):
                                  validators=[DataRequired()])
     interests = StringField("Interests (comma-separated)", validators=[Optional(), Length(max=500)],
                              description="e.g. hiking, movies, cooking, football")
+    age_confirm = BooleanField(
+        "I confirm that I am at least 18 years old and agree to use Dating respectfully.",
+        description="Dating is an optional adults-only feature. We do not collect your date of birth for it.")
     submit = SubmitField("Save My Dating Persona")
 
 
