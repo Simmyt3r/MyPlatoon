@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Review PPA Experiences{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1000px">
+  <h1 class="h3 fw-bold">Review member PPA experiences</h1>
+  <p class="text-muted">Publish only firsthand, non-identifying contributions. Member identities are displayed to admins for accountability but never disclosed to the public.</p>
+  <a href="{{ url_for('ppa.review_queue') }}" class="small d-block mb-3">← Back to new PPA listings</a>
+  <nav class="d-flex gap-2 flex-wrap mb-4">
+    {% for value in ['pending', 'verified', 'rejected'] %}
+    <a class="btn btn-sm {{ 'btn-p5' if value == status else 'btn-p5-outline' }}" href="{{ url_for('ppa.experience_queue', status=value) }}">{{ value|capitalize }}</a>
+    {% endfor %}
+  </nav>
+  {% for report in reports %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <h2 class="h5 fw-bold"><a href="{{ url_for('ppa.detail', ppa_id=report.ppa_id) }}">{{ report.ppa.name }}</a></h2>
+    <p class="text-muted small">Service year: {{ report.service_year }} · Submitted by: {{ report.submitter.full_name if report.submitter else 'Deleted member' }}</p>
+    <p class="small">Accommodation: {{ report.accommodation|capitalize }} · Extra allowance: {{ report.allowance|capitalize }}</p>
+    <p style="white-space:pre-line">{{ report.notes or '(No written details)' }}</p>
+    <form method="POST" action="{{ url_for('ppa.review_experience', report_id=report.id) }}">
+      {{ review_form.csrf_token }}
+      <label class="form-label small" for="experience-reason-{{ report.id }}">Reason (for rejection)</label>
+      <textarea class="form-control mb-2" name="reason" id="experience-reason-{{ report.id }}" maxlength="500" rows="2"></textarea>
+      <button type="submit" class="btn btn-p5 btn-sm" name="decision" value="verified">Approve</button>
+      <button type="submit" class="btn btn-outline-danger btn-sm" name="decision" value="rejected">Reject</button>
+    </form>
+  </article>
+  {% else %}
+  <div class="p5-card p-4 text-muted">No {{ status }} experience reports.</div>
+  {% endfor %}
+</div>
+{% endblock %}
