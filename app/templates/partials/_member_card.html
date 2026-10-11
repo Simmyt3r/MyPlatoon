@@ -6,6 +6,7 @@
     <div class="p5-card-body">
       <h6 class="mb-1 fw-bold text-truncate">{{ profile.user.full_name }}</h6>
       <p class="mb-1 small text-muted text-truncate">{{ profile.profession or APP_MEMBER_LABEL }}</p>
+      <p class="small text-success mb-2">{{ profile.platoon_label }}</p>
       <p class="mb-2 small text-muted">
         <i class="fa-solid fa-location-dot me-1"></i>{{ profile.state_of_origin or 'Nigeria' }}
       </p>
