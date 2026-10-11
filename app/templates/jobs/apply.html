@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Apply: {{ job.title }}{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:770px">
+  <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="small d-inline-block mb-3">Back to {{ job.title }}</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-success small fw-bold text-uppercase">Private job application</div>
+    <h1 class="h3 fw-bold mb-2">Apply for {{ job.title }}</h1>
+    <p class="text-muted">{{ job.employer.name }} · {{ job.state }} · {{ job.kind_label }}</p>
+    <div class="alert alert-info small">
+      Only this employer's registered account will see the name on your MyPlatoon account, the message below and the email or phone you explicitly provide. Other profile contact details are not shared. Review employer information before submitting.
+    </div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.cover_note, rows=6) }}
+      {{ field(form.contact_email) }}
+      {{ field(form.contact_phone) }}
+      {{ field(form.consent) }}
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        {{ form.submit(class="btn btn-p5") }}
+        <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-p5-outline">Cancel</a>
+      </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">No payment is required to apply. Do not provide NIN scans, passwords or payment-card details to anyone offering employment.</p>
+  </section>
+</div>
+{% endblock %}
