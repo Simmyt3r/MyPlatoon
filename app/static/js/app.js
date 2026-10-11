@@ -121,7 +121,7 @@ function initFeedInteractions() {
     btn.addEventListener("click", function () {
       const url = btn.dataset.url;
       if (navigator.share) {
-        navigator.share({ title: "Platoon 5 Digital Album", url: url }).catch(() => {});
+        navigator.share({ title: "MyPlatoon", url: url }).catch(() => {});
       } else if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
           const original = btn.innerHTML;
