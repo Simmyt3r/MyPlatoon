@@ -82,8 +82,12 @@ class BaseConfig:
             url = url.replace("postgres://", "postgresql://", 1)
         return url
 
+    # Set AIVEN_DATABASE_URL to switch this app to its dedicated Aiven database
+    # without inadvertently using an old Neon DATABASE_URL on Vercel.
     SQLALCHEMY_DATABASE_URI = _normalize_db_url.__func__(
-        os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "dev.db"))
+        os.environ.get("AIVEN_DATABASE_URL")
+        or os.environ.get("DATABASE_URL")
+        or "sqlite:///" + os.path.join(basedir, "dev.db")
     )
 
 
