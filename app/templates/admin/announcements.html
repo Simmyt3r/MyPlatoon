@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Announcements{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Announcements</h4>
+  <div class="row g-4">
+    <div class="col-md-5">
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold mb-3">New Announcement</h6>
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          {{ field(form.title) }}
+          {{ field(form.body, rows=4) }}
+          {{ field(form.submit) }}
+        </form>
+      </div>
+    </div>
+    <div class="col-md-7">
+      {% for a in announcements %}
+      <div class="p5-card p5-card-body mb-2">
+        <div class="d-flex justify-content-between">
+          <h6 class="fw-bold mb-1">{{ a.title }}</h6>
+          <span class="badge {{ 'bg-success' if a.is_active else 'bg-secondary' }}">{{ 'Active' if a.is_active else 'Hidden' }}</span>
+        </div>
+        <p class="small mb-2">{{ a.body }}</p>
+        <form method="POST" action="{{ url_for('admin.toggle_announcement', announcement_id=a.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-p5-outline" type="submit">{{ 'Hide' if a.is_active else 'Show' }}</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-muted">No announcements yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

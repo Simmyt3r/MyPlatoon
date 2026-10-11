@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Log In{% endblock %}
+{% block body_class %}app-shell-auth{% endblock %}
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="p5-card p5-card-body p-4">
+        <h4 class="fw-bold text-center mb-1">Welcome Back</h4>
+        <p class="text-center text-muted small mb-4">Log in to your {{ APP_SHORT_NAME }} account.</p>
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          {{ field(form.email) }}
+          {{ field(form.password) }}
+          {{ field(form.remember_me) }}
+          <div class="d-grid mt-3">
+            {{ field(form.submit, extra_class="w-100") }}
+          </div>
+        </form>
+        <p class="text-center small mt-3 mb-0">
+          New to {{ APP_SHORT_NAME }}? <a href="{{ url_for('auth.register') }}">Create an account</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

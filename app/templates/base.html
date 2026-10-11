@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %} | {{ APP_SUBTITLE }}</title>
+  <meta name="description" content="{% block meta_description %}{{ APP_NAME }} — {{ APP_SUBTITLE }}. {{ POWERED_BY }}. {{ APP_MOTTO }}.{% endblock %}">
+  <meta property="og:title" content="{{ APP_NAME }}">
+  <meta property="og:description" content="{{ APP_SUBTITLE }} — {{ APP_MOTTO }}">
+  <meta property="og:type" content="website">
+
+  <!-- PWA -->
+  <link rel="manifest" href="{{ url_for('main.web_manifest') }}">
+  <meta name="theme-color" content="{{ APP_PRIMARY_COLOR }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="{{ APP_SHORT_NAME }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/icon-192.png') }}">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    /* Deployment-specific theme override -- see APP_PRIMARY_COLOR / APP_ACCENT_COLOR
+       in .env. Derived shades (darker/lighter variants) stay fixed in style.css,
+       so very different hues may need a manual CSS pass for full consistency. */
+    :root { --p5-green: {{ APP_PRIMARY_COLOR }}; --p5-gold: {{ APP_ACCENT_COLOR }}; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ============ TOP APP BAR ============ -->
+<nav class="p5-topbar">
+  <div class="d-flex align-items-center justify-content-between h-100 px-2 px-md-3">
+    <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width:0;">
+      <a href="{{ url_for('main.index') }}" class="p5-brand">
+        <span class="p5-brand-badge">{{ APP_BRAND_INITIALS or (APP_NAME[:2]|upper) }}</span>
+        <span class="d-none d-sm-inline">{{ APP_SHORT_NAME }}</span>
+      </a>
+      <form method="GET" action="{{ url_for('main.search') }}" class="p5-topbar-search-wrap d-none d-md-block">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" class="p5-topbar-search" placeholder="Search {{ APP_SHORT_NAME }}" value="{{ request.args.get('q', '') }}">
+      </form>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('main.search') }}" class="p5-icon-btn d-md-none" aria-label="Search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </a>
+
+      {% if current_user.is_authenticated %}
+      <div class="dropdown">
+        <button class="p5-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          {% if unread_notifications %}<span class="p5-badge-dot">{{ unread_notifications if unread_notifications < 10 else '9+' }}</span>{% endif %}
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p5-dropdown-menu">
+          <div class="dropdown-header d-flex justify-content-between align-items-center">
+            Notifications
+            <a href="{{ url_for('main.notifications') }}" class="small fw-normal">See all</a>
+          </div>
+          {% for n in recent_notifications %}
+          <div class="p5-notif-item">
+            {% if not n.is_read %}<span class="p5-notif-dot"></span>{% else %}<span style="width:8px;display:inline-block;"></span>{% endif %}
+            <div>
+              <div>{{ n.message }}</div>
+              <small class="text-muted">{{ n.created_at.strftime('%d %b, %H:%M') }}</small>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-center text-muted small py-3">No notifications yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <a href="{{ url_for('album.view') }}" class="p5-icon-btn d-none d-sm-inline-flex" aria-label="Digital Album">
+        <i class="fa-solid fa-book"></i>
+      </a>
+
+      <div class="dropdown">
+        <button class="p5-icon-btn p5-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
+          {% if current_user.profile and current_user.profile.photo_url %}
+          <img src="{{ current_user.profile.photo_url }}" alt="Your avatar">
+          {% else %}
+          <i class="fa-solid fa-circle-user fa-lg"></i>
+          {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end p5-dropdown-menu">
+          <li><a class="dropdown-item" href="{{ url_for('profile.dashboard') }}"><i class="fa-solid fa-gauge me-2 text-success"></i>Dashboard</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('profile.edit') }}"><i class="fa-solid fa-user-pen me-2 text-success"></i>Edit Profile</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
+          {% if current_user.is_admin %}
+          <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-success"></i>Admin</a></li>
+          {% endif %}
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i>Log Out</a></li>
+        </ul>
+      </div>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}" class="btn btn-p5-outline btn-sm">Log In</a>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-p5 btn-sm">Join</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- ============ FLASH MESSAGES ============ -->
+<div class="container" style="max-width:1320px;">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="pt-3">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div class="p5-shell {% block body_class %}has-right-rail{% endblock %}">
+
+  {% block left_sidebar %}
+  <aside class="p5-sidebar-left">
+    <div class="p5-sidebar-card">
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('profile.dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'profile.dashboard' }}">
+        {% if current_user.profile and current_user.profile.photo_url %}
+        <img src="{{ current_user.profile.photo_url }}" alt="">
+        {% else %}<i class="fa-solid fa-circle-user"></i>{% endif %}
+        {{ current_user.full_name }}
+      </a>
+      {% endif %}
+      <a href="{{ url_for('main.index') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.index' }}">
+        <i class="fa-solid fa-house"></i>Home Feed
+      </a>
+      <a href="{{ url_for('directory.members') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.members' }}">
+        <i class="fa-solid fa-users"></i>Members
+      </a>
+      <a href="{{ url_for('directory.businesses') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.businesses' }}">
+        <i class="fa-solid fa-store"></i>Businesses
+      </a>
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('album.view') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'album.view' }}">
+        <i class="fa-solid fa-book"></i>Digital Album
+      </a>
+      {% if ENABLE_DATING %}
+      <a href="{{ url_for('dating.home') }}" class="p5-nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('dating.') }}">
+        <i class="fa-solid fa-heart"></i>Dating
+      </a>
+      {% endif %}
+      <a href="{{ url_for('business.my_businesses') }}" class="p5-nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('business.') }}">
+        <i class="fa-solid fa-briefcase"></i>My Business
+      </a>
+      <a href="{{ url_for('main.notifications') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.notifications' }}">
+        <i class="fa-regular fa-bell"></i>Notifications
+        {% if unread_notifications %}<span class="badge bg-danger rounded-pill ms-auto">{{ unread_notifications }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile.privacy') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'profile.privacy' }}">
+        <i class="fa-solid fa-lock"></i>Privacy Settings
+      </a>
+      {% if current_user.is_admin %}
+      <a href="{{ url_for('admin.dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('admin.') }}">
+        <i class="fa-solid fa-shield-halved"></i>Admin Dashboard
+      </a>
+      {% endif %}
+      {% else %}
+      <a href="{{ url_for('main.about') }}" class="p5-nav-item"><i class="fa-solid fa-circle-info"></i>About</a>
+      <a href="{{ url_for('auth.login') }}" class="p5-nav-item"><i class="fa-solid fa-right-to-bracket"></i>Log In</a>
+      <a href="{{ url_for('auth.register') }}" class="p5-nav-item"><i class="fa-solid fa-user-plus"></i>Join {{ APP_SHORT_NAME }}</a>
+      {% endif %}
+    </div>
+  </aside>
+  {% endblock %}
+
+  <main class="p5-main-col">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block right_sidebar %}
+  <aside class="p5-sidebar-right">
+    <div class="p5-sidebar-card">
+      <div class="p5-sidebar-heading">Suggested for you</div>
+      {% for p in suggested_profiles %}
+      <a href="{{ url_for('directory.member_profile', slug=p.slug) }}" class="p5-suggestion-item text-decoration-none">
+        <img src="{{ p.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}" alt="">
+        <div>
+          <div class="p5-suggestion-name">{{ p.user.full_name }}</div>
+          <div class="p5-suggestion-meta">{{ p.profession or APP_MEMBER_LABEL }}</div>
+        </div>
+      </a>
+      {% else %}
+      <p class="text-muted small px-2">No suggestions yet.</p>
+      {% endfor %}
+    </div>
+    <div class="p5-sidebar-card text-center small text-muted">
+      <div class="fw-bold text-success mb-1">{{ APP_NAME }}</div>
+      {% if POWERED_BY %}<div>{{ POWERED_BY }}</div>{% endif %}
+      {% if APP_MOTTO %}<div class="fst-italic" style="color:var(--p5-gold);">{{ APP_MOTTO }}</div>{% endif %}
+    </div>
+  </aside>
+  {% endblock %}
+
+</div>
+
+<!-- ============ MOBILE BOTTOM NAV ============ -->
+<nav class="p5-bottom-nav">
+  <div class="row row-cols-5 g-0 text-center">
+    <div class="col"><a href="{{ url_for('main.index') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.index' }}"><i class="fa-solid fa-house"></i>Home</a></div>
+    <div class="col"><a href="{{ url_for('directory.members') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.members' }}"><i class="fa-solid fa-users"></i>Members</a></div>
+    {% if ENABLE_DATING and current_user.is_authenticated %}
+    <div class="col"><a href="{{ url_for('dating.home') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('dating.') }}"><i class="fa-solid fa-heart"></i>Dating</a></div>
+    {% else %}
+    <div class="col"><a href="{{ url_for('directory.businesses') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.businesses' }}"><i class="fa-solid fa-store"></i>Business</a></div>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+    <div class="col"><a href="{{ url_for('main.notifications') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.notifications' }}"><i class="fa-regular fa-bell"></i>Alerts</a></div>
+    <div class="col"><a href="{{ url_for('profile.dashboard') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'profile.dashboard' }}"><i class="fa-solid fa-circle-user"></i>You</a></div>
+    {% else %}
+    <div class="col"><a href="{{ url_for('auth.login') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-right-to-bracket"></i>Log In</a></div>
+    <div class="col"><a href="{{ url_for('auth.register') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-user-plus"></i>Join</a></div>
+    {% endif %}
+  </div>
+</nav>
+
+<footer class="p5-footer d-none d-lg-block">
+  <div class="container">
+    <div class="row gy-3">
+      <div class="col-md-4">
+        <h5 class="text-white">{{ APP_NAME|upper }}</h5>
+        {% if APP_SUBTITLE %}<p class="mb-1">{{ APP_SUBTITLE }}</p>{% endif %}
+        {% if APP_MOTTO %}<p class="p5-motto mb-0">{{ APP_MOTTO }}</p>{% endif %}
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white">Explore</h6>
+        <ul class="list-unstyled">
+          <li><a href="{{ url_for('directory.members') }}">Member Directory</a></li>
+          <li><a href="{{ url_for('directory.businesses') }}">Business Directory</a></li>
+          <li><a href="{{ url_for('main.about') }}">About the Project</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-white">Powered By</h6>
+        {% if POWERED_BY %}<p class="mb-0">{{ POWERED_BY }}</p>{% endif %}
+      </div>
+    </div>
+    <hr class="border-secondary">
+    <p class="text-center small mb-0">&copy; 2026 {{ POWERED_BY or APP_NAME }}. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () { /* offline support is best-effort */ });
+    });
+  }
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

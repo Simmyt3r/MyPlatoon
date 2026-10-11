@@ -1,0 +1,31 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+
+# Flask / SQLAlchemy
+instance/
+*.db
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Vercel
+.vercel/

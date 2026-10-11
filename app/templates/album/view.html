@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Digital Album{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">{{ APP_NAME }}</h4>
+
+  {% if latest %}
+  <div class="p5-card p5-card-body text-center py-5 mb-4">
+    <i class="fa-solid fa-book-open fa-3x text-success mb-3"></i>
+    <h5 class="fw-bold">Album Version {{ latest.version_label }}</h5>
+    <p class="text-muted">{{ latest.member_count }} members &bull; Generated {{ latest.generated_at.strftime('%d %B %Y') }}</p>
+    <a href="{{ url_for('album.download', version_id=latest.id) }}" class="btn btn-p5 btn-lg">
+      <i class="fa-solid fa-download me-1"></i>Download Latest Album
+    </a>
+  </div>
+  {% else %}
+  <div class="p5-card p5-card-body text-center py-5 mb-4">
+    <i class="fa-solid fa-book fa-3x text-muted mb-3"></i>
+    <p class="text-muted">No album has been published yet.</p>
+  </div>
+  {% endif %}
+
+  {% if current_user.is_admin %}
+  <div class="p5-card p5-card-body mb-4">
+    <h6 class="fw-bold">Generate New Version</h6>
+    <p class="small text-muted">
+      This compiles all currently approved profiles into a fresh PDF. Only do this
+      when there are meaningful changes since the last version.
+    </p>
+    <form method="POST" action="{{ url_for('album.generate') }}" data-confirm="Generate a new album version now?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button class="btn btn-p5-outline" type="submit"><i class="fa-solid fa-arrows-rotate me-1"></i>Generate New Version</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if history %}
+  <h6 class="fw-bold mb-3">Version History</h6>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle bg-white p5-card">
+      <thead><tr><th>Version</th><th>Members</th><th>Generated</th><th>Downloads</th><th></th></tr></thead>
+      <tbody>
+        {% for v in history %}
+        <tr>
+          <td>v{{ v.version_label }}</td>
+          <td>{{ v.member_count }}</td>
+          <td>{{ v.generated_at.strftime('%d %b %Y') }}</td>
+          <td>{{ v.download_count }}</td>
+          <td><a href="{{ url_for('album.download', version_id=v.id) }}" class="btn btn-sm btn-p5-outline">Download</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

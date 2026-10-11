@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Admin Dashboard</h4>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.total_members }}</div><div class="p5-stat-label">Total Members</div></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.approved_members }}</div><div class="p5-stat-label">Approved</div></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.pending_approval }}</div><div class="p5-stat-label">Pending</div></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.incomplete_profiles }}</div><div class="p5-stat-label">Incomplete</div></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.registered_businesses }}</div><div class="p5-stat-label">Businesses</div></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="p5-stat"><div class="p5-stat-value">{{ stats.album_downloads }}</div><div class="p5-stat-label">Album Downloads</div></div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('admin.members', status='pending') }}" class="btn btn-p5 btn-sm">Review Pending ({{ stats.pending_approval }})</a>
+    <a href="{{ url_for('admin.members') }}" class="btn btn-p5-outline btn-sm">All Members</a>
+    <a href="{{ url_for('admin.businesses') }}" class="btn btn-p5-outline btn-sm">Businesses</a>
+    <a href="{{ url_for('admin.categories') }}" class="btn btn-p5-outline btn-sm">Categories</a>
+    <a href="{{ url_for('admin.announcements') }}" class="btn btn-p5-outline btn-sm">Announcements</a>
+    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-p5-outline btn-sm">Audit Logs</a>
+    <a href="{{ url_for('admin.export_members_csv') }}" class="btn btn-p5-outline btn-sm">Export CSV</a>
+    {% if ENABLE_DATING %}<a href="{{ url_for('admin.dating_moderation') }}" class="btn btn-p5-outline btn-sm">Dating Reports</a>{% endif %}
+    <a href="{{ url_for('album.view') }}" class="btn btn-p5-outline btn-sm">Manage Album</a>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold text-success">Pending Approval</h6>
+        {% for p in pending_profiles %}
+        <div class="d-flex justify-content-between py-2 {{ 'border-top' if not loop.first }}">
+          <a href="{{ url_for('admin.member_detail', profile_id=p.id) }}">{{ p.user.full_name }}</a>
+          <small class="text-muted">{{ p.updated_at.strftime('%d %b') }}</small>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No profiles awaiting review.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold text-success">Recent Registrations</h6>
+        {% for u in recent_registrations %}
+        <div class="d-flex justify-content-between py-2 {{ 'border-top' if not loop.first }}">
+          <span>{{ u.full_name }}</span>
+          <small class="text-muted">{{ u.created_at.strftime('%d %b') }}</small>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No registrations yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

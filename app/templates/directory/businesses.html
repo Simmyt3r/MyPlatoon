@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "partials/_business_card.html" import business_card %}
+{% from "partials/_pagination.html" import paginate %}
+{% block title %}Business Directory{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Business Directory</h4>
+
+  <form method="GET" class="p5-card p5-card-body mb-4">
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search business name or description...">
+      </div>
+      <div class="col-md-4">
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}" {{ 'selected' if category_id == c.id }}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-grid">
+        <button class="btn btn-p5" type="submit">Search</button>
+      </div>
+    </div>
+  </form>
+
+  {% if pagination.items %}
+  <div class="row g-3">
+    {% for biz in pagination.items %}
+      {{ business_card(biz) }}
+    {% endfor %}
+  </div>
+  {{ paginate(pagination, 'directory.businesses', q=q, category=category_id, state=state) }}
+  {% else %}
+  <div class="p5-card p5-card-body text-center py-5">
+    <i class="fa-solid fa-store-slash fa-2x text-muted mb-3"></i>
+    <p class="text-muted mb-0">No businesses match your search.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

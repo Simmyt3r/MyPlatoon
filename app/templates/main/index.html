@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Home Feed{% endblock %}
+
+{% block content %}
+
+{% if not current_user.is_authenticated %}
+<section class="p5-hero text-center mb-4">
+  <div class="container">
+    <h1>{{ APP_NAME|upper }}</h1>
+    <p class="fs-6 mb-1">{{ APP_TAGLINE }}</p>
+    <div class="p5-badge-stripe mx-auto"></div>
+    {% if APP_MOTTO %}<p class="p5-motto">{{ APP_MOTTO }}</p>{% endif %}
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg fw-bold">
+        <i class="fa-solid fa-user-plus me-1"></i>Join {{ APP_SHORT_NAME }}
+      </a>
+      <a href="{{ url_for('directory.members') }}" class="btn btn-outline-light btn-lg">Explore Members</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<div class="row g-3 text-center mb-3">
+  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ member_count }}</div><div class="p5-stat-label">Members</div></div></div>
+  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ business_count }}</div><div class="p5-stat-label">Businesses</div></div></div>
+  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">1</div><div class="p5-stat-label">Platoon</div></div></div>
+</div>
+
+{% if stories %}
+<div class="p5-stories">
+  {% for p in stories %}
+  <a href="{{ url_for('directory.member_profile', slug=p.slug) }}" class="p5-story text-decoration-none">
+    <div class="p5-story-ring"><img src="{{ p.photo_url }}" alt="{{ p.user.full_name }}"></div>
+    <span class="p5-story-name">{{ p.user.full_name.split(' ')[0] }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if current_user.is_authenticated and current_user.is_admin %}
+<div class="p5-composer">
+  <a href="{{ url_for('admin.announcements') }}" class="text-decoration-none text-muted d-flex align-items-center gap-2">
+    <i class="fa-solid fa-circle-plus text-success"></i>
+    Post an announcement to the platoon feed...
+  </a>
+</div>
+{% endif %}
+
+{% if feed_announcements %}
+  {% for a in feed_announcements %}
+  <article class="p5-post" id="announcement-{{ a.id }}">
+    <div class="p5-post-header">
+      <img src="{{ url_for('static', filename='img/icon-192.png') }}" alt="">
+      <div>
+        <div class="p5-post-author">{{ a.title }}</div>
+        <div class="p5-post-meta">{{ POWERED_BY }} &bull; {{ a.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+      </div>
+    </div>
+    <div class="p5-post-body">{{ a.body }}</div>
+
+    {% set counts = a.reaction_counts() %}
+    {% if a.total_reactions() or a.comments|length %}
+    <div class="p5-post-stats">
+      <span>
+        {% if counts.get('like') %}👍{% endif %}{% if counts.get('love') %}❤️{% endif %}{% if counts.get('celebrate') %}🎉{% endif %}{% if counts.get('support') %}🤝{% endif %}
+        {{ a.total_reactions() }}
+      </span>
+      <span>{{ a.comments|length }} comment{{ 's' if a.comments|length != 1 }}</span>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <div class="p5-post-actions">
+      <div class="p5-reaction-picker flex-fill">
+        <form method="POST" action="{{ url_for('main.react_to_announcement', announcement_id=a.id) }}" class="js-react-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="reaction_type" value="{{ a.reaction_for(current_user) or 'like' }}">
+          <button type="submit" class="p5-post-action-btn js-react-btn w-100 {{ 'reacted reaction-' + a.reaction_for(current_user) if a.reaction_for(current_user) }}">
+            <i class="fa-solid fa-thumbs-up"></i> React
+          </button>
+        </form>
+        <div class="p5-reaction-options">
+          {% for rt, emoji in [('like','👍'), ('love','❤️'), ('celebrate','🎉'), ('support','🤝')] %}
+          <button type="button" class="p5-reaction-option js-react-option" data-reaction="{{ rt }}" data-announcement="{{ a.id }}" title="{{ rt|title }}">{{ emoji }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="button" class="p5-post-action-btn flex-fill js-focus-comment" data-announcement="{{ a.id }}">
+        <i class="fa-regular fa-comment"></i> Comment
+      </button>
+      <button type="button" class="p5-post-action-btn flex-fill js-share" data-url="{{ request.url_root.rstrip('/') }}{{ url_for('main.index') }}#announcement-{{ a.id }}">
+        <i class="fa-solid fa-share"></i> Share
+      </button>
+    </div>
+
+    <div class="p5-comments">
+      {% for c in a.comments[-3:] %}
+      <div class="p5-comment">
+        <img src="{{ c.user.profile.photo_url if c.user.profile and c.user.profile.photo_url else url_for('static', filename='img/placeholder-avatar.png') }}" alt="">
+        <div class="p5-comment-bubble">
+          <span class="p5-comment-author">{{ c.user.full_name }}<span class="p5-comment-time">{{ c.created_at.strftime('%d %b, %H:%M') }}</span></span>
+          {{ c.body }}
+        </div>
+      </div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('main.comment_on_announcement', announcement_id=a.id) }}" class="p5-comment-form js-comment-form" data-announcement="{{ a.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        {% if current_user.profile and current_user.profile.photo_url %}
+        <img src="{{ current_user.profile.photo_url }}" alt="">
+        {% else %}<i class="fa-solid fa-circle-user fa-lg text-muted"></i>{% endif %}
+        <input type="text" name="body" maxlength="1000" placeholder="Write a comment..." required>
+      </form>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+{% else %}
+<div class="p5-post p5-card-body text-center py-5">
+  <i class="fa-solid fa-bullhorn fa-2x text-muted mb-3"></i>
+  <p class="text-muted mb-0">No announcements yet. Check back soon!</p>
+</div>
+{% endif %}
+{% endblock %}

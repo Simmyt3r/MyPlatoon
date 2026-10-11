@@ -1,0 +1,39 @@
+{% macro dating_match_card(match, other, viewer_persona, show_rank=none) %}
+{% set label, emoji = score_label(match.score) %}
+<div class="col-sm-6 col-lg-4">
+  <div class="p5-card h-100">
+    <div class="position-relative">
+      <img src="{{ other.profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+           class="p5-card-photo" alt="{{ other.display_name }}">
+      <span class="badge position-absolute top-0 end-0 m-2" style="background:rgba(0,0,0,0.65); font-size:0.85rem;">
+        {{ emoji }} {{ match.score|round|int }}%
+      </span>
+      {% if match.status == 'matched' %}
+      <span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="fa-solid fa-heart"></i> Matched</span>
+      {% endif %}
+      {% if show_rank %}
+      <span class="badge bg-dark position-absolute bottom-0 start-0 m-2">#{{ show_rank }}</span>
+      {% endif %}
+    </div>
+    <div class="p5-card-body">
+      <h6 class="fw-bold mb-0">{{ other.display_name or other.profile.user.full_name.split(' ')[0] }}</h6>
+      <p class="small mb-1" style="color:var(--p5-gold-dark, #8a6207); font-weight:600;">{{ label }}</p>
+      {% if other.tagline %}<p class="small text-muted mb-2 fst-italic">"{{ other.tagline }}"</p>{% endif %}
+
+      {% set shared = viewer_persona.shared_interests_with(other) if viewer_persona else [] %}
+      {% if shared %}
+      <div class="mb-2">
+        {% for i in shared[:3] %}<span class="p5-chip">{{ i }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-2 mt-2">
+        <a href="{{ url_for('directory.member_profile', slug=other.profile.slug) }}" class="btn btn-p5-outline btn-sm flex-fill">View Profile</a>
+        <a href="{{ url_for('dating.report', persona_id=other.id) }}" class="btn btn-outline-danger btn-sm" title="Report">
+          <i class="fa-solid fa-flag"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

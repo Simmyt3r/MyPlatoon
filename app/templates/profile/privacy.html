@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Privacy Settings{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <h4 class="p5-section-title">Privacy Settings</h4>
+      <p class="text-muted small">
+        Control exactly who can see your contact details and address. Residential
+        addresses are private by default and are never shown publicly unless you
+        choose to change that here.
+      </p>
+      <div class="p5-card p5-card-body">
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          {{ field(form.profile_visibility) }}
+          {{ field(form.phone_visibility) }}
+          {{ field(form.whatsapp_visibility) }}
+          {{ field(form.address_visibility) }}
+          {{ field(form.submit) }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-5" style="max-width:760px;">
+  <h2 class="p5-section-title">About This Project</h2>
+  <p>
+    {{ APP_NAME }} is a networking directory and digital album{% if APP_SUBTITLE %} for
+    {{ APP_SUBTITLE }}{% endif %}.
+  </p>
+  <p>
+    Every {{ APP_MEMBER_LABEL|lower }} can create a profile, showcase their skills and
+    businesses, control exactly who sees their contact information, and connect with
+    fellow members. Approved profiles are compiled into an official downloadable digital
+    album, complete with QR codes linking back to each member's live profile.
+  </p>
+  {% if APP_MOTTO %}<p class="p5-motto">{{ APP_MOTTO }}</p>{% endif %}
+  {% if POWERED_BY %}<p class="text-muted">{{ POWERED_BY }}</p>{% endif %}
+</div>
+{% endblock %}

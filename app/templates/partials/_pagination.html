@@ -1,0 +1,23 @@
+{% macro paginate(pagination, endpoint, q=none, state=none, profession=none, skill=none, category=none, status=none) %}
+{% if pagination.pages > 1 %}
+<nav aria-label="Pagination" class="mt-4">
+  <ul class="pagination justify-content-center flex-wrap">
+    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+      <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, q=q, state=state, profession=profession, skill=skill, category=category, status=status) if pagination.has_prev else '#' }}">&laquo;</a>
+    </li>
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if p %}
+        <li class="page-item {{ 'active' if p == pagination.page }}">
+          <a class="page-link" href="{{ url_for(endpoint, page=p, q=q, state=state, profession=profession, skill=skill, category=category, status=status) }}">{{ p }}</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+      {% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+      <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, q=q, state=state, profession=profession, skill=skill, category=category, status=status) if pagination.has_next else '#' }}">&raquo;</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{% endmacro %}

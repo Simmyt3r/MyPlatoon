@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "partials/_dating_match_card.html" import dating_match_card %}
+{% block title %}Mutual Matches{% endblock %}
+{% block content %}
+<h4 class="p5-section-title">🎉 Your Mutual Matches</h4>
+{% if mutuals %}
+<div class="row g-3">
+  {% for match, other in mutuals %}
+    {{ dating_match_card(match, other, persona) }}
+  {% endfor %}
+</div>
+{% else %}
+<div class="p5-card p5-card-body text-center py-5">
+  <div style="font-size:2.5rem;" class="mb-2">💌</div>
+  <p class="text-muted mb-3">No mutual matches yet -- when you and someone both show up in each other's top picks, it's a match!</p>
+  <a href="{{ url_for('dating.browse') }}" class="btn btn-p5">Browse Your Top Picks</a>
+</div>
+{% endif %}
+{% endblock %}

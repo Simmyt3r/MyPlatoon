@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "partials/_member_card.html" import member_card %}
+{% from "partials/_pagination.html" import paginate %}
+{% block title %}Member Directory{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Member Directory</h4>
+
+  <form method="GET" class="p5-card p5-card-body mb-4">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, profession, location...">
+      </div>
+      <div class="col-md-3">
+        <select name="state" class="form-select">
+          <option value="">All States</option>
+          {% for s in states %}
+          <option value="{{ s }}" {{ 'selected' if state == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="text" name="profession" value="{{ profession }}" class="form-control" placeholder="Profession">
+      </div>
+      <div class="col-md-2 d-grid">
+        <button class="btn btn-p5" type="submit">Search</button>
+      </div>
+    </div>
+  </form>
+
+  {% if pagination.items %}
+  <div class="row g-3">
+    {% for profile in pagination.items %}
+      {{ member_card(profile) }}
+    {% endfor %}
+  </div>
+  {{ paginate(pagination, 'directory.members', q=q, state=state, profession=profession, skill=skill) }}
+  {% else %}
+  <div class="p5-card p5-card-body text-center py-5">
+    <i class="fa-solid fa-user-slash fa-2x text-muted mb-3"></i>
+    <p class="text-muted mb-0">No members match your search.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

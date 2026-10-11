@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ business.name }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="p5-card p5-card-body">
+        <div class="d-flex gap-3 align-items-center mb-3">
+          <img src="{{ business.logo_url or url_for('static', filename='img/placeholder-logo.png') }}"
+               width="90" height="90" style="object-fit:contain;" alt="{{ business.name }} logo">
+          <div>
+            <h4 class="fw-bold mb-0">{{ business.name }}</h4>
+            {% if business.category %}<span class="p5-chip">{{ business.category.name }}</span>{% endif %}
+            <p class="small text-muted mb-0 mt-1">
+              Owned by
+              <a href="{{ url_for('directory.member_profile', slug=business.profile.slug) }}">{{ business.profile.user.full_name }}</a>
+            </p>
+          </div>
+        </div>
+
+        {% if business.description %}
+        <p>{{ business.description }}</p>
+        {% endif %}
+
+        {% if business.address %}
+        <p class="small text-muted"><i class="fa-solid fa-location-dot me-1"></i>{{ business.address }}</p>
+        {% endif %}
+
+        <div class="d-flex flex-wrap mt-3">
+          {% if business.phone %}
+          <a href="tel:{{ business.phone }}" class="p5-contact-btn p5-contact-call"><i class="fa-solid fa-phone"></i>Call</a>
+          {% endif %}
+          {% if business.whatsapp %}
+          <a href="https://wa.me/{{ business.whatsapp|replace('+','')|replace(' ','')|replace('-','') }}"
+             target="_blank" rel="noopener" class="p5-contact-btn p5-contact-whatsapp"><i class="fa-brands fa-whatsapp"></i>WhatsApp</a>
+          {% endif %}
+          {% if business.email %}
+          <a href="mailto:{{ business.email }}" class="p5-contact-btn p5-contact-email"><i class="fa-solid fa-envelope"></i>Email</a>
+          {% endif %}
+          {% if business.website %}
+          <a href="{{ business.website|ensure_scheme }}" target="_blank" rel="noopener" class="p5-contact-btn p5-contact-web"><i class="fa-solid fa-globe"></i>Website</a>
+          {% endif %}
+        </div>
+
+        <div class="d-flex gap-3 mt-3">
+          {% if business.facebook %}<a href="{{ business.facebook|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-facebook fa-lg text-success"></i></a>{% endif %}
+          {% if business.instagram %}<a href="{{ business.instagram|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-instagram fa-lg text-success"></i></a>{% endif %}
+          {% if business.tiktok %}<a href="{{ business.tiktok|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-tiktok fa-lg text-success"></i></a>{% endif %}
+          {% if business.twitter_x %}<a href="{{ business.twitter_x|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-x-twitter fa-lg text-success"></i></a>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

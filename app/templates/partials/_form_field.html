@@ -1,0 +1,33 @@
+{% macro field(f, extra_class="", rows=none) %}
+<div class="mb-3">
+  {% if f.type != 'SubmitField' %}
+  <label for="{{ f.id }}" class="form-label fw-semibold">{{ f.label.text }}</label>
+  {% endif %}
+
+  {% if f.type == 'SubmitField' %}
+    {{ f(class="btn btn-p5 " + extra_class) }}
+  {% elif f.type == 'FileField' %}
+    {{ f(class="form-control" + (" is-invalid" if f.errors else "") + " " + extra_class) }}
+  {% elif f.type == 'SelectField' %}
+    {{ f(class="form-select" + (" is-invalid" if f.errors else "") + " " + extra_class) }}
+  {% elif f.type == 'TextAreaField' %}
+    {{ f(class="form-control" + (" is-invalid" if f.errors else "") + " " + extra_class, rows=(rows or 4)) }}
+  {% elif f.type == 'BooleanField' %}
+    <div class="form-check">
+      {{ f(class="form-check-input") }}
+      <label class="form-check-label" for="{{ f.id }}">{{ f.label.text }}</label>
+    </div>
+  {% else %}
+    {{ f(class="form-control" + (" is-invalid" if f.errors else "") + " " + extra_class) }}
+  {% endif %}
+
+  {% if f.errors %}
+    {% for error in f.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endfor %}
+  {% endif %}
+  {% if f.description %}
+  <div class="form-text">{{ f.description }}</div>
+  {% endif %}
+</div>
+{% endmacro %}

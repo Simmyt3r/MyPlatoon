@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "partials/_pagination.html" import paginate %}
+{% block title %}Manage Businesses{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Registered Businesses</h4>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle bg-white p5-card">
+      <thead><tr><th>Business</th><th>Owner</th><th>Category</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for b in pagination.items %}
+        <tr>
+          <td>{{ b.name }}</td>
+          <td>{{ b.profile.user.full_name }}</td>
+          <td>{{ b.category.name if b.category else '-' }}</td>
+          <td><span class="badge {{ 'bg-success' if b.is_active else 'bg-secondary' }}">{{ 'Active' if b.is_active else 'Inactive' }}</span></td>
+          <td><a href="{{ url_for('directory.business_detail', business_id=b.id) }}" class="btn btn-sm btn-p5-outline">View</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No businesses registered yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ paginate(pagination, 'admin.businesses') }}
+</div>
+{% endblock %}

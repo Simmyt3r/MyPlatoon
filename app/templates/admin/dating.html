@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Dating Reports{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<h4 class="p5-section-title">Reported Dating Personas</h4>
+{% if reported %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle bg-white p5-card">
+    <thead><tr><th>Persona</th><th>Owner</th><th>Reason</th><th></th></tr></thead>
+    <tbody>
+      {% for p in reported %}
+      <tr>
+        <td>{{ p.display_name }}</td>
+        <td>{{ p.profile.user.full_name }} ({{ p.profile.user.email }})</td>
+        <td class="small">{{ p.report_reason }}</td>
+        <td class="text-nowrap">
+          <form method="POST" action="{{ url_for('admin.dating_clear_report', persona_id=p.id) }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-sm btn-outline-success" type="submit">Clear</button>
+          </form>
+          <form method="POST" action="{{ url_for('admin.dating_remove_persona', persona_id=p.id) }}" class="d-inline"
+                data-confirm="Permanently remove this dating persona?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="p5-card p5-card-body text-center py-5">
+  <i class="fa-solid fa-heart-circle-check fa-2x text-success mb-3"></i>
+  <p class="text-muted mb-0">No reports right now.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}You're Offline{% endblock %}
+{% block body_class %}app-shell-auth{% endblock %}
+{% block content %}
+<div class="container my-5 text-center" style="max-width:520px;">
+  <div class="p5-card p5-card-body py-5">
+    <i class="fa-solid fa-wifi fa-2x text-muted mb-3" style="opacity:0.4;"></i>
+    <h4 class="fw-bold mb-2">You're offline</h4>
+    <p class="text-muted mb-4">
+      This page needs a connection to load. Check your network and try again --
+      {{ APP_SHORT_NAME }} will be right here when you're back online.
+    </p>
+    <button class="btn btn-p5" onclick="window.location.reload()">
+      <i class="fa-solid fa-arrows-rotate me-1"></i>Try Again
+    </button>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Business Categories{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">Business Categories</h4>
+  <div class="row g-4">
+    <div class="col-md-5">
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold mb-3">Add Category</h6>
+        <form method="POST" novalidate>
+          {{ form.hidden_tag() }}
+          {{ field(form.name) }}
+          {{ field(form.submit) }}
+        </form>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold mb-3">Existing Categories</h6>
+        <ul class="list-group list-group-flush">
+          {% for c in categories %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ c.name }}
+            <form method="POST" action="{{ url_for('admin.delete_category', category_id=c.id) }}"
+                  data-confirm="Delete category '{{ c.name }}'?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="fa-solid fa-trash"></i></button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

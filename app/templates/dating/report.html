@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Report{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<h4 class="p5-section-title">Report {{ target.display_name or 'This Person' }}</h4>
+<div class="p5-card p5-card-body">
+  <p class="text-muted small">
+    Reports are reviewed by an administrator. This person will stop appearing in
+    anyone's matches immediately while it's reviewed.
+  </p>
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.reason, rows=4) }}
+    <button type="submit" class="btn btn-danger">Submit Report</button>
+  </form>
+</div>
+{% endblock %}

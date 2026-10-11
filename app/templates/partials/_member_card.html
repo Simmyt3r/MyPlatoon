@@ -1,0 +1,24 @@
+{% macro member_card(profile) %}
+<div class="col-sm-6 col-lg-4 col-xl-3">
+  <div class="p5-card">
+    <img src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+         class="p5-card-photo" alt="Photo of {{ profile.user.full_name }}" loading="lazy">
+    <div class="p5-card-body">
+      <h6 class="mb-1 fw-bold text-truncate">{{ profile.user.full_name }}</h6>
+      <p class="mb-1 small text-muted text-truncate">{{ profile.profession or APP_MEMBER_LABEL }}</p>
+      <p class="mb-2 small text-muted">
+        <i class="fa-solid fa-location-dot me-1"></i>{{ profile.state_of_origin or 'Nigeria' }}
+      </p>
+      {% if profile.businesses %}
+      <p class="mb-2 small"><i class="fa-solid fa-briefcase me-1 text-warning"></i>{{ profile.businesses[0].name }}</p>
+      {% endif %}
+      {% for s in profile.skills[:3] %}
+        <span class="p5-chip">{{ s.name }}</span>
+      {% endfor %}
+      <div class="mt-3 d-grid">
+        <a href="{{ url_for('directory.member_profile', slug=profile.slug) }}" class="btn btn-p5-outline btn-sm">View Profile</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

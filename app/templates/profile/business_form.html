@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}{{ 'Edit' if business else 'Add' }} Business{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="p5-section-title">{{ 'Edit Business' if business else 'Add Your Business' }}</h4>
+  <div class="p5-card p5-card-body">
+    <form method="POST" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+      {% if business %}
+      <div class="mb-3">
+        <img src="{{ business.logo_url or url_for('static', filename='img/placeholder-logo.png') }}"
+             width="72" height="72" style="object-fit:contain;" alt="Current logo">
+      </div>
+      {% endif %}
+      {{ field(form.logo) }}
+      {{ field(form.name) }}
+      {{ field(form.category_id) }}
+      {{ field(form.description, rows=4) }}
+      <div class="row">
+        <div class="col-md-6">{{ field(form.address) }}</div>
+        <div class="col-md-6">{{ field(form.phone) }}</div>
+        <div class="col-md-6">{{ field(form.whatsapp) }}</div>
+        <div class="col-md-6">{{ field(form.email) }}</div>
+        <div class="col-md-6">{{ field(form.website) }}</div>
+        <div class="col-md-6">{{ field(form.facebook) }}</div>
+        <div class="col-md-6">{{ field(form.instagram) }}</div>
+        <div class="col-md-6">{{ field(form.tiktok) }}</div>
+        <div class="col-md-6">{{ field(form.twitter_x) }}</div>
+      </div>
+      {{ field(form.submit) }}
+    </form>
+  </div>
+</div>
+{% endblock %}

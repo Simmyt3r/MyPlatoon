@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/_member_card.html" import member_card %}
+{% from "partials/_business_card.html" import business_card %}
+{% block title %}Search{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="p5-card p5-card-body mb-4">
+  <form method="GET" action="{{ url_for('main.search') }}" class="d-flex gap-2">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search members or businesses...">
+    <button class="btn btn-p5" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+  </form>
+</div>
+
+{% if q %}
+  {% if profiles %}
+  <h6 class="p5-section-title">Members</h6>
+  <div class="row g-3 mb-4">
+    {% for p in profiles %}{{ member_card(p) }}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if businesses %}
+  <h6 class="p5-section-title">Businesses</h6>
+  <div class="row g-3 mb-4">
+    {% for b in businesses %}{{ business_card(b) }}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not profiles and not businesses %}
+  <div class="p5-card p5-card-body text-center py-5">
+    <i class="fa-solid fa-magnifying-glass fa-2x text-muted mb-3"></i>
+    <p class="text-muted mb-0">No results for "{{ q }}".</p>
+  </div>
+  {% endif %}
+{% else %}
+<p class="text-muted text-center py-4">Search for a member or business by name, profession, or location.</p>
+{% endif %}
+{% endblock %}

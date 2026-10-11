@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.user.full_name }}{% endblock %}
+{% block meta_description %}{{ profile.user.full_name }} — {{ profile.profession or APP_MEMBER_LABEL }} — {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="p5-card p5-card-body text-center">
+        <img src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+             class="rounded-circle mb-3" width="160" height="160" style="object-fit:cover;"
+             alt="Photo of {{ profile.user.full_name }}">
+        <h4 class="fw-bold mb-0">{{ profile.user.full_name }}</h4>
+        {% if profile.nickname %}<p class="text-muted mb-1">"{{ profile.nickname }}"</p>{% endif %}
+        <p class="text-success fw-semibold">{{ profile.profession or APP_MEMBER_LABEL }}</p>
+        <p class="text-muted small mb-3">
+          <i class="fa-solid fa-location-dot me-1"></i>{{ profile.state_of_origin or '-' }}
+          {% if profile.lga %} &bull; {{ profile.lga }}{% endif %}
+        </p>
+
+        <div class="d-flex justify-content-center flex-wrap mb-3">
+          {% if contact.phone_number %}
+          <a href="tel:{{ contact.phone_number }}" class="p5-contact-btn p5-contact-call"><i class="fa-solid fa-phone"></i>Call</a>
+          {% endif %}
+          {% if contact.whatsapp_number %}
+          <a href="https://wa.me/{{ contact.whatsapp_number|replace('+','')|replace(' ','')|replace('-','') }}"
+             target="_blank" rel="noopener" class="p5-contact-btn p5-contact-whatsapp"><i class="fa-brands fa-whatsapp"></i>WhatsApp</a>
+          {% endif %}
+          {% if profile.user.email and (current_user.is_authenticated) %}
+          <a href="mailto:{{ profile.user.email }}" class="p5-contact-btn p5-contact-email"><i class="fa-solid fa-envelope"></i>Email</a>
+          {% endif %}
+          {% if profile.website %}
+          <a href="{{ profile.website|ensure_scheme }}" target="_blank" rel="noopener" class="p5-contact-btn p5-contact-web"><i class="fa-solid fa-globe"></i>Website</a>
+          {% endif %}
+        </div>
+
+        {% if contact.address %}
+        <p class="small text-muted"><i class="fa-solid fa-map-pin me-1"></i>{{ contact.address }}</p>
+        {% endif %}
+
+        <div class="d-flex justify-content-center gap-3 mb-2">
+          {% if profile.facebook %}<a href="{{ profile.facebook|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-facebook fa-lg text-success"></i></a>{% endif %}
+          {% if profile.instagram %}<a href="{{ profile.instagram|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-instagram fa-lg text-success"></i></a>{% endif %}
+          {% if profile.tiktok %}<a href="{{ profile.tiktok|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-tiktok fa-lg text-success"></i></a>{% endif %}
+          {% if profile.twitter_x %}<a href="{{ profile.twitter_x|ensure_scheme }}" target="_blank" rel="noopener"><i class="fa-brands fa-x-twitter fa-lg text-success"></i></a>{% endif %}
+        </div>
+
+        <hr>
+        <p class="small text-muted mb-2">Scan to view this profile</p>
+        <img src="{{ qr_data_uri }}" alt="QR code linking to this profile" width="130" height="130">
+        <div class="mt-2">
+          <button type="button" class="p5-post-action-btn js-share d-inline-flex" style="width:auto;" data-url="{{ public_url }}">
+            <i class="fa-solid fa-share"></i> Share Profile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      {% if profile.biography %}
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Biography</h6>
+        <p class="mb-0">{{ profile.biography }}</p>
+      </div>
+      {% endif %}
+
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Professional Background</h6>
+        <p class="mb-1"><strong>Institution:</strong> {{ profile.institution or '-' }}</p>
+        <p class="mb-1"><strong>Course of Study:</strong> {{ profile.course_of_study or '-' }}</p>
+        {% if profile.graduation_year %}<p class="mb-1"><strong>Graduation Year:</strong> {{ profile.graduation_year }}</p>{% endif %}
+        {% if profile.certifications %}<p class="mb-0"><strong>Certifications:</strong> {{ profile.certifications }}</p>{% endif %}
+      </div>
+
+      {% if profile.skills %}
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Skills</h6>
+        {% for s in profile.skills %}<span class="p5-chip">{{ s.name }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if profile.businesses %}
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Business</h6>
+        {% for biz in profile.businesses %}
+        <div class="d-flex align-items-center gap-3 py-2 {{ 'border-top' if not loop.first }}">
+          <img src="{{ biz.logo_url or url_for('static', filename='img/placeholder-logo.png') }}" width="48" height="48" style="object-fit:contain;" alt="{{ biz.name }}">
+          <div>
+            <a href="{{ url_for('directory.business_detail', business_id=biz.id) }}" class="fw-semibold text-decoration-none">{{ biz.name }}</a>
+            <p class="small text-muted mb-0">{{ biz.category.name if biz.category else '' }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

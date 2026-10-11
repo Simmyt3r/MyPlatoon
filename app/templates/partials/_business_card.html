@@ -1,0 +1,18 @@
+{% macro business_card(business) %}
+<div class="col-sm-6 col-lg-4 col-xl-3">
+  <div class="p5-card">
+    <img src="{{ business.logo_url or url_for('static', filename='img/placeholder-logo.png') }}"
+         class="p5-card-photo" alt="{{ business.name }} logo" loading="lazy" style="object-fit:contain; background:#fff; padding:1rem;">
+    <div class="p5-card-body">
+      <h6 class="mb-1 fw-bold text-truncate">{{ business.name }}</h6>
+      <p class="mb-1 small text-muted text-truncate">by {{ business.profile.user.full_name }}</p>
+      {% if business.category %}
+      <span class="p5-chip">{{ business.category.name }}</span>
+      {% endif %}
+      <div class="mt-3 d-grid">
+        <a href="{{ url_for('directory.business_detail', business_id=business.id) }}" class="btn btn-p5-outline btn-sm">View Business</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

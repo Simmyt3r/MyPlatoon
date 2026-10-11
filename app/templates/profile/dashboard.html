@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h4 class="mb-3">WELCOME, {{ current_user.full_name.upper() }}</h4>
+
+  <div class="p5-card p5-card-body mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Profile Completion</strong>
+      <span class="fw-bold text-success">{{ completion }}%</span>
+    </div>
+    <div class="p5-progress mb-2">
+      <div class="p5-progress-fill" style="width: {{ completion }}%;"></div>
+    </div>
+    <div class="row small text-muted mt-3">
+      {% for key, done in breakdown.items() %}
+      <div class="col-6 col-md-4 mb-1">
+        <i class="fa-solid {{ 'fa-circle-check text-success' if done else 'fa-circle-xmark text-muted' }} me-1"></i>
+        {{ key.replace('_', ' ').title() }}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-3 d-flex flex-wrap gap-2">
+      <a href="{{ url_for('profile.edit') }}" class="btn btn-p5 btn-sm">Complete Profile</a>
+      {% if profile.status in ('draft', 'rejected') %}
+      <form method="POST" action="{{ url_for('profile.submit_for_approval') }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button class="btn btn-p5-outline btn-sm" type="submit">Submit for Approval</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <span class="badge w-100 py-2 badge-status-{{ profile.status }}">{{ profile.status.upper() }}</span>
+    </div>
+  </div>
+
+  {% if profile.status == 'rejected' and profile.rejection_reason %}
+  <div class="alert alert-danger">
+    <strong>Your profile was not approved.</strong> Reason: {{ profile.rejection_reason }}
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('directory.member_profile', slug=profile.slug) }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-id-card fa-2x mb-2 text-success"></i><div>Your Profile</div></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('business.my_businesses') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-briefcase fa-2x mb-2 text-success"></i><div>Your Business</div></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('album.view') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-book fa-2x mb-2 text-success"></i><div>Digital Album</div></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('directory.members') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-users fa-2x mb-2 text-success"></i><div>Member Directory</div></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('directory.businesses') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-store fa-2x mb-2 text-success"></i><div>Business Directory</div></div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('profile.privacy') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-lock fa-2x mb-2 text-success"></i><div>Privacy Settings</div></div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

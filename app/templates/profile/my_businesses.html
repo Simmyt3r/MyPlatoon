@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}My Business{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="p5-section-title mb-0">Your Business{{ 'es' if businesses|length != 1 else '' }}</h4>
+    <a href="{{ url_for('business.create') }}" class="btn btn-p5 btn-sm"><i class="fa-solid fa-plus me-1"></i>Add Business</a>
+  </div>
+
+  {% if businesses %}
+  <div class="row g-3">
+    {% for biz in businesses %}
+    <div class="col-md-6">
+      <div class="p5-card p5-card-body">
+        <div class="d-flex gap-3">
+          <img src="{{ biz.logo_url or url_for('static', filename='img/placeholder-logo.png') }}"
+               width="64" height="64" style="object-fit:contain;" alt="{{ biz.name }} logo">
+          <div class="flex-grow-1">
+            <h6 class="fw-bold mb-1">{{ biz.name }}</h6>
+            <p class="small text-muted mb-1">{{ biz.category.name if biz.category else 'Uncategorized' }}</p>
+            <p class="small mb-2">{{ biz.description[:100] if biz.description else '' }}{{ '...' if biz.description and biz.description|length > 100 else '' }}</p>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('business.edit', business_id=biz.id) }}" class="btn btn-sm btn-p5-outline">Edit</a>
+              <form method="POST" action="{{ url_for('business.delete', business_id=biz.id) }}" data-confirm="Delete this business? This cannot be undone.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="p5-card p5-card-body text-center py-5">
+    <i class="fa-solid fa-store-slash fa-2x text-muted mb-3"></i>
+    <p class="text-muted">You haven't registered a business yet.</p>
+    <a href="{{ url_for('business.create') }}" class="btn btn-p5">Add Your Business</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

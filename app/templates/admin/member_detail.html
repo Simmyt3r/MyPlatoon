@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Review {{ profile.user.full_name }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="p5-card p5-card-body text-center">
+        <img src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+             class="rounded-circle mb-3" width="140" height="140" style="object-fit:cover;" alt="Photo">
+        <h5 class="fw-bold mb-0">{{ profile.user.full_name }}</h5>
+        <p class="text-muted small">{{ profile.user.email }}</p>
+        <span class="badge badge-status-{{ profile.status }} mb-3">{{ profile.status.upper() }}</span>
+
+        <div class="d-grid gap-2">
+          {% if profile.status != 'approved' %}
+          <form method="POST" action="{{ url_for('admin.approve_member', profile_id=profile.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-check me-1"></i>Approve</button>
+          </form>
+          {% endif %}
+
+          {% if profile.status != 'suspended' %}
+          <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+            <i class="fa-solid fa-xmark me-1"></i>Reject
+          </button>
+          {% endif %}
+
+          {% if profile.status == 'suspended' %}
+          <form method="POST" action="{{ url_for('admin.reinstate_member', profile_id=profile.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-warning w-100" type="submit">Reinstate Account</button>
+          </form>
+          {% else %}
+          <form method="POST" action="{{ url_for('admin.suspend_member', profile_id=profile.id) }}" data-confirm="Suspend this member's account?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-outline-dark w-100" type="submit">Suspend Account</button>
+          </form>
+          {% endif %}
+
+          <form method="POST" action="{{ url_for('admin.delete_member', profile_id=profile.id) }}" data-confirm="Permanently delete this account? This cannot be undone.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-outline-danger w-100" type="submit">Delete Account</button>
+          </form>
+        </div>
+
+        <div class="collapse mt-3 text-start" id="rejectForm">
+          <form method="POST" action="{{ url_for('admin.reject_member', profile_id=profile.id) }}">
+            {{ reject_form.hidden_tag() }}
+            <label class="form-label small fw-semibold">Rejection Reason</label>
+            {{ reject_form.reason(class="form-control mb-2", rows=3) }}
+            <button class="btn btn-danger btn-sm w-100" type="submit">Confirm Rejection</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Profile Details</h6>
+        <p class="mb-1"><strong>Profession:</strong> {{ profile.profession or '-' }}</p>
+        <p class="mb-1"><strong>State/LGA:</strong> {{ profile.state_of_origin or '-' }} / {{ profile.lga or '-' }}</p>
+        <p class="mb-1"><strong>Institution:</strong> {{ profile.institution or '-' }}</p>
+        <p class="mb-1"><strong>Phone:</strong> {{ profile.phone_number or '-' }} ({{ profile.phone_visibility }})</p>
+        <p class="mb-1"><strong>WhatsApp:</strong> {{ profile.whatsapp_number or '-' }} ({{ profile.whatsapp_visibility }})</p>
+        <p class="mb-1"><strong>Address:</strong> {{ profile.address or '-' }} ({{ profile.address_visibility }})</p>
+        <p class="mb-0"><strong>Biography:</strong> {{ profile.biography or '-' }}</p>
+      </div>
+
+      {% if profile.skills %}
+      <div class="p5-card p5-card-body mb-3">
+        <h6 class="fw-bold text-success">Skills</h6>
+        {% for s in profile.skills %}<span class="p5-chip">{{ s.name }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if profile.businesses %}
+      <div class="p5-card p5-card-body">
+        <h6 class="fw-bold text-success">Businesses</h6>
+        {% for b in profile.businesses %}
+        <p class="mb-1">{{ b.name }} &mdash; {{ b.category.name if b.category else 'Uncategorized' }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
