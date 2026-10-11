@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} · Jobs & Gigs{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:980px">
+  <a class="small d-inline-block mb-3" href="{{ url_for('jobs.index') }}"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>All Jobs &amp; Gigs</a>
+  <article class="p5-card p-4 p-md-5">
+    <div class="text-success text-uppercase small fw-bold mb-1">{{ job.kind_label }} · {{ job.work_label }}</div>
+    <h1 class="h2 fw-bold mb-2">{{ job.title }}</h1>
+    <p class="text-muted mb-2"><i class="fa-solid fa-building me-1" aria-hidden="true"></i>{{ job.employer.name }} · {{ job.employer.kind_label }}</p>
+    <p class="text-muted"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>{{ job.lga or '' }}{% if job.lga %}, {% endif %}{{ job.state }}{% if job.location_description %} · {{ job.location_description }}{% endif %}</p>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4"><div class="border rounded-3 p-3 h-100">
+        <div class="small text-muted">Advertised pay</div>
+        <div class="fw-bold">₦{{ "{:,}".format(job.pay_min) }}{% if job.pay_max != job.pay_min %} – ₦{{ "{:,}".format(job.pay_max) }}{% endif %}</div>
+        <div class="small text-muted">{{ job.pay_label }}</div>
+      </div></div>
+      <div class="col-md-4"><div class="border rounded-3 p-3 h-100">
+        <div class="small text-muted">Working hours</div>
+        <div class="fw-bold">{{ job.hours_per_week|string ~ ' hours/week' if job.hours_per_week else 'See schedule' }}</div>
+        <div class="small text-muted">{{ job.schedule_notes or 'Contact employer after applying' }}</div>
+      </div></div>
+      <div class="col-md-4"><div class="border rounded-3 p-3 h-100">
+        <div class="small text-muted">Application deadline</div>
+        <div class="fw-bold">{{ job.closing_date.strftime('%d %B %Y') }}</div>
+        <div class="small text-muted">{{ 'Currently serving NYSC members only' if job.serving_only else 'Open to approved MyPlatoon members' }}</div>
+      </div></div>
+    </div>
+    <h2 class="h5 fw-bold">Responsibilities</h2>
+    <p style="white-space:pre-line;overflow-wrap:anywhere">{{ job.description }}</p>
+    <h2 class="h5 fw-bold mt-4">Requirements</h2>
+    <p style="white-space:pre-line;overflow-wrap:anywhere">{{ job.requirements }}</p>
+    {% if job.status != 'published' %}<div class="alert alert-warning">This listing is {{ job.status }} and is not publicly available.</div>{% endif %}
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      {% if can_apply %}
+        <a class="btn btn-p5" href="{{ url_for('jobs.apply', job_id=job.id) }}">Apply for this opportunity</a>
+      {% elif already %}
+        <span class="btn btn-p5-outline disabled">Application {{ already.status }}</span>
+      {% elif current_user.is_authenticated and current_user.role == 'member' %}
+        <a class="btn btn-p5-outline" href="{{ url_for('profile.edit') }}">Complete your approved member profile to apply</a>
+      {% elif not current_user.is_authenticated and job.is_open %}
+        <a class="btn btn-p5" href="{{ url_for('auth.login', next=url_for('jobs.detail', job_id=job.id)) }}">Sign in to apply</a>
+      {% endif %}
+      {% if owner %}<a class="btn btn-p5-outline" href="{{ url_for('jobs.edit', job_id=job.id) }}">Edit listing</a>{% endif %}
+    </div>
+    <div class="alert alert-light border small mt-4 mb-0">
+      <strong>Safety first:</strong> No MyPlatoon job application or employment activation fee. Do not send money, NIN images, passwords or bank PINs to recruiters. Always independently verify the offer, including pay and work hours. A listing review is not official NYSC approval.
+    </div>
+  </article>
+</div>
+{% endblock %}
