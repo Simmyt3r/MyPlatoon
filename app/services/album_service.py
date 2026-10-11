@@ -134,16 +134,21 @@ def fetch_album_pdf_bytes(pdf_url: str) -> bytes:
         ) from exc
 
 
-def generate_new_album_version(generated_by) -> AlbumVersion:
+def generate_new_album_version(generated_by, platoon_id) -> AlbumVersion:
+    """Generate for exactly one selected platoon; never a national private PDF."""
+    platoon = db.session.get(Platoon, platoon_id)
+    if platoon is None:
+        raise ValueError("Select a valid NYSC platoon before generating an album.")
     approved_profiles = (
-        Profile.query.filter_by(status="approved")
-        .order_by(Profile.state_of_origin.asc(), Profile.id.asc())
-        .all()
+        Profile.query.filter_by(status="approved", platoon_id=platoon.id)
+        .filter(Profile.profile_visibility.in_(["public", "platoon"]))
+        .order_by(Profile.id.asc()).all()
     )
     active_businesses = (
         Business.query.filter_by(is_active=True)
         .join(Profile, Business.profile_id == Profile.id)
-        .filter(Profile.status == "approved")
+        .filter(Profile.status == "approved", Profile.platoon_id == platoon.id)
+        .filter(Profile.profile_visibility.in_(["public", "platoon"]))
         .all()
     )
 
