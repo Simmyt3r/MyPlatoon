@@ -13,7 +13,7 @@ This guide walks through deploying MyPlatoon, the nationwide NYSC community, to 
 ## Required: database upgrade for nationwide platoons
 
 **Before exposing the new application on an existing database**, apply
-the current migrations through revision `63f21ac4db09`. Simply deploying the new Python code will NOT alter
+the current migrations through revision `f1a9c3de7b21`. Simply deploying the new Python code will NOT alter
 the old `profiles` table because SQLAlchemy `create_all()` adds missing
 tables, not missing columns.
 
@@ -140,8 +140,8 @@ defaults to disabled in production.
    for **`myplatoon`**.
 3. GitHub → Actions → `Apply MyPlatoon production migrations` → Run workflow.
 4. Wait for a successful run. Verify the installed revision is
-   `63f21ac4db09` (includes nationwide platoons, PPA records, member
-   experience reports, and PostGIS index).
+   `f1a9c3de7b21` (includes nationwide platoons, PPA records, member
+   experience reports, PostGIS index, adult Dating consent and blocks).
 5. For new installations, create GitHub `production` secrets
    `ADMIN_INIT_EMAIL` and `ADMIN_INIT_PASSWORD` (16+ characters) and run
    Actions → **Bootstrap Aiven MyPlatoon administrator** → Run workflow.
