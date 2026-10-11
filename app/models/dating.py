@@ -159,3 +159,27 @@ class DatingBlock(db.Model):
 
     blocker = db.relationship("DatingPersona", foreign_keys=[blocker_id])
     blocked = db.relationship("DatingPersona", foreign_keys=[blocked_id])
+
+
+
+class DatingInterest(db.Model):
+    """An explicit, private interest from one adult Dating persona to another.
+
+    The recipient is NOT notified until a reciprocal interest exists. There
+    are no algorithmically granted romantic connections.
+    """
+    __tablename__ = "dating_interests"
+    __table_args__ = (
+        db.UniqueConstraint("sender_id", "recipient_id", name="uq_dating_interest_pair"),
+        db.CheckConstraint("sender_id != recipient_id", name="ck_dating_no_self_interest"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("dating_personas.id", ondelete="CASCADE"),
+                          nullable=False, index=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey("dating_personas.id", ondelete="CASCADE"),
+                             nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    sender = db.relationship("DatingPersona", foreign_keys=[sender_id])
+    recipient = db.relationship("DatingPersona", foreign_keys=[recipient_id])
