@@ -115,12 +115,25 @@ def search():
     if q:
         like = f"%{q}%"
         from app.models import User
-        profiles = (Profile.query.filter_by(status="approved")
-                    .filter(Profile.profile_visibility.in_(["public", "platoon"]))
-                    .join(Profile.user)
-                    .filter(or_(User.full_name.ilike(like), Profile.profession.ilike(like),
-                                Profile.state_of_origin.ilike(like)))
-                    .limit(20).all())
+        profiles_query = (
+            Profile.query.filter_by(status="approved")
+            .join(Profile.user)
+            .filter(or_(User.full_name.ilike(like), Profile.profession.ilike(like),
+                        Profile.state_of_origin.ilike(like)))
+        )
+        own = current_user.profile if current_user.is_authenticated else None
+        if current_user.is_authenticated and current_user.is_admin:
+            profiles_query = profiles_query.filter(
+                Profile.profile_visibility.in_(["public", "platoon"]))
+        elif own and own.status == "approved" and own.platoon_id:
+            profiles_query = profiles_query.filter(or_(
+                Profile.profile_visibility == "public",
+                and_(Profile.profile_visibility == "platoon",
+                     Profile.platoon_id == own.platoon_id),
+            ))
+        else:
+            profiles_query = profiles_query.filter(Profile.profile_visibility == "public")
+        profiles = profiles_query.limit(20).all()
         businesses = (Business.query.filter_by(is_active=True)
                       .join(Profile, Business.profile_id == Profile.id)
                       .filter(Profile.status == "approved")
