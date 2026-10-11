@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Find a PPA{% endblock %}
+{% block meta_description %}Search community-submitted NYSC Places of Primary Assignment across Nigerian states. Compare locations, accommodation and allowances; verified by MyPlatoon moderators.{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-hH2m6H4+kLRlbVKHq0mcYLyeCMT6mBIueY1Le4Q78dCRsS0I42FJcQ7wtK/9bWJ/GUB9SH7lgBG3bbE2OaQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+.ppa-map { height: 360px; width: 100%; border-radius: 14px; background: #eef4ef; z-index: 0; }
+.ppa-filter-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: .75rem; align-items: end; }
+.ppa-result { transition: background .15s; border-bottom: 1px solid #e5ebe6; }
+.ppa-result:last-child { border-bottom: none; }
+.ppa-result:hover { background: #f8faf8; }
+@media(max-width:576px) { .ppa-map { height: 280px; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1120px">
+  <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <div class="text-success small text-uppercase fw-bold">NYSC places of primary assignment</div>
+      <h1 class="fw-bold mb-2">Find a PPA</h1>
+      <p class="text-muted mb-0">Search workplaces by name, state, LGA or sector. Locations are based on corps-member reports reviewed by MyPlatoon moderators, not official NYSC postings.</p>
+    </div>
+    {% if can_submit %}
+    <a href="{{ url_for('ppa.create') }}" class="btn btn-p5"><i class="fa-solid fa-plus me-1"></i>Submit a PPA</a>
+    {% elif current_user.is_authenticated %}
+    <a href="{{ url_for('profile.edit') }}" class="btn btn-p5-outline">Complete profile to contribute</a>
+    {% else %}
+    <a href="{{ url_for('auth.register') }}" class="btn btn-p5-outline">Join to contribute</a>
+    {% endif %}
+  </header>
+
+  <form method="GET" action="{{ url_for('ppa.index') }}" class="p5-card p-3 p-md-4 mb-4" id="ppa-search">
+    <div class="ppa-filter-grid">
+      <div>
+        <label for="ppa-q" class="form-label fw-semibold">Name, town or LGA</label>
+        <input class="form-control" id="ppa-q" name="q" maxlength="80" value="{{ filters.q }}" placeholder="e.g. General Hospital">
+      </div>
+      <div>
+        <label for="ppa-state" class="form-label fw-semibold">State</label>
+        <select name="state" class="form-select" id="ppa-state">
+          <option value="">All states</option>
+          {% for s in states %}<option value="{{ s }}" {{ 'selected' if filters.state == s }}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="ppa-sector" class="form-label fw-semibold">Sector</label>
+        <select name="sector" class="form-select" id="ppa-sector">
+          <option value="">All sectors</option>
+          {% for key, value in sectors %}<option value="{{ key }}" {{ 'selected' if filters.sector == key }}>{{ value }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="ppa-radius" class="form-label fw-semibold">Near selected location</label>
+        <select name="radius" id="ppa-radius" class="form-select">
+          {% for km in [5, 10, 20, 50, 100] %}
+          <option value="{{ km }}" {{ 'selected' if filters.radius_km == km }}>{{ km }} km radius</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="hidden" id="ppa-lat" name="lat" value="{{ filters.lat if filters.lat is not none else '' }}">
+      <input type="hidden" id="ppa-lng" name="lng" value="{{ filters.lng if filters.lng is not none else '' }}">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-p5 flex-grow-1">Search</button>
+        <a class="btn btn-p5-outline" href="{{ url_for('ppa.index') }}" aria-label="Clear filters">Clear</a>
+      </div>
+    </div>
+    <p class="text-muted small mt-3 mb-0">Only reviewed PPAs appear here. For radius search, tap the map to choose a centre or use the optional location button. Avoid sharing your home address.</p>
+  </form>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <section class="p5-card p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h5 fw-bold mb-0">Places of Primary Assignment</h2>
+          <span class="small text-muted">{{ total }} result{{ '' if total == 1 else 's' }}</span>
+        </div>
+        {% for p in entries %}
+        <article class="ppa-result py-3">
+          <a class="h6 fw-bold d-block text-decoration-none" href="{{ url_for('ppa.detail', ppa_id=p.id) }}">{{ p.name }}</a>
+          <div class="text-muted small"><i class="fa-solid fa-location-dot me-1"></i>{{ p.lga }}, {{ p.state }}{% if p.town %} · {{ p.town }}{% endif %}</div>
+          <div class="mt-2 d-flex flex-wrap gap-2">
+            <span class="badge text-bg-light border">{{ p.sector_label }}</span>
+            <span class="badge text-bg-light border">Accommodation: {{ p.accommodation|capitalize }}</span>
+            <span class="badge text-bg-light border">Extra allowance: {{ p.allowance|capitalize }}</span>
+            {% if p.has_location %}<span class="badge text-bg-light border">Map location</span>{% endif %}
+          </div>
+        </article>
+        {% else %}
+        <p class="text-muted mb-2">No reviewed PPAs match these filters yet.</p>
+        <p class="small text-muted mb-0">Corps members can help build this directory by submitting their PPA for moderator review.</p>
+        {% endfor %}
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="d-flex flex-wrap gap-2 align-items-center mt-3" aria-label="PPA pages">
+          {% if pagination.has_prev %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('ppa.index', q=filters.q, state=filters.state, sector=filters.sector, lat=filters.lat, lng=filters.lng, radius=filters.radius_km, page=pagination.prev_num) }}">Previous</a>{% endif %}
+          <span class="small text-muted">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+          {% if pagination.has_next %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('ppa.index', q=filters.q, state=filters.state, sector=filters.sector, lat=filters.lat, lng=filters.lng, radius=filters.radius_km, page=pagination.next_num) }}">Next</a>{% endif %}
+        </nav>
+        {% endif %}
+      </section>
+    </div>
+    <div class="col-lg-5">
+      <section class="p5-card p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <h2 class="h6 fw-bold mb-0">PPA map</h2>
+          <button type="button" class="btn btn-p5-outline btn-sm" id="ppa-use-location">Use my location</button>
+        </div>
+        <div id="ppa-map" class="ppa-map" role="region" aria-label="Interactive map of reviewed PPAs"></div>
+        <p class="text-muted small mb-0 mt-2" id="ppa-map-status" aria-live="polite">Select a point on the map as your search centre. Blue markers are reviewed PPAs.</p>
+        <p class="text-muted small mt-1">Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>. Map tiles require an internet connection.</p>
+      </section>
+    </div>
+  </div>
+
+  {% if current_user.is_authenticated %}
+  <p class="small mt-3"><a href="{{ url_for('ppa.mine') }}">View my PPA submissions</a>{% if current_user.is_admin %} · <a href="{{ url_for('ppa.review_queue') }}">Review pending PPAs</a>{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="{{ url_for('static', filename='js/ppa_map.js') }}" defer></script>
+{% endblock %}
