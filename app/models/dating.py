@@ -54,6 +54,9 @@ class DatingPersona(db.Model):
     interested_in = db.Column(db.String(10), nullable=False)
     interests = db.Column(db.String(500))  # comma-separated tags, same pattern as skills
 
+    # Self-attested 18+ eligibility. Never store a DOB solely for Dating.
+    # NULL on pre-upgrade personas forces confirmation before further use.
+    age_confirmed_at = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(10), default="active", nullable=False, index=True)
     is_reported = db.Column(db.Boolean, default=False, nullable=False)
     report_reason = db.Column(db.String(500))
@@ -78,7 +81,12 @@ class DatingPersona(db.Model):
         return self.gender == other.interested_in and other.gender == self.interested_in
 
     def is_active_and_visible(self) -> bool:
-        return self.status == "active" and not self.is_reported
+        return (self.status == "active" and not self.is_reported
+                and self.age_confirmed_at is not None
+                and self.profile is not None
+                and self.profile.status == "approved"
+                and self.profile.user.is_active_account
+                and not self.profile.user.is_suspended)
 
     def __repr__(self):
         return f"<DatingPersona profile_id={self.profile_id} status={self.status}>"
@@ -125,3 +133,27 @@ class DatingMatch(db.Model):
 
     def __repr__(self):
         return f"<DatingMatch {self.persona_low_id}<->{self.persona_high_id} score={self.score:.0f} {self.status}>"
+
+
+
+class DatingBlock(db.Model):
+    """One-way personal block. Neither participant sees the other in Dating.
+
+    Unlike reports, blocking does not reveal the reason to the blocked person
+    and does not hide anyone from unrelated participants.
+    """
+    __tablename__ = "dating_blocks"
+    __table_args__ = (
+        db.UniqueConstraint("blocker_id", "blocked_id", name="uq_dating_block_pair"),
+        db.CheckConstraint("blocker_id != blocked_id", name="ck_dating_no_self_block"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey("dating_personas.id", ondelete="CASCADE"),
+                           nullable=False, index=True)
+    blocked_id = db.Column(db.Integer, db.ForeignKey("dating_personas.id", ondelete="CASCADE"),
+                           nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    blocker = db.relationship("DatingPersona", foreign_keys=[blocker_id])
+    blocked = db.relationship("DatingPersona", foreign_keys=[blocked_id])
