@@ -32,6 +32,13 @@
   <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ platoon_count }}</div><div class="p5-stat-label">Platoons</div></div></div>
 </div>
 
+<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="Jobs and gigs">
+  <div>
+    <div class="fw-bold"><i class="fa-solid fa-briefcase text-success me-2" aria-hidden="true"></i>Need flexible work during NYSC?</div>
+    <p class="small text-muted mb-0">Explore school tutoring, part-time work and paid gigs from employers reviewed by MyPlatoon.</p>
+  </div>
+  <a href="{{ url_for('jobs.index') }}" class="btn btn-p5">Browse jobs</a>
+</section>
 <section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="NERD resource">
   <div>
     <div class="fw-bold"><i class="fa-solid fa-graduation-cap text-success me-2" aria-hidden="true"></i>Preparing for NYSC mobilisation?</div>
