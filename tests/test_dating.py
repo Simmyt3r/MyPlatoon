@@ -58,7 +58,7 @@ def test_create_persona_generates_matches(client, member_user, db):
     assert DatingMatch.query.count() == 1
 
 
-def test_mutual_match_notifies_both_sides(client, db):
+def test_mutual_ranking_does_not_notify_without_mutual_consent(client, db):
     a = _create_user(db, "amaka@example.com", full_name="Amaka Test")
     b = _create_user(db, "tunde@example.com", full_name="Tunde Test")
     _approve(db, a)
@@ -88,11 +88,10 @@ def test_mutual_match_notifies_both_sides(client, db):
     assert match.low_ranks_high is not None
     assert match.high_ranks_low is not None
 
+    # Ranking overlap is NOT romantic consent. Do not notify either person
+    # until both explicitly express interest through the Dating UI.
     notifs = Notification.query.all()
-    assert len(notifs) == 2
-    recipients = {n.user_id for n in notifs}
-    assert recipients == {a.id, b.id}
-    assert all("match" in n.message.lower() for n in notifs)
+    assert not notifs
 
 
 def test_same_gender_preference_never_matches(client, db):
