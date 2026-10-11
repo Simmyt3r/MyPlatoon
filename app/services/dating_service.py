@@ -247,7 +247,9 @@ def block_persona(blocker: DatingPersona, target: DatingPersona):
 
 
 def delete_dating_persona(persona: DatingPersona):
-    """Delete this persona and any match/block rows, without deleting the member."""
+    """Delete this persona and related chat data without deleting the member."""
+    from app.services.dating_chat_service import purge_persona_chat
+    purge_persona_chat(persona.id)
     DatingMatch.query.filter(or_(
         DatingMatch.persona_low_id == persona.id,
         DatingMatch.persona_high_id == persona.id,
