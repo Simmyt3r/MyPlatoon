@@ -38,7 +38,11 @@ def generate():
         flash("Only administrators can generate a new album version.", "danger")
         return redirect(url_for("album.view"))
 
-    version, pdf_bytes = generate_new_album_version(current_user)
+    platoon_id = request.form.get("platoon_id", type=int)
+    if not platoon_id or db.session.get(Platoon, platoon_id) is None:
+        flash("Select the platoon to publish this album for.", "warning")
+        return redirect(url_for("album.view"))
+    version, pdf_bytes = generate_new_album_version(current_user, platoon_id)
     log_action(current_user, "album.generate", "AlbumVersion", version.id,
                detail=f"{version.member_count} members")
     flash(f"Album v{version.version_label} generated with {version.member_count} members.",
