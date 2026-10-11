@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Review Job Listings{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1080px">
+  <h1 class="h3 fw-bold">Job moderation queue</h1>
+  <p class="text-muted">Review pay, working hours, suspicious fees, unsafe requests and real employer identity. A published vacancy is not an endorsement or NYSC permission.</p>
+  <a href="{{ url_for('jobs.admin_employers') }}" class="btn btn-p5-outline btn-sm mb-4">Review employers</a>
+  {% for job in listings %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <h2 class="h5 fw-bold">{{ job.title }}</h2>
+    <p class="small text-muted">{{ job.employer.name }} · Organisation {{ job.employer.status }} · {{ job.kind_label }} · {{ job.work_label }} · {{ job.state }}</p>
+    <p><strong>Advertised pay:</strong> ₦{{ "{:,}".format(job.pay_min) }} – ₦{{ "{:,}".format(job.pay_max) }} {{ job.pay_label }} · <strong>Hours/week:</strong> {{ job.hours_per_week or 'Unspecified' }} · <strong>Deadline:</strong> {{ job.closing_date }}</p>
+    <h3 class="h6 fw-bold">Responsibilities</h3><p style="white-space:pre-wrap">{{ job.description }}</p>
+    <h3 class="h6 fw-bold">Requirements</h3><p style="white-space:pre-wrap">{{ job.requirements }}</p>
+    <form method="POST" action="{{ url_for('jobs.review_listing', job_id=job.id) }}" class="border-top pt-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label">Reason / review note</label>
+      <textarea name="note" maxlength="500" rows="2" class="form-control mb-2"></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" name="decision" value="published" class="btn btn-p5 btn-sm">Publish listing</button>
+        <button type="submit" name="decision" value="rejected" class="btn btn-outline-danger btn-sm">Reject</button>
+        <button type="submit" name="decision" value="closed" class="btn btn-outline-danger btn-sm">Close</button>
+      </div>
+    </form>
+  </article>
+  {% else %}<div class="p5-card p-4 text-muted">No pending listings.</div>{% endfor %}
+</div>
+{% endblock %}
