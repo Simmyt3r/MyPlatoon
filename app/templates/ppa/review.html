@@ -4,6 +4,7 @@
 <div class="container my-4" style="max-width:1050px">
   <h1 class="h3 fw-bold">PPA moderation</h1>
   <p class="text-muted">Review community-submitted organisation details and workplace locations. Approval is MyPlatoon content review, not NYSC certification.</p>
+  <a href="{{ url_for('ppa.experience_queue') }}" class="btn btn-p5-outline btn-sm mb-3">Review member experiences</a>
   <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Submission review status">
     {% for value in ['pending','verified','rejected'] %}
     <a href="{{ url_for('ppa.review_queue', status=value) }}" class="btn btn-sm {{ 'btn-p5' if value == status else 'btn-p5-outline' }}">{{ value|capitalize }}</a>
