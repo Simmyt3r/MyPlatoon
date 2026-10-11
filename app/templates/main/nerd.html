@@ -25,7 +25,14 @@
 </div>
 
 <section class="p5-card mb-3 p-3 p-md-4">
-  <h2 class="h5 fw-bold mb-3"><i class="fa-solid fa-list-check text-success me-2" aria-hidden="true"></i>Your NERD preparation checklist</h2>
+  <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+    <div>
+      <h2 class="h5 fw-bold mb-1"><i class="fa-solid fa-clipboard-check text-success me-2" aria-hidden="true"></i>Prepare your 38 NERD checklist items</h2>
+      <p class="text-muted small mb-0">Personal and contact information, next of kin, academics, supervisor, HOD and five documents. No information or files are submitted to MyPlatoon.</p>
+    </div>
+    <a class="btn btn-p5" href="{{ url_for('main.nerd_requirements') }}">Open full checklist</a>
+  </div>
+  <h3 class="h6 fw-bold mb-3">Then follow these steps</h3>
   <ol class="ps-4 mb-0 d-grid gap-3">
     <li><strong>Confirm your institution's process.</strong> Ask your school for its NERD focal person, institution-issued email and any required unified access credentials.</li>
     <li><strong>Visit the official portal.</strong> Follow the registration or enrolment guidance for students and graduates. Institutional validation may be required.</li>
