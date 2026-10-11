@@ -100,6 +100,9 @@
           <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
           <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
           <li><a class="dropdown-item" href="{{ url_for('ppa.mine') }}"><i class="fa-solid fa-location-dot me-2 text-success"></i>My PPA Reports</a></li>
+          {% endif %}
+          <li><a class="dropdown-item" href="{{ url_for('jobs.index') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>Jobs &amp; Gigs</a></li>
+          {% if current_user.role != 'employer' %}
           <li><a class="dropdown-item" href="{{ url_for('main.services') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Services &amp; Careers</a></li>
           {% if ENABLE_DATING %}
           <li><a class="dropdown-item" href="{{ url_for('dating.home') }}"><i class="fa-regular fa-heart me-2 text-success"></i>Dating (18+)</a></li>
