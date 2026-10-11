@@ -70,7 +70,7 @@
       </div>
       <p class="small text-muted mb-3">{{ section.subtitle }}</p>
       <div class="nerd-requirements-grid">
-        {% for item_key, label in section.items %}
+        {% for item_key, label in section['items'] %}
         <label class="nerd-check" for="nerd-{{ section.key }}-{{ item_key }}">
           <input type="checkbox" id="nerd-{{ section.key }}-{{ item_key }}" data-nerd-checklist-item data-nerd-section="{{ section.key }}">
           <span>{{ label }}</span>
