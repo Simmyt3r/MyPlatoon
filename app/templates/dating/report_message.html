@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Report Dating Message{% endblock %}
+{% from "partials/_form_field.html" import field %}
+{% block content %}
+<div class="container py-4" style="max-width:680px">
+  <a href="{{ url_for('dating.connections') }}" class="small d-inline-block mb-3">Back to connections</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="small fw-bold text-danger text-uppercase">Private safety report</div>
+    <h1 class="h3 fw-bold mb-3">Report a received message</h1>
+    <p class="text-muted">Only administrators can view this report and its associated message. Reports do not automatically notify the sender. You can also block the person to stop future conversations.</p>
+    <div class="border rounded-3 p-3 mb-4">
+      <div class="small text-muted mb-2">Message you are reporting</div>
+      {% if message.is_removed %}<em>Previously removed by moderation</em>{% else %}
+      <p class="mb-0" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ message.body }}</p>{% endif %}
+    </div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.reason, rows=4) }}
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-danger">Submit report</button>
+        <a href="{{ url_for('dating.connections') }}" class="btn btn-p5-outline">Cancel</a>
+      </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">For urgent threats, seek help from local authorities. Reports here are not an emergency channel.</p>
+  </section>
+</div>
+{% endblock %}
