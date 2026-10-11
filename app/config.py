@@ -34,17 +34,17 @@ class BaseConfig:
     # Branding -- all overridable via environment variables so this codebase
     # can be deployed for a different group/organization with no code
     # changes. Defaults are intentionally generic (not NYSC/Platoon-specific).
-    APP_NAME = os.environ.get("APP_NAME", "Community Digital Album")
-    APP_SHORT_NAME = os.environ.get("APP_SHORT_NAME", APP_NAME)
+    APP_NAME = os.environ.get("APP_NAME", "MyPlatoon")
+    APP_SHORT_NAME = os.environ.get("APP_SHORT_NAME", "MyPlatoon")
     APP_MOTTO = os.environ.get("APP_MOTTO", "")
-    APP_TAGLINE = os.environ.get("APP_TAGLINE", "Connect. Collaborate. Grow Together.")
-    APP_SUBTITLE = os.environ.get("APP_SUBTITLE", "")
+    APP_TAGLINE = os.environ.get("APP_TAGLINE", "Your NYSC journey. Your platoon. Your people.")
+    APP_SUBTITLE = os.environ.get("APP_SUBTITLE", "For PCMs, serving corps members and alumni")
     POWERED_BY = os.environ.get("POWERED_BY", "")
-    APP_BRAND_INITIALS = os.environ.get("APP_BRAND_INITIALS", "")  # falls back to APP_NAME initials in templates
+    APP_BRAND_INITIALS = os.environ.get("APP_BRAND_INITIALS", "MP")  # falls back to APP_NAME initials in templates
     APP_MEMBER_LABEL = os.environ.get("APP_MEMBER_LABEL", "Member")
     APP_PRIMARY_COLOR = os.environ.get("APP_PRIMARY_COLOR", "#0b7a3b")
     APP_ACCENT_COLOR = os.environ.get("APP_ACCENT_COLOR", "#c79a2e")
-    ENABLE_DATING = os.environ.get("ENABLE_DATING", "true").lower() != "false"
+    ENABLE_DATING = os.environ.get("ENABLE_DATING", "false").lower() == "true"
 
     # MyPlatoon independent help desk, NOT an official NERD/NYSC helpline.
     NERD_HELP_PHONE = os.environ.get("NERD_HELP_PHONE", "09039930006")
