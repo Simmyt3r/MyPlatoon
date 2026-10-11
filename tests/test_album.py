@@ -156,8 +156,8 @@ def test_download_failure_shows_admin_the_real_diagnosis(monkeypatch, client, ad
     from app.models import AlbumVersion
     from app.services.album_service import AlbumFetchError
 
-    platoon = _attach_platoon(db, member_user)
-    version = AlbumVersion(version_label="1.0", platoon_id=platoon.id, pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
+    # A legacy nationwide album has no platoon and remains admin-only.
+    version = AlbumVersion(version_label="1.0", pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
                             member_count=1, status="published")
     db.session.add(version)
     db.session.commit()
