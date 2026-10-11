@@ -1,12 +1,9 @@
 """Dating persona matching: compatibility scoring + ranked match generation.
 
-Matching is fully automatic -- no manual swiping. Whenever a persona is
-created/edited (or a member taps "Refresh My Matches"), we recompute its
-ranked candidate list against every eligible, gender-compatible active
-persona. A DatingMatch row is upserted per unique pair with a symmetric
-score, and each side's rank of the other. The celebratory notification
-only fires the first time a pair becomes MUTUAL (each ranks the other in
-their own top N) -- see app/models/dating.py for why.
+Candidate discovery is automatically ranked by shared interests and skills.
+A DatingMatch row stores suggestion ranks, but *rankings are not consent*.
+Only explicit, reciprocated DatingInterest actions notify the participants
+and create a mutual connection. Gender preferences must be mutually compatible.
 """
 from datetime import datetime
 from sqlalchemy import or_, and_
