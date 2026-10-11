@@ -33,6 +33,20 @@ def upgrade():
     op.create_index("ix_dating_blocks_blocker_id", "dating_blocks", ["blocker_id"])
     op.create_index("ix_dating_blocks_blocked_id", "dating_blocks", ["blocked_id"])
 
+    op.create_table(
+        "dating_interests",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("sender_id", sa.Integer(),
+                  sa.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("recipient_id", sa.Integer(),
+                  sa.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("sender_id", "recipient_id", name="uq_dating_interest_pair"),
+        sa.CheckConstraint("sender_id != recipient_id", name="ck_dating_no_self_interest"),
+    )
+    op.create_index("ix_dating_interests_sender_id", "dating_interests", ["sender_id"])
+    op.create_index("ix_dating_interests_recipient_id", "dating_interests", ["recipient_id"])
+
 
 def downgrade():
     op.drop_index("ix_dating_blocks_blocked_id", table_name="dating_blocks")
