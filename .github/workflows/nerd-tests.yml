@@ -35,4 +35,4 @@ jobs:
         env:
           FLASK_ENV: testing
           SECRET_KEY: test-only-key
-        run: python -m pytest -q tests/test_nerd.py
+        run: python -m pytest -q tests/test_nerd.py tests/test_nerd_requirements.py
