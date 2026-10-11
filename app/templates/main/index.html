@@ -18,6 +18,7 @@
       <a href="{{ url_for('main.platoon_guide') }}" class="btn btn-outline-light btn-lg">What is a platoon?</a>
       <a href="{{ url_for('main.nerd') }}" class="btn btn-outline-light btn-lg">NERD &amp; NYSC Guide</a>
       <a href="{{ url_for('ppa.index') }}" class="btn btn-outline-light btn-lg">Find a PPA</a>
+      <a href="{{ url_for('main.services') }}" class="btn btn-outline-light btn-lg">Services &amp; Careers</a>
     </div>
   </div>
 </section>
@@ -35,6 +36,14 @@
     <p class="small text-muted mb-0">Visit the NERD guide for official registration links, academic submission steps, and independent help on 09039930006.</p>
   </div>
   <a href="{{ url_for('main.nerd') }}" class="btn btn-p5 text-nowrap">NERD guide</a>
+</section>
+
+<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="Career development service">
+  <div>
+    <div class="fw-bold"><i class="fa-solid fa-file-lines text-success me-2" aria-hidden="true"></i>Prepare for life after NYSC</div>
+    <p class="small text-muted mb-0">Discover CareerMirror for CV preparation and explore tools for your career journey. CareerMirror opens as an external website.</p>
+  </div>
+  <a href="{{ url_for('main.services') }}" class="btn btn-p5-outline text-nowrap">Career services</a>
 </section>
 
 {% if stories %}
