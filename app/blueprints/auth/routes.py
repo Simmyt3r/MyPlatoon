@@ -64,8 +64,9 @@ def login():
             flash("This account has been suspended. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
 
-        from app.services.profile_service import ensure_profile
-        ensure_profile(user)
+        if user.role != "employer":
+            from app.services.profile_service import ensure_profile
+            ensure_profile(user)
 
         login_user(user, remember=form.remember_me.data)
         session.permanent = True
