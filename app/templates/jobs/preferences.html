@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Job Preferences and Alerts{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:850px">
+  <a class="small d-inline-block mb-3" href="{{ url_for('jobs.for_me') }}">Back to recommended jobs</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="small fw-bold text-uppercase text-success">Your opportunities</div>
+    <h1 class="h3 fw-bold">Job preferences &amp; alerts</h1>
+    <p class="text-muted">Set your available hours and opportunity types. We use your recorded NYSC posting state, not your state of origin. You can override it if you prefer another work location.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.preferred_state) }}
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ form.preferred_kinds.id }}">Opportunity types</label>
+        <p class="small text-muted mb-2">Choose one or more. Hold Ctrl to select multiple on desktop, or leave blank for all opportunities.</p>
+        {{ form.preferred_kinds(class="form-select", size=5) }}
+        {% for error in form.preferred_kinds.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      {{ field(form.available_hours) }}
+      <div class="border rounded-3 p-3 mb-3">
+        {{ field(form.remote_ok) }}
+        {{ field(form.enabled) }}
+        <p class="small text-muted mb-0">Alerts are opt-in and appear only inside MyPlatoon when administrators publish a matching vacancy. No email, SMS, background tracking or GPS permission is needed.</p>
+      </div>
+      {{ form.submit(class="btn btn-p5") }}
+    </form>
+  </section>
+</div>
+{% endblock %}
