@@ -103,7 +103,9 @@ See `migrations/versions/0d842ac781b6_nationwide_platoons.py` and
   and limited persona previews that do not expose member contact details.
   Automatic mutual top picks are **suggestions only**. A connection exists,
   and both users are notified, **only when both explicitly express interest**.
-  Unilateral interests are private. See [DATING_UPGRADE.md](DATING_UPGRADE.md).
+  Unilateral interests are private. Reciprocal connections can privately
+  exchange text messages and report abuse without disclosing their phone
+  numbers or full profiles. See [DATING_UPGRADE.md](DATING_UPGRADE.md).
 - **Automated tests** — pytest cases covering auth, profiles, businesses, admin
   authorization, album/PDF generation, security boundaries, generic-platform behavior,
   and the dating matching/notification/moderation flow
