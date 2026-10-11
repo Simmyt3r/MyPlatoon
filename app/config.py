@@ -110,6 +110,13 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
 
+    # Vercel's serverless workers must not each retain a large connection pool.
+    # Aiven's free plan has a limited connection count.
+    from sqlalchemy.pool import NullPool
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "poolclass": NullPool}
+    # Production schema changes are always managed with Alembic, not cold-start DDL.
+    AUTO_CREATE_TABLES = os.environ.get("AUTO_CREATE_TABLES", "false").lower() == "true"
+
 
 CONFIG_MAP = {
     "development": DevelopmentConfig,
