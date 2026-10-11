@@ -25,6 +25,20 @@ publications, not official NYSC documents.
 
 ---
 
+## Jobs & Gigs
+
+The nationwide [Jobs & Gigs board](/jobs/) brings paid part-time gigs,
+school tutoring work, internships, contracts and full-time job listings
+into MyPlatoon. Schools and businesses can register as independent employer
+accounts with no fake NYSC platoon, or existing members can link an
+organisation to their account. Employer accounts and listings both require
+moderator review before postings appear publicly.
+
+Approved members can apply to jobs and follow status updates; the employer
+receives only the contact details deliberately provided on the application.
+No recruitment, activation or application fees are collected, and job
+postings are not NYSC endorsements. See [JOBS_GIGS.md](JOBS_GIGS.md).
+
 ## Services and career support
 
 The public **Services & Career Tools** hub is available at `/services`.
