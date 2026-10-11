@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}{{ 'Edit PPA' if ppa else 'Submit a PPA' }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>#ppa-location-picker{height:300px;border-radius:12px;background:#edf4ee;z-index:0}</style>
+{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:850px">
+  <a class="small d-inline-block mb-3" href="{{ url_for('ppa.index') }}"><i class="fa-solid fa-arrow-left me-1"></i>Back to PPA lookup</a>
+  <div class="p5-card p-4 p-md-5">
+    <div class="text-success small fw-bold text-uppercase">Help fellow corps members</div>
+    <h1 class="h3 fw-bold">{{ 'Edit your PPA submission' if ppa else 'Submit a Place of Primary Assignment' }}</h1>
+    <p class="text-muted">Share firsthand information about a workplace where corps members serve. Your report will only appear in public searches after MyPlatoon moderation. This is not an official NYSC employer accreditation.</p>
+    <div class="alert alert-warning small">
+      <strong>Protect privacy:</strong> Report only an organisation's publicly accessible address. Do not enter a corps member's home, a staff member's personal phone number, internal security details, or unverified accusations. Accommodation and allowance reports are historical observations, not guarantees.
+    </div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.name) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.state) }}</div>
+        <div class="col-md-6">{{ field(form.lga) }}</div>
+        <div class="col-md-6">{{ field(form.town) }}</div>
+        <div class="col-md-6">{{ field(form.sector) }}</div>
+      </div>
+      {{ field(form.address) }}
+      {{ field(form.website) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.accommodation) }}</div>
+        <div class="col-md-6">{{ field(form.allowance) }}</div>
+      </div>
+      {{ field(form.experience_notes, rows=4) }}
+      <h2 class="h5 fw-bold mt-3">Workplace location (optional)</h2>
+      <p class="text-muted small">Tap the map to place a pin on the publicly known PPA workplace, or enter latitude/longitude manually. Leave both blank if you are unsure. We will not guess coordinates from your address.</p>
+      <div id="ppa-location-picker" role="region" aria-label="Map for selecting the workplace location" class="mb-3"></div>
+      <p class="text-muted small">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></p>
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.latitude) }}</div>
+        <div class="col-md-6">{{ field(form.longitude) }}</div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        {{ form.submit(class="btn btn-p5") }}
+        <a href="{{ url_for('ppa.mine') }}" class="btn btn-p5-outline">Cancel</a>
+      </div>
+      <p class="small text-muted mt-3 mb-0">Submitting does not confirm that the PPA accepts new corps members. Always verify posting and acceptance with NYSC and the organisation.</p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{{ url_for('static', filename='js/ppa_map.js') }}" defer></script>
+{% endblock %}
