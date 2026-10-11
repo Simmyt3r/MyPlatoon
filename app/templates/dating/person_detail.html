@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ target.display_name or 'Dating Persona' }}{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:800px">
+  <a href="{{ url_for('dating.browse') }}" class="small d-inline-block mb-3"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to suggestions</a>
+  <article class="p5-card overflow-hidden">
+    <div class="row g-0">
+      <div class="col-md-5">
+        <img src="{{ target.profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+             alt="Portrait of {{ target.display_name or 'participant' }}" class="w-100 h-100"
+             style="object-fit:cover;max-height:500px;min-height:260px;">
+      </div>
+      <div class="col-md-7 p-4">
+        <div class="text-success text-uppercase fw-semibold small mb-2">Dating persona</div>
+        <h1 class="h3 fw-bold mb-2">{{ target.display_name or 'A member' }}</h1>
+        {% if target.tagline %}<p class="text-muted fst-italic">{{ target.tagline }}</p>{% endif %}
+        {% if target.bio %}
+        <h2 class="h6 fw-bold mt-4">A little about me</h2>
+        <p style="white-space:pre-line">{{ target.bio }}</p>
+        {% endif %}
+        {% if target.interest_list() %}
+        <h2 class="h6 fw-bold mt-4">Interests</h2>
+        <div class="d-flex flex-wrap gap-2">
+          {% for interest in target.interest_list()[:12] %}
+          <span class="badge bg-light text-dark border">{{ interest }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if shared %}
+        <p class="small text-success mt-3 mb-0"><i class="fa-solid fa-link me-1" aria-hidden="true"></i>
+          You share {{ shared|length }} interest{{ '' if shared|length == 1 else 's' }}.
+        </p>
+        {% endif %}
+        <div class="alert alert-light border small mt-4">
+          This is a separate, opted-in Dating persona. No private member profile, phone number or contact address is shown here. Match suggestions aren't mutual consent or a request to connect.
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <form method="POST" action="{{ url_for('dating.block', persona_id=target.id) }}"
+                data-confirm="Block this persona? Neither of you will appear in the other's Dating suggestions.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-p5-outline"><i class="fa-solid fa-ban me-1" aria-hidden="true"></i>Block</button>
+          </form>
+          <a href="{{ url_for('dating.report', persona_id=target.id) }}" class="btn btn-outline-danger"><i class="fa-solid fa-flag me-1" aria-hidden="true"></i>Report</a>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
+{% endblock %}
