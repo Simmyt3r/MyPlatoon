@@ -15,8 +15,8 @@ Relevance is a transparent 0–100 heuristic:
   available per week, and whether remote work should be included.
 - Remote opportunities can match across states without GPS or precise
   coordinates. The algorithm does not currently compute kilometre
-  distances. It uses employer-declared state and optionally a locality
-  match. Listing locations are **not GIS verified** yet.
+  distances. It uses employer-declared state; the member's current
+  or residential location is never consulted. Listing locations are **not GIS verified** yet.
 - Public professional skills and profession already entered by the
   member may increase relevance where they overlap vacancy titles and
   requirements. The score is deliberately labelled **relevance**,
