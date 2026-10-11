@@ -133,6 +133,8 @@ def _register_context_processors(app):
             "APP_PRIMARY_COLOR": app.config["APP_PRIMARY_COLOR"],
             "APP_ACCENT_COLOR": app.config["APP_ACCENT_COLOR"],
             "ENABLE_DATING": app.config["ENABLE_DATING"],
+            "NERD_HELP_PHONE": app.config["NERD_HELP_PHONE"],
+            "NERD_HELP_WHATSAPP_URL": app.config["NERD_HELP_WHATSAPP_URL"],
             "unread_notifications": unread_count(current_user) if current_user else 0,
             "suggested_profiles": suggested_profiles,
             "recent_notifications": recent_notifications,
