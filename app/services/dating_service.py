@@ -75,18 +75,18 @@ def _eligible_candidates(persona: DatingPersona):
              .filter(DatingPersona.status == "active")
              .filter(DatingPersona.is_reported.is_(False))
              .filter(DatingPersona.age_confirmed_at.isnot(None))
-             .filter(DatingPersona.gender == persona.interested_in if
-                     persona.interested_in != "any" else
-                     DatingPersona.gender.in_(("male", "female", "nonbinary")))
+             .filter(or_(
+                 DatingPersona.gender == persona.interested_in,
+                 DatingPersona.gender.in_(("male", "female", "nonbinary"))
+                 if persona.interested_in == "any" else
+                 DatingPersona.gender == persona.interested_in,
+             ))
              .filter(or_(DatingPersona.interested_in == persona.gender,
                          DatingPersona.interested_in == "any"))
              .join(Profile, DatingPersona.profile_id == Profile.id)
              .join(User, Profile.user_id == User.id)
              .filter(Profile.status == "approved", User.is_active_account.is_(True),
                      User.is_suspended.is_(False)))
-    if persona.interested_in == "any":
-        # Remove the single-gender condition while keeping reciprocal preferences.
-        query = query.filter(DatingPersona.gender.in_(("male", "female", "nonbinary")))
     if blocked:
         query = query.filter(~DatingPersona.id.in_(blocked))
     return query.all()
@@ -165,12 +165,9 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
         for other, _score in top:
             generate_matches_for_persona(other, top_n=top_n, _cascade=False)
 
-    # Known simplification: a candidate that falls out of this persona's
-    # top-N on a later recompute (e.g. after editing interests) keeps its
-    # stale rank on the DatingMatch row until that row is next touched, so
-    # it may briefly still appear in browse_matches_for_persona. Matched
-    # (mutual) pairs are unaffected -- they're sticky by design (see
-    # module docstring) and never pruned here.
+    # Ranked suggestions are recalculated on each refresh; old one-sided
+    # suggestions drop out when their rank is cleared. Mutual listings
+    # require live reciprocal rankings as well as active status.
 
     return results
 
