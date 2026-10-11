@@ -3,12 +3,17 @@ from tests.conftest import login
 
 def _attach_platoon(db, *users):
     """Create a real orientation cohort for album tests."""
-    from app.models import Platoon
+    from app.models import Platoon, Profile
     platoon = Platoon.find_or_create("Benue", 2026, "B", "II", 5)
+    # App-context nested tests create a fresh scoped SQLAlchemy session.
+    # Re-fetch each profile in the *current* session before assigning the
+    # cohort, otherwise a user fixture's old Profile object remains bound
+    # to an earlier session and raises InvalidRequestError.
     for user in users:
-        user.profile.service_stage = "serving"
-        user.profile.platoon = platoon
-        user.profile.status = "approved"
+        profile = Profile.query.filter_by(user_id=user.id).one()
+        profile.service_stage = "serving"
+        profile.platoon = platoon
+        profile.status = "approved"
     db.session.commit()
     return platoon
 
