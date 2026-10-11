@@ -25,6 +25,16 @@ publications, not official NYSC documents.
 
 ---
 
+## Platoon Power Rankings
+
+The public [Platoon Power Rankings](/platoons/rankings) compare real
+NYSC cohorts scoped by state, year, batch, stream and platoon number.
+Scores are based on normalized approved-member participation, verified
+community contributions and one 1–5-star mini rating per eligible
+member for their **own** platoon. Low-sample groups are provisional,
+and the board is explicitly **not an official NYSC competition result**.
+See [DISCOVERY_RANKINGS.md](DISCOVERY_RANKINGS.md).
+
 ## Jobs & Gigs
 
 The nationwide [Jobs & Gigs board](/jobs/) brings paid part-time gigs,
