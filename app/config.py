@@ -44,7 +44,7 @@ class BaseConfig:
     APP_MEMBER_LABEL = os.environ.get("APP_MEMBER_LABEL", "Member")
     APP_PRIMARY_COLOR = os.environ.get("APP_PRIMARY_COLOR", "#0b7a3b")
     APP_ACCENT_COLOR = os.environ.get("APP_ACCENT_COLOR", "#c79a2e")
-    ENABLE_DATING = os.environ.get("ENABLE_DATING", "false").lower() == "true"
+    ENABLE_DATING = os.environ.get("ENABLE_DATING", "true").lower() != "false"
 
     # MyPlatoon independent help desk, NOT an official NERD/NYSC helpline.
     NERD_HELP_PHONE = os.environ.get("NERD_HELP_PHONE", "09039930006")
