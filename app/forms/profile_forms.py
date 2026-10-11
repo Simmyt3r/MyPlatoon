@@ -57,6 +57,10 @@ class ProfileForm(FlaskForm):
 
     submit = SubmitField("Save Profile")
 
+    def validate(self, extra_validators=None):
+        valid = super().validate(extra_validators)
+        return validate_platoon_fields(self) and valid
+
 
 class PrivacyForm(FlaskForm):
     profile_visibility = SelectField("Profile Visibility", choices=VISIBILITY_CHOICES,
