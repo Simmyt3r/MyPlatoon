@@ -6,7 +6,7 @@ from app.models.skill import Skill, profile_skills
 from app.models.business import Business, BusinessCategory, DEFAULT_CATEGORIES
 from app.models.album import AlbumVersion, Announcement, AuditLog, Notification
 from app.models.feed import AnnouncementReaction, AnnouncementComment, REACTION_TYPES
-from app.models.jobs import Employer, JobListing, JobApplication, EMPLOYER_KINDS, JOB_KINDS, WORK_MODES, PAY_UNITS, APP_STATUSES
+from app.models.jobs import Employer, JobListing, JobApplication, JobReport, EMPLOYER_KINDS, JOB_KINDS, WORK_MODES, PAY_UNITS, APP_STATUSES
 from app.models.dating import DatingPersona, DatingMatch, DatingBlock, DatingInterest, DatingMessage, DatingMessageReport, GENDER_CHOICES, PERSONA_STATUSES, MATCH_STATUSES, score_label
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     "Profile", "VISIBILITY_LEVELS", "ADDRESS_VISIBILITY_LEVELS", "PROFILE_STATES",
     "Skill", "profile_skills",
     "Business", "BusinessCategory", "DEFAULT_CATEGORIES",
-    "Employer", "JobListing", "JobApplication", "EMPLOYER_KINDS", "JOB_KINDS", "WORK_MODES", "PAY_UNITS", "APP_STATUSES",
+    "Employer", "JobListing", "JobApplication", "JobReport", "EMPLOYER_KINDS", "JOB_KINDS", "WORK_MODES", "PAY_UNITS", "APP_STATUSES",
     "AlbumVersion", "Announcement", "AuditLog", "Notification",
     "AnnouncementReaction", "AnnouncementComment", "REACTION_TYPES",
     "DatingPersona", "DatingMatch", "DatingBlock", "DatingInterest", "DatingMessage", "DatingMessageReport", "GENDER_CHOICES", "PERSONA_STATUSES", "MATCH_STATUSES", "score_label",
