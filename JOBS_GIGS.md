@@ -88,6 +88,11 @@ No automated importing of jobs from third-party websites.
 - Recruitment fraud, discrimination, exploitation or harassment should
   be reviewed by an independent moderation process before launching
   at nationwide scale.
+- Members may submit a confidential safety/scam report for a listing.
+  The moderation queue allows admins to dismiss an unsubstantiated report
+  or close a suspicious job to stop new applications. The employer is
+  informed if the listing is closed; the reporter's identity is not
+  disclosed.
 - An organisation name and 'reviewed' listing do not prove a vacancy
   is genuine. Encourage independent verification before accepting an
   offer or visiting an unfamiliar worksite.
