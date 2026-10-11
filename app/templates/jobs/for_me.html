@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Recommended Jobs for Me{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1120px">
+  <header class="p5-card p-4 mb-4">
+    <p class="small text-success fw-bold text-uppercase mb-1">Made for your NYSC journey</p>
+    <h1 class="h3 fw-bold">Jobs &amp; gigs for you</h1>
+    <p class="text-muted mb-2">Suggestions use your posting state{% if posting_state %} ({{ posting_state }}){% endif %}, declared skills, preferred hours and work types. Remote jobs can be included without revealing your location to an employer.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('jobs.preferences') }}" class="btn btn-p5">Edit preferences &amp; alerts</a>
+      <a href="{{ url_for('jobs.saved') }}" class="btn btn-p5-outline">Saved jobs</a>
+      <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">All jobs</a>
+    </div>
+    <p class="small mt-2 mb-0 text-muted">
+      In-app new-job alerts: <strong>{{ 'On' if preference and preference.enabled else 'Off by default' }}</strong>.
+      A recommendation is not an employer's hiring decision or NYSC permission.
+    </p>
+  </header>
+  <div class="row g-3">
+    {% for job, score in results %}
+    <div class="col-md-6">
+      <article class="p5-card p-4 h-100">
+        <div class="d-flex justify-content-between gap-2 align-items-start">
+          <h2 class="h5 fw-bold"><a class="text-decoration-none" href="{{ url_for('jobs.detail', job_id=job.id) }}">{{ job.title }}</a></h2>
+          <span class="badge text-bg-light border" title="Discovery relevance, not a probability of getting hired">{{ score }}/100 relevance</span>
+        </div>
+        <p class="small text-muted mb-2">{{ job.employer.name }} · {{ job.kind_label }} · {{ job.work_label }} · {{ job.state }}</p>
+        <p class="fw-semibold mb-2">₦{{ "{:,}".format(job.pay_min) }}{% if job.pay_max!=job.pay_min %} – ₦{{ "{:,}".format(job.pay_max) }}{% endif %} {{ job.pay_label|lower }}</p>
+        <p class="small text-muted">Deadline: {{ job.closing_date.strftime('%d %b %Y') }}</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-p5 btn-sm" href="{{ url_for('jobs.detail', job_id=job.id) }}">View job</a>
+          {% if job.id in saved_ids %}
+          <span class="btn btn-p5-outline btn-sm disabled">Saved</span>
+          {% else %}
+          <form method="POST" action="{{ url_for('jobs.save', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-p5-outline btn-sm" type="submit"><i class="fa-regular fa-bookmark me-1"></i>Save</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="p5-card p-4 text-center">
+      <h2 class="h5 fw-bold">No matching opportunities yet</h2>
+      <p class="text-muted">Try choosing more opportunity types or including remote work.</p>
+      <a href="{{ url_for('jobs.preferences') }}" class="btn btn-p5">Adjust preferences</a>
+    </div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
