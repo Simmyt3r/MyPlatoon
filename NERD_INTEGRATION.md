@@ -4,6 +4,45 @@
 
 **Not implemented:** NERD account registration, academic uploads, NERD receipt issuance, academic verification, NSN/NCN verification, NYSC eligibility checks, government SSO, or data synchronisation. Do not advertise those capabilities until they exist, and never imitate an official government site.
 
+## NERD preparation checklist (new)
+
+MyPlatoon includes a public, read-only preparation checklist at
+`/nerd/requirements`, reachable from `/nerd`, Services and the home page.
+The checklist contains **38 items in seven groups**, transcribed from
+the list supplied for this project:
+
+1. Personal Information (8): title, names, sex, date of birth,
+   marital status and NIN.
+2. Contact Information (7): nationality, state, LGA, town,
+   contact address, email and phone.
+3. Next of Kin (3): name, phone, email.
+4. Academic Data (7): institution, faculty, department, programme category,
+   programme type, registration/matriculation number and course.
+5. Supervisor Details (4): academic title, name, phone, email.
+6. HOD Details (4): academic title, name, phone, email.
+7. Documents (5): passport photo, NIN image, result/certificate image,
+   approved project page image and final project soft copy.
+
+This user-supplied list is **not claimed to be a universal or fully official
+NERD mandatory form**. The exact requirements may depend on the institution
+and the official enrolment process. Verify directly with NERD and the
+institutional NERD focal person.
+
+**Data-minimisation guarantee for this phase:**
+- No NIN text field, document uploader, collection form, or POST endpoint.
+- No writes to Aiven or other databases.
+- Checkboxes/progress exist only on the current browser page and are cleared
+  on refresh/exit (no localStorage or cookie persistence).
+- Print uses the browser's own print function; no server-side PDF generated.
+- No next-of-kin, supervisor or HOD contact details are received by MyPlatoon.
+- Registration and academic document submission stay with NERD or an
+  authorised institution.
+
+The NERD checklist is intentionally informational only. A future
+officially authorised API implementation will require explicit permission,
+privacy notices, consent/appropriate legal basis, encryption, lifecycle
+controls and separate security review before collecting identity documents.
+
 ## Official sources
 
 - NERD home: https://databank.ned.gov.ng/home
