@@ -122,6 +122,10 @@ def submit_for_approval():
         flash("Something went wrong. Please try again.", "danger")
         return redirect(url_for("profile.dashboard"))
 
+    if profile.service_stage != "pcm" and not profile.platoon_id:
+        flash("Enter your assigned NYSC platoon before submitting your profile.", "warning")
+        return redirect(url_for("profile.edit"))
+
     if profile.completion_percent() < 60:
         flash("Please complete more of your profile (at least 60%) before submitting.", "warning")
         return redirect(url_for("profile.dashboard"))
