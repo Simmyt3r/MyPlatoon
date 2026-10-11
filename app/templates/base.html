@@ -107,6 +107,7 @@
           {% if ENABLE_DATING %}
           <li><a class="dropdown-item" href="{{ url_for('dating.home') }}"><i class="fa-regular fa-heart me-2 text-success"></i>Dating (18+)</a></li>
           {% endif %}
+          {% endif %}
           {% if current_user.is_admin %}
           <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-success"></i>Admin</a></li>
           {% endif %}
