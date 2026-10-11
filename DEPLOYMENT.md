@@ -147,7 +147,7 @@ defaults to disabled in production.
    Actions → **Bootstrap Aiven MyPlatoon administrator** → Run workflow.
 6. Vercel → Settings → Environment Variables: set `AIVEN_DATABASE_URL`
    to the Aiven **myplatoon** URI; set `AUTO_CREATE_TABLES=false`.
-6. Deploy the updated main branch through Vercel UI.
+7. Deploy the updated main branch through Vercel UI.
 
 The workflow's `scripts/upgrade_nysc_schema.py` handles an empty database
 or a verified legacy schema. It refuses partially initialized databases
