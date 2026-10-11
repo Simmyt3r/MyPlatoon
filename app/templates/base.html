@@ -145,6 +145,9 @@
       <a href="{{ url_for('directory.members') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.members' }}">
         <i class="fa-solid fa-users"></i>Members
       </a>
+      <a href="{{ url_for('main.platoon_guide') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.platoon_guide' }}">
+        <i class="fa-solid fa-people-group"></i>Platoon Guide
+      </a>
       <a href="{{ url_for('main.nerd') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.nerd' }}" aria-label="NERD and NYSC mobilisation guide">
         <i class="fa-solid fa-graduation-cap"></i>NERD Guide
       </a>
