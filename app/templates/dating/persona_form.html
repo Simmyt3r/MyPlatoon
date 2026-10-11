@@ -3,36 +3,49 @@
 {% block title %}{{ 'Edit' if persona else 'Create' }} Dating Persona{% endblock %}
 {% block body_class %}app-shell-focused{% endblock %}
 {% block content %}
-<h4 class="p5-section-title">{{ 'Edit Your Dating Persona' if persona else 'Create Your Dating Persona' }} 💘</h4>
-<div class="p5-card p5-card-body">
-  <form method="POST" novalidate>
-    {{ form.hidden_tag() }}
-    {{ field(form.display_name) }}
-    {{ field(form.tagline) }}
-    {{ field(form.bio, rows=4) }}
-    <div class="row">
-      <div class="col-md-6">{{ field(form.gender) }}</div>
-      <div class="col-md-6">{{ field(form.interested_in) }}</div>
+<div class="container py-4" style="max-width:850px">
+  <a href="{{ url_for('dating.home') }}" class="small d-inline-block mb-3"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to Dating</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-success text-uppercase fw-semibold small">Your private Dating identity</div>
+    <h1 class="h3 fw-bold mb-2">{{ 'Edit your dating persona' if persona else 'Create your dating persona' }}</h1>
+    <p class="text-muted mb-4">Choose what to share with opted-in adults. Dating does not automatically expose the contact details or full profile you use elsewhere on MyPlatoon.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.display_name) }}
+      {{ field(form.tagline) }}
+      {{ field(form.bio, rows=4) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.gender) }}</div>
+        <div class="col-md-6">{{ field(form.interested_in) }}</div>
+      </div>
+      {{ field(form.interests) }}
+      <div class="border rounded-3 p-3 mb-3" style="background:#f8faf8">
+        {{ field(form.age_confirm) }}
+        <p class="text-muted small mb-0">Don't share your personal address, NIN, passwords or financial details with a match. All users can report inappropriate behaviour.</p>
+      </div>
+      {{ form.submit(class="btn btn-p5 w-100 w-sm-auto") }}
+    </form>
+  </section>
+  {% if persona %}
+  <section class="p5-card p-4 mt-3">
+    <h2 class="h5 fw-bold">Visibility and account controls</h2>
+    <p class="small text-muted">Pausing removes you from active match discovery. Deleting only removes your Dating persona and its matching records.</p>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <form method="POST" action="{{ url_for('dating.toggle_pause') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-p5-outline btn-sm" type="submit">
+          <i class="fa-solid {{ 'fa-pause' if persona.status == 'active' else 'fa-play' }} me-1" aria-hidden="true"></i>
+          {{ 'Pause discovery' if persona.status == 'active' else 'Resume discovery' }}
+        </button>
+      </form>
+      <a href="{{ url_for('dating.blocked') }}" class="btn btn-p5-outline btn-sm"><i class="fa-solid fa-user-slash me-1" aria-hidden="true"></i>Manage blocked members</a>
     </div>
-    {{ field(form.interests) }}
-    {{ field(form.submit) }}
-  </form>
+    <form method="POST" action="{{ url_for('dating.delete') }}"
+          data-confirm="Delete your Dating persona and all matches and blocks? This cannot be undone. Your MyPlatoon account will remain.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-danger btn-sm" type="submit"><i class="fa-solid fa-trash me-1" aria-hidden="true"></i>Delete dating persona</button>
+    </form>
+  </section>
+  {% endif %}
 </div>
-{% if persona %}
-<div class="p5-card p5-card-body mt-3">
-  <form method="POST" action="{{ url_for('dating.toggle_pause') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <button class="btn btn-outline-secondary btn-sm" type="submit">
-      {% if persona.status == 'active' %}
-      <i class="fa-solid fa-pause me-1"></i>Pause My Dating Persona
-      {% else %}
-      <i class="fa-solid fa-play me-1"></i>Resume My Dating Persona
-      {% endif %}
-    </button>
-    <span class="text-muted small ms-2">
-      {% if persona.status == 'paused' %}You're currently paused -- nobody can see or match with you.{% endif %}
-    </span>
-  </form>
-</div>
-{% endif %}
 {% endblock %}
