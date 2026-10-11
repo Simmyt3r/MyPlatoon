@@ -28,7 +28,7 @@ def rankings():
     if state not in NYSC_STATES:
         state = None
     raw_year = request.args.get("year", "")
-    year = int(raw_year) if raw_year.isdigit() and 2020 <= int(raw_year) <= 2100 else None
+    year = int(raw_year) if len(raw_year) == 4 and raw_year.isdigit() and 2020 <= int(raw_year) <= 2100 else None
     batch = request.args.get("batch", "")
     if batch not in ("A", "B", "C"):
         batch = None
