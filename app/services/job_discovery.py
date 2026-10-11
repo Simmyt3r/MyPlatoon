@@ -58,9 +58,6 @@ def match_score(profile, job, preference=None):
         score += 26
     elif state and job.state == state:
         score += 34
-        if (profile.current_location and job.lga
-                and profile.current_location.casefold().strip() == job.lga.casefold().strip()):
-            score += 6
 
     if job.job_kind in ("gig", "part_time"):
         score += 15
