@@ -274,6 +274,6 @@ def test_compatibility_score_is_symmetric(app, db):
 def test_score_label_bands():
     from app.models import score_label
     label, emoji = score_label(95)
-    assert label == "Soulmate Vibes"
+    assert label == "Very high similarity"
     label2, _ = score_label(30)
-    assert label2 == "Wildcard"
+    assert label2 == "Little recorded overlap"
