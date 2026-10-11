@@ -6,11 +6,11 @@
   <header class="mb-4">
     <div class="text-success text-uppercase small fw-semibold">Dating</div>
     <h1 class="h3 fw-bold">Mutual top picks</h1>
-    <p class="text-muted">These people appear in each other's top suggestions. Automatic rankings do not mean that either person has expressed romantic interest.</p>
+    <p class="text-muted">These people appear in each other's top suggestions. Automatic rankings do not mean that either person has expressed romantic interest. <a href="{{ url_for('dating.connections') }}">View people who actually expressed mutual interest.</a></p>
   </header>
   {% if mutuals %}
   <div class="row g-3">
-    {% for match, other in mutuals %}{{ dating_match_card(match, other, persona) }}{% endfor %}
+    {% for match, other in mutuals %}{{ dating_match_card(match, other, persona, liked_ids=liked_ids) }}{% endfor %}
   </div>
   {% else %}
   <div class="p5-card p-4 text-center">
