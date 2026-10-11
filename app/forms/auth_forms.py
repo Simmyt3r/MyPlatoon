@@ -3,6 +3,8 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Selec
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 
 from app.models import User
+from app.models.platoon import SERVICE_STAGES, NYSC_STATES
+from app.services.platoon_membership import validate_platoon_fields
 
 
 class RegistrationForm(FlaskForm):
