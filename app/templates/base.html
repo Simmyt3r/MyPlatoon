@@ -201,6 +201,10 @@
         <i class="fa-solid fa-shield-halved"></i>Admin Dashboard
       </a>
       {% endif %}
+      {% elif current_user.is_authenticated %}
+      <a href="{{ url_for('jobs.employer_dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'jobs.employer_dashboard' }}">
+        <i class="fa-solid fa-building"></i>Employer Dashboard
+      </a>
       {% else %}
       <a href="{{ url_for('main.about') }}" class="p5-nav-item"><i class="fa-solid fa-circle-info"></i>About</a>
       <a href="{{ url_for('auth.login') }}" class="p5-nav-item"><i class="fa-solid fa-right-to-bracket"></i>Log In</a>
