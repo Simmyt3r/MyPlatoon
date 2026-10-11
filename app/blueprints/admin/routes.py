@@ -81,6 +81,9 @@ def member_detail(profile_id):
 @admin_required
 def approve_member(profile_id):
     profile = Profile.query.get_or_404(profile_id)
+    if profile.service_stage in ("serving", "alumni") and not profile.platoon_id:
+        flash("This member must enter their actual orientation platoon before approval.", "warning")
+        return redirect(url_for("admin.member_detail", profile_id=profile.id))
     profile.status = "approved"
     profile.rejection_reason = None
     profile.reviewed_by_id = current_user.id
