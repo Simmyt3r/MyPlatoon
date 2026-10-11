@@ -50,7 +50,24 @@
     <p class="text-muted small">A precise public workplace map pin has not been reviewed for this entry.</p>
     {% endif %}
     {% if owned or admin %}
-    <a href="{{ url_for('ppa.edit', ppa_id=ppa.id) }}" class="btn btn-p5 ms-1">Suggest an update</a>
+    <a href="{{ url_for('ppa.edit', ppa_id=ppa.id) }}" class="btn btn-p5 ms-1">Edit PPA details</a>
+    {% endif %}
+    {% if ppa.status == 'verified' %}
+      <hr class="my-4">
+      <h2 class="h5 fw-bold">Experiences shared by corps members</h2>
+      <p class="small text-muted">Historical, self-reported information reviewed by MyPlatoon moderators. Conditions can change.</p>
+      {% for experience in experiences %}
+        <div class="py-3 {{ 'border-top' if not loop.first }}">
+          <div class="fw-semibold small">Service year: {{ experience.service_year }}</div>
+          <div class="small">Accommodation: {{ experience.accommodation|capitalize }} · Extra allowance: {{ experience.allowance|capitalize }}</div>
+          {% if experience.notes %}<p class="mb-0 mt-2" style="white-space:pre-line">{{ experience.notes }}</p>{% endif %}
+        </div>
+      {% else %}
+        <p class="text-muted small">No additional member experiences have been reviewed yet.</p>
+      {% endfor %}
+      {% if can_submit %}
+        <a href="{{ url_for('ppa.contribute_experience', ppa_id=ppa.id) }}" class="btn btn-p5 mt-3">Share my experience</a>
+      {% endif %}
     {% endif %}
     <p class="small text-muted mt-4 mb-0">Reported information can change. Confirm details directly with the organisation and your NYSC state office before making plans.</p>
   </article>
