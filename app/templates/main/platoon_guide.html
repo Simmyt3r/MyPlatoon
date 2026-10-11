@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}What Is an NYSC Platoon?{% endblock %}
+{% block meta_description %}A simple guide for prospective corps members: what an NYSC platoon is, when you get assigned and what MyPlatoon uses your platoon for.{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:900px;">
+  <div class="p5-card p-4 p-md-5 mb-4">
+    <span class="small text-uppercase fw-bold text-success">PCM orientation guide</span>
+    <h1 class="fw-bold mt-2">What is a platoon in NYSC?</h1>
+    <p class="fs-5">A <strong>platoon</strong> is the smaller group of corps members you belong to during the NYSC orientation camp. It helps the camp organise people for activities, teamwork and friendly competitions.</p>
+    <p class="mb-0">Think of the camp as a whole school and your platoon as your class. Other platoons are in the same camp, but your platoon is the team you will often train and take part in activities with.</p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="p5-card p-3 h-100">
+        <i class="fa-solid fa-clipboard-check fa-lg text-success mb-2" aria-hidden="true"></i>
+        <h2 class="h6 fw-bold">Before camp (PCM)</h2>
+        <p class="small mb-0">You do not need to guess a platoon. Join MyPlatoon as a PCM and your profile will display <strong>Awaiting camp assignment</strong>.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p5-card p-3 h-100">
+        <i class="fa-solid fa-people-group fa-lg text-success mb-2" aria-hidden="true"></i>
+        <h2 class="h6 fw-bold">At orientation camp</h2>
+        <p class="small mb-0">Follow camp officials' registration instructions to find out your actual platoon number. You may participate in drills, sanitation, sports and other inter-platoon activities.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p5-card p-3 h-100">
+        <i class="fa-solid fa-user-group fa-lg text-success mb-2" aria-hidden="true"></i>
+        <h2 class="h6 fw-bold">After orientation</h2>
+        <p class="small mb-0">Your camp platoon becomes part of your service history. Keep in touch with those people during your PPA, CDS and after passing out.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold">Why MyPlatoon asks for more than a number</h2>
+    <p>Different camps and batches can all have a “Platoon 5”. To place you in the right MyPlatoon community, we ask for:</p>
+    <ul>
+      <li>Orientation camp state</li>
+      <li>Service year</li>
+      <li>Batch (A, B or C) and stream (I or II)</li>
+      <li>Platoon number assigned at camp</li>
+    </ul>
+    <p class="small text-muted mb-0">These details are self-reported on MyPlatoon, not official NYSC verification. You can correct them in your profile. Access to private platoon content is limited to members assigned to the same recorded cohort, subject to profile approval.</p>
+  </section>
+
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold">What does PCM mean?</h2>
+    <p><strong>PCM</strong> means <strong>Prospective Corps Member</strong>: a graduate preparing for, or going through, NYSC mobilisation before becoming a serving corps member. You are welcome here before your platoon is known.</p>
+    <p class="mb-3">NYSC's orientation course ordinarily lasts three weeks. For current rules, dates and camp requirements, always check the official NYSC website.</p>
+    <div class="d-flex flex-wrap gap-2">
+      {% if current_user.is_authenticated %}
+      <a class="btn btn-p5" href="{{ url_for('profile.edit') }}">Update my platoon</a>
+      {% else %}
+      <a class="btn btn-p5" href="{{ url_for('auth.register') }}">Join as a PCM</a>
+      {% endif %}
+      <a class="btn btn-p5-outline" href="https://www.nysc.gov.ng/serviceyear.html" target="_blank" rel="noopener noreferrer">NYSC service year guidance</a>
+      <a class="btn btn-p5-outline" href="{{ url_for('main.nerd') }}">NERD guide</a>
+    </div>
+  </section>
+
+  <p class="text-muted small">MyPlatoon is an independent community platform. We do not assign platoon numbers, issue call-up letters or represent the NYSC.</p>
+</div>
+{% endblock %}
