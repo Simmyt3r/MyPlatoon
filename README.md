@@ -18,6 +18,19 @@ publications, not official NYSC documents.
 
 ---
 
+## Services and career support
+
+The public **Services & Career Tools** hub is available at `/services`.
+It links to MyPlatoon's PPA Lookup, NERD guidance and the separately hosted
+[CareerMirror](https://mycareermirror.vercel.app/) website for CV/résumé
+preparation. CareerMirror is an **external service**, not part of MyPlatoon's
+database, authentication or content-management systems. Clicking its link
+opens a new tab; MyPlatoon sends no personal profile information to it.
+
+CareerMirror was added as a link-only service. No database migrations,
+API keys, login synchronisation or new environment variables are required.
+Website configuration and deployment remain deferred to final setup.
+
 ## PPA lookup and GIS
 
 The [PPA Lookup](/ppas/) helps PCMs and corps members find community-reported
