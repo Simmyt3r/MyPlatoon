@@ -13,7 +13,7 @@ This guide walks through deploying MyPlatoon, the nationwide NYSC community, to 
 ## Required: database upgrade for nationwide platoons
 
 **Before exposing the new application on an existing database**, apply
-the current migrations through revision `c8a49d127e03`. Simply deploying the new Python code will NOT alter
+the current migrations through revision `d6ee891f0d42`. Simply deploying the new Python code will NOT alter
 the old `profiles` table because SQLAlchemy `create_all()` adds missing
 tables, not missing columns.
 
