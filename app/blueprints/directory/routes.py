@@ -36,12 +36,17 @@ def members():
     if skill:
         query = query.join(Profile.skills).filter(Skill.name.ilike(f"%{skill}%"))
 
-    # Guests / non-platoon-members only ever see publicly-visible cards.
-    is_platoon_member = (current_user.is_authenticated and (
-        current_user.is_admin or
-        (current_user.profile and current_user.profile.status == "approved")))
-    if not is_platoon_member:
-        query = query.filter(Profile.profile_visibility == "public")
+    # Joining MyPlatoon does NOT give access to every cohort's private directory.
+    if not (current_user.is_authenticated and current_user.is_admin):
+        own = current_user.profile if current_user.is_authenticated else None
+        if own is not None and own.status == "approved" and own.platoon_id:
+            query = query.filter(or_(
+                Profile.profile_visibility == "public",
+                and_(Profile.profile_visibility == "platoon",
+                     Profile.platoon_id == own.platoon_id),
+            ))
+        else:
+            query = query.filter(Profile.profile_visibility == "public")
 
     pagination = query.order_by(Profile.updated_at.desc()).paginate(
         page=page, per_page=current_app.config["MEMBERS_PER_PAGE"], error_out=False)
