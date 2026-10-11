@@ -13,6 +13,20 @@
           {{ form.hidden_tag() }}
           {{ field(form.full_name) }}
           {{ field(form.email) }}
+          <hr class="my-3">
+          <h5 class="fw-bold">Your NYSC journey</h5>
+          {{ field(form.service_stage) }}
+          <p class="small text-muted">A platoon is your orientation-camp team. PCMs can register without a number and add one after camp assignment. <a href="{{ url_for('main.platoon_guide') }}">What is a platoon?</a></p>
+          <div class="rounded-3 border p-3 mb-3">
+            <p class="small fw-bold mb-2">If you are serving or an alumnus, enter your actual camp details:</p>
+            <div class="row">
+              <div class="col-12">{{ field(form.nysc_state) }}</div>
+              <div class="col-6">{{ field(form.service_year) }}</div>
+              <div class="col-6">{{ field(form.platoon_number) }}</div>
+              <div class="col-6">{{ field(form.nysc_batch) }}</div>
+              <div class="col-6">{{ field(form.nysc_stream) }}</div>
+            </div>
+          </div>
           {{ field(form.password) }}
           {{ field(form.confirm_password) }}
           <div class="d-grid mt-3">
