@@ -31,7 +31,5 @@ jobs:
           fi
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
-      - name: Run Alembic upgrade
-        run: python -m flask db upgrade
-      - name: Confirm schema revision
-        run: python -m flask db current
+      - name: Apply version-aware schema upgrade
+        run: python scripts/upgrade_nysc_schema.py
