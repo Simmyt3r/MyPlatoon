@@ -264,7 +264,7 @@ def export_members_csv():
         ])
     log_action(current_user, "data.export", "Profile", None, detail="members.csv")
     return Response(output.getvalue(), mimetype="text/csv",
-                     headers={"Content-Disposition": "attachment; filename=platoon5_members.csv"})
+                     headers={"Content-Disposition": "attachment; filename=myplatoon_members.csv"})
 
 
 @bp.route("/dating")
