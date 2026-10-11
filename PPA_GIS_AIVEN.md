@@ -12,7 +12,9 @@ MyPlatoon PPA Lookup is an **independent, corps-member-contributed** directory. 
 | `/ppas/new` | Approved serving members, alumni and admins | Submit a PPA |
 | `/ppas/mine` | Signed in | My submitted records and status |
 | `/ppas/<id>/edit` | Report owner/admin | Edit; resubmit for approval |
+| `/ppas/<id>/experience` | Approved serving members/alumni | Contribute or revise a historical experience |
 | `/ppas/review` | Admin | Approve or reject pending entries |
+| `/ppas/review/experiences` | Admin | Moderate historical experiences separately |
 
 Location is optional. We do **not** generate imaginary coordinates when a user only provides an address or LGA. Browser location requests happen only when a user explicitly presses *Use my location*. Exact coordinates in the public map are *workplace* coordinates submitted by a member and approved by a moderator. Home locations, sensitive person-level information and contact details are not collected for PPA records.
 
