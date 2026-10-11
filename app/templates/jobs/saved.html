@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Saved Jobs{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:860px">
+  <div class="d-flex justify-content-between flex-wrap gap-2 mb-4">
+    <div><h1 class="h3 fw-bold">Saved jobs &amp; gigs</h1><p class="text-muted mb-0">Only you can see this list. Saved positions may expire or be withdrawn.</p></div>
+    <a class="btn btn-p5" href="{{ url_for('jobs.for_me') }}">For me</a>
+  </div>
+  {% for entry in records %}
+  <article class="p5-card p-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h2 class="h5 fw-bold mb-1">{{ entry.listing.title }}</h2>
+      <p class="small text-muted mb-0">{{ entry.listing.employer.name }} · {{ entry.listing.state }} · {{ 'Open' if entry.listing.is_open else 'Closed or unlisted' }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      {% if entry.listing.is_open %}<a class="btn btn-p5 btn-sm" href="{{ url_for('jobs.detail', job_id=entry.job_id) }}">View</a>{% endif %}
+      <form method="POST" action="{{ url_for('jobs.unsave', job_id=entry.job_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-p5-outline btn-sm" type="submit">Remove</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <div class="p5-card p-4 text-center"><p>No saved opportunities yet.</p>
+    <a href="{{ url_for('jobs.index') }}" class="btn btn-p5">Browse opportunities</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
