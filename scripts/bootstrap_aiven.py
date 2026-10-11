@@ -6,6 +6,9 @@ script never resets a password or changes roles on existing accounts.
 import os
 import sys
 
+# Running `python scripts/...` must resolve the repository's app package.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import create_app
 from app.extensions import db
 from app.models import User, Profile, BusinessCategory, DEFAULT_CATEGORIES
