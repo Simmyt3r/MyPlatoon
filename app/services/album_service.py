@@ -18,7 +18,7 @@ import cloudinary.uploader
 from flask import current_app
 
 from app.extensions import db
-from app.models import AlbumVersion, Profile, Business
+from app.models import AlbumVersion, Profile, Business, Platoon
 from app.services.pdf_service import build_album_pdf
 
 
