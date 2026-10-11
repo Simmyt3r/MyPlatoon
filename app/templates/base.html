@@ -95,6 +95,7 @@
           <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
           <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
           <li><a class="dropdown-item" href="{{ url_for('ppa.mine') }}"><i class="fa-solid fa-location-dot me-2 text-success"></i>My PPA Reports</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('main.services') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Services &amp; Careers</a></li>
           {% if current_user.is_admin %}
           <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-shield-halved me-2 text-success"></i>Admin</a></li>
           {% endif %}
@@ -151,6 +152,9 @@
       </a>
       <a href="{{ url_for('main.nerd') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.nerd' }}" aria-label="NERD and NYSC mobilisation guide">
         <i class="fa-solid fa-graduation-cap"></i>NERD Guide
+      </a>
+      <a href="{{ url_for('main.services') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.services' }}">
+        <i class="fa-solid fa-layer-group"></i>Services &amp; Careers
       </a>
       <a href="{{ url_for('ppa.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'ppa' }}">
         <i class="fa-solid fa-map-location-dot"></i>PPA Lookup
@@ -226,11 +230,7 @@
   <div class="row row-cols-5 g-0 text-center">
     <div class="col"><a href="{{ url_for('main.index') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.index' }}"><i class="fa-solid fa-house"></i>Home</a></div>
     <div class="col"><a href="{{ url_for('directory.members') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.members' }}"><i class="fa-solid fa-users"></i>Members</a></div>
-    {% if ENABLE_DATING and current_user.is_authenticated %}
-    <div class="col"><a href="{{ url_for('dating.home') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('dating.') }}"><i class="fa-solid fa-heart"></i>Dating</a></div>
-    {% else %}
-    <div class="col"><a href="{{ url_for('directory.businesses') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.businesses' }}"><i class="fa-solid fa-store"></i>Business</a></div>
-    {% endif %}
+    <div class="col"><a href="{{ url_for('main.services') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.services' }}"><i class="fa-solid fa-layer-group"></i>Services</a></div>
     {% if current_user.is_authenticated %}
     <div class="col"><a href="{{ url_for('main.notifications') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.notifications' }}"><i class="fa-regular fa-bell"></i>Alerts</a></div>
     <div class="col"><a href="{{ url_for('profile.dashboard') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'profile.dashboard' }}"><i class="fa-solid fa-circle-user"></i>You</a></div>
@@ -255,6 +255,7 @@
           <li><a href="{{ url_for('directory.members') }}">Member Directory</a></li>
           <li><a href="{{ url_for('directory.businesses') }}">Business Directory</a></li>
           <li><a href="{{ url_for('ppa.index') }}">PPA Lookup &amp; Map</a></li>
+          <li><a href="{{ url_for('main.services') }}">Services &amp; Career Tools</a></li>
           <li><a href="{{ url_for('main.nerd') }}">NERD &amp; NYSC Guide</a></li>
           <li><a href="{{ url_for('main.platoon_guide') }}">What is an NYSC platoon?</a></li>
           <li><a href="{{ url_for('main.about') }}">About the Project</a></li>
