@@ -1,0 +1,37 @@
+name: Apply MyPlatoon production migrations
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      FLASK_APP: wsgi.py
+      FLASK_ENV: production
+      AUTO_CREATE_TABLES: "false"
+      SECRET_KEY: migration-job-placeholder-do-not-use-for-web-sessions
+      DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Validate production database secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Please configure GitHub environment secret DATABASE_URL_UNPOOLED in production first." >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run Alembic upgrade
+        run: python -m flask db upgrade
+      - name: Confirm schema revision
+        run: python -m flask db current
