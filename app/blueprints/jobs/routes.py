@@ -18,7 +18,7 @@ from app.models import (
 from app.models.platoon import NYSC_STATES
 from app.forms.job_forms import (
     EmployerRegistrationForm, EmployerEditForm, JobForm,
-    JobApplicationForm, JobReviewForm,
+    JobApplicationForm, JobReviewForm, JobPreferenceForm,
 )
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
@@ -413,6 +413,9 @@ def review_listing(job_id):
     log_action(current_user, "jobs.listing_" + decision, "JobListing", job.id)
     notify(job.employer.owner, "Listing {}: {}.".format(job.title, decision),
            category="info")
+    if decision == "published":
+        from app.services.job_discovery import dispatch_job_alerts
+        dispatch_job_alerts(job)
     return redirect(url_for("jobs.admin_listings"))
 
 
@@ -485,3 +488,101 @@ def review_report(report_id):
                    report.listing.title), category="warning")
     flash("Report reviewed.", "success")
     return redirect(url_for("jobs.admin_reports"))
+
+
+
+@bp.route("/for-me")
+@login_required
+def for_me():
+    """Personal suggestions based on opt-in preferences and recorded NYSC camp state."""
+    from app.services.job_discovery import recommended_jobs, member_eligible, service_state
+    from app.models import JobAlertPreference, SavedJob
+    if current_user.role != "member":
+        return redirect(url_for("jobs.employer_dashboard"))
+    if not member_eligible(current_user):
+        flash("An approved MyPlatoon member profile is needed for personalised suggestions.", "warning")
+        return redirect(url_for("jobs.index"))
+    results = recommended_jobs(current_user)
+    saved = {row.job_id for row in SavedJob.query.filter_by(user_id=current_user.id).all()}
+    pref = JobAlertPreference.query.filter_by(user_id=current_user.id).first()
+    return render_template("jobs/for_me.html", results=results,
+                           saved_ids=saved, preference=pref,
+                           posting_state=service_state(current_user.profile))
+
+
+@bp.route("/saved")
+@login_required
+def saved():
+    from app.models import SavedJob
+    if current_user.role != "member":
+        abort(403)
+    records = (SavedJob.query.filter_by(user_id=current_user.id)
+               .order_by(SavedJob.created_at.desc()).all())
+    return render_template("jobs/saved.html", records=records)
+
+
+@bp.route("/<int:job_id>/save", methods=["POST"])
+@login_required
+@limiter.limit("40 per hour")
+def save(job_id):
+    from app.models import SavedJob
+    if current_user.role != "member" or not current_user.is_active:
+        abort(403)
+    job = JobListing.query.get_or_404(job_id)
+    if not job.is_open:
+        abort(404)
+    if not SavedJob.query.filter_by(user_id=current_user.id, job_id=job_id).first():
+        db.session.add(SavedJob(user_id=current_user.id, job_id=job_id))
+        db.session.commit()
+    flash("Job saved privately to your list.", "success")
+    return redirect(url_for("jobs.detail", job_id=job_id))
+
+
+@bp.route("/<int:job_id>/unsave", methods=["POST"])
+@login_required
+@limiter.limit("40 per hour")
+def unsave(job_id):
+    from app.models import SavedJob
+    if current_user.role != "member":
+        abort(403)
+    entry = SavedJob.query.filter_by(user_id=current_user.id, job_id=job_id).first()
+    if entry is not None:
+        db.session.delete(entry)
+        db.session.commit()
+    flash("Removed from your saved opportunities.", "info")
+    return redirect(url_for("jobs.saved"))
+
+
+@bp.route("/preferences", methods=["GET", "POST"])
+@login_required
+def preferences():
+    from app.models import JobAlertPreference
+    if current_user.role != "member":
+        abort(403)
+    record = JobAlertPreference.query.filter_by(user_id=current_user.id).first()
+    form = JobPreferenceForm()
+    if request.method == "GET" and record:
+        form.preferred_state.data = record.preferred_state or ""
+        form.preferred_kinds.data = [item for item in record.preferred_kinds.split(",") if item]
+        form.available_hours.data = record.available_hours
+        form.remote_ok.data = record.remote_ok
+        form.enabled.data = record.enabled
+    elif request.method == "GET":
+        form.preferred_kinds.data = ["gig", "part_time"]
+        form.enabled.data = False
+    if form.validate_on_submit():
+        if record is None:
+            record = JobAlertPreference(user_id=current_user.id)
+            db.session.add(record)
+        record.preferred_state = form.preferred_state.data or None
+        record.preferred_kinds = ",".join(form.preferred_kinds.data or [])
+        record.available_hours = form.available_hours.data
+        record.remote_ok = bool(form.remote_ok.data)
+        # Only requested, approved members receive in-app alerts.
+        record.enabled = bool(form.enabled.data)
+        db.session.commit()
+        log_action(current_user, "jobs.preferences", "JobAlertPreference", record.id)
+        flash("Preferences updated. New-job alerts are {}.".format(
+            "on" if record.enabled else "off"), "success")
+        return redirect(url_for("jobs.for_me"))
+    return render_template("jobs/preferences.html", form=form, record=record)
