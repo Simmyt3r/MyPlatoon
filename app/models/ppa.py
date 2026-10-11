@@ -64,6 +64,8 @@ class PPA(db.Model):
 
     submitter = db.relationship("User", foreign_keys=[submitted_by_id])
     reviewer = db.relationship("User", foreign_keys=[verified_by_id])
+    experiences = db.relationship("PPAExperience", back_populates="ppa",
+                                  cascade="all, delete-orphan", lazy="dynamic")
 
     @staticmethod
     def normalize_name(value):
@@ -83,3 +85,34 @@ class PPA(db.Model):
         if self.status == "verified" and self.has_location:
             return {"lat": self.latitude, "lng": self.longitude}
         return None
+
+
+class PPAExperience(db.Model):
+    """An independently moderated account by another corps member.
+
+    Member identities are retained for moderation but never published.
+    We allow at most one currently editable contribution per member/PPA.
+    """
+    __tablename__ = "ppa_experiences"
+    __table_args__ = (
+        db.UniqueConstraint("ppa_id", "submitted_by_id",
+                            name="uq_ppa_experience_member"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    ppa_id = db.Column(db.Integer, db.ForeignKey("ppas.id", ondelete="CASCADE"),
+                       nullable=False, index=True)
+    submitted_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"),
+                                nullable=True, index=True)
+    service_year = db.Column(db.Integer, nullable=False)
+    accommodation = db.Column(db.String(12), nullable=False, default="unknown")
+    allowance = db.Column(db.String(12), nullable=False, default="unknown")
+    notes = db.Column(db.String(1200))
+    status = db.Column(db.String(16), nullable=False, default="pending", index=True)
+    rejection_reason = db.Column(db.String(500))
+    verified_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
+                           onupdate=datetime.utcnow)
+
+    ppa = db.relationship("PPA", back_populates="experiences")
+    submitter = db.relationship("User", foreign_keys=[submitted_by_id])
