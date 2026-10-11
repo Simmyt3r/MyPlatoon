@@ -18,7 +18,20 @@ class RegistrationForm(FlaskForm):
         DataRequired(),
         EqualTo("password", message="Passwords must match."),
     ])
+    service_stage = SelectField("NYSC Journey", choices=SERVICE_STAGES,
+                                default="pcm")
+    nysc_state = SelectField("Orientation Camp State",
+                             choices=[("", "Choose your camp state")] + [(s, s) for s in NYSC_STATES],
+                             default="")
+    service_year = IntegerField("Year of Orientation Camp")
+    nysc_batch = SelectField("NYSC Batch", choices=[("", "Select batch"), ("A", "Batch A"), ("B", "Batch B"), ("C", "Batch C")], default="")
+    nysc_stream = SelectField("NYSC Stream", choices=[("", "Select stream"), ("I", "Stream I"), ("II", "Stream II")], default="")
+    platoon_number = IntegerField("Platoon Number (assigned at camp)")
     submit = SubmitField("Create Account")
+
+    def validate(self, extra_validators=None):
+        valid = super().validate(extra_validators)
+        return validate_platoon_fields(self) and valid
 
     def validate_email(self, field):
         if User.query.filter_by(email=field.data.lower().strip()).first():
