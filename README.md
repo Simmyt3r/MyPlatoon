@@ -2,6 +2,13 @@
 
 ## NERD guidance for prospective corps members
 
+**New:** The public [NERD requirements checklist](/nerd/requirements)
+organises 38 personal, contact, academic, institutional and document items
+into seven printable sections with in-page readiness tracking. This is a
+preparation aid based on user-provided requirements, not an official
+government registration or document-upload form. MyPlatoon does not store
+NINs, identity scans, next-of-kin details or checklist progress.
+
 MyPlatoon offers a public [NERD & NYSC mobilisation guide](/nerd) with links to the official NERD student enrolment, academic deposit receipt, and NYSC registration resources. MyPlatoon support is available on **09039930006**.
 
 **Important:** MyPlatoon is independent. The guide does not connect to NERD's API, issue government certificates or collect NERD login credentials. See [NERD_INTEGRATION.md](NERD_INTEGRATION.md) for current scope, official source links and partnership prerequisites.
