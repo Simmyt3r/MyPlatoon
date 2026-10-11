@@ -123,3 +123,11 @@ class JobReviewForm(FlaskForm):
     note = TextAreaField("Reason / internal moderation notes",
         validators=[Optional(), Length(max=500)])
     submit = SubmitField("Save review")
+
+
+
+class JobReportForm(FlaskForm):
+    reason = TextAreaField("Why is this opportunity concerning?",
+        validators=[DataRequired(), Length(min=15, max=500)],
+        description="Examples: recruiting fee, identity-document demand, misleading pay, harassment or suspicious address. Your identity is visible only to moderators.")
+    submit = SubmitField("Submit confidential report")
