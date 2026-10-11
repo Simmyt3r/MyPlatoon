@@ -64,6 +64,12 @@ def generate():
 @login_required
 def download(version_id):
     version = AlbumVersion.query.get_or_404(version_id)
+    own = current_user.profile
+    if not current_user.is_admin and not (
+        version.platoon_id is not None and own and own.status == "approved"
+        and own.platoon_id == version.platoon_id
+    ):
+        abort(403)  # legacy national albums are admin-only.
 
     if version.pdf_data:
         # Source of truth: served directly from the database, so this
