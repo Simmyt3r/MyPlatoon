@@ -97,13 +97,13 @@ See `migrations/versions/0d842ac781b6_nationwide_platoons.py` and
 - **Secure image uploads** — validated, re-encoded (metadata stripped), stored on Cloudinary —
   never on the application server's filesystem
 - **Notifications & announcements**, **audit logging**, **CSV export**
-- **Dating** (optional, `ENABLE_DATING` flag) — members create a separate, opt-in dating
-  persona and are automatically ranked-matched against opposite-gender, active personas
-  by shared interests, profession, and location. A match only becomes a notified "mutual
-  match" when both people rank each other in their own top picks — nothing is shown or
-  sent one-sidedly. Includes pause-anytime, a report-and-hide safety flow, and an admin
-  moderation queue. Entirely separate storage from the main professional profile/directory —
-  dating data never appears in search, the PDF album, or CSV exports.
+- **Dating v2** (optional, `ENABLE_DATING` flag) — an adults-only opt-in
+  community with separate personas, photo-sharing consent, inclusive
+  preferences, interest/skill-based discovery, block/report/pause/delete,
+  and limited persona previews that do not expose member contact details.
+  Automatic mutual top picks are **suggestions only**. A connection exists,
+  and both users are notified, **only when both explicitly express interest**.
+  Unilateral interests are private. See [DATING_UPGRADE.md](DATING_UPGRADE.md).
 - **Automated tests** — pytest cases covering auth, profiles, businesses, admin
   authorization, album/PDF generation, security boundaries, generic-platform behavior,
   and the dating matching/notification/moderation flow
