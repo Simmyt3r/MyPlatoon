@@ -38,7 +38,7 @@ def _init_extensions(app):
     @login_manager.user_loader
     def load_user(user_id):
         user = db.session.get(User, int(user_id))
-        if user is not None and user.profile is None:
+        if user is not None and user.role != "employer" and user.profile is None:
             # Self-heal: see app/services/profile_service.py for why this
             # is needed and why it's written this specific way.
             from app.services.profile_service import ensure_profile
