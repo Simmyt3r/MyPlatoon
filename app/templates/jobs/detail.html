@@ -40,6 +40,11 @@
       {% elif not current_user.is_authenticated and job.is_open %}
         <a class="btn btn-p5" href="{{ url_for('auth.login', next=url_for('jobs.detail', job_id=job.id)) }}">Sign in to apply</a>
       {% endif %}
+      {% if current_user.is_authenticated and current_user.role == 'member' and (job.is_open or already) %}
+      <a href="{{ url_for('jobs.report_job', job_id=job.id) }}" class="btn btn-outline-danger">
+        <i class="fa-solid fa-flag me-1" aria-hidden="true"></i>Report suspicious listing
+      </a>
+      {% endif %}
       {% if owner %}<a class="btn btn-p5-outline" href="{{ url_for('jobs.edit', job_id=job.id) }}">Edit listing</a>{% endif %}
     </div>
     <div class="alert alert-light border small mt-4 mb-0">
