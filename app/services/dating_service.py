@@ -75,12 +75,18 @@ def _eligible_candidates(persona: DatingPersona):
              .filter(DatingPersona.status == "active")
              .filter(DatingPersona.is_reported.is_(False))
              .filter(DatingPersona.age_confirmed_at.isnot(None))
-             .filter(DatingPersona.gender == persona.interested_in)
-             .filter(DatingPersona.interested_in == persona.gender)
+             .filter(DatingPersona.gender == persona.interested_in if
+                     persona.interested_in != "any" else
+                     DatingPersona.gender.in_(("male", "female", "nonbinary")))
+             .filter(or_(DatingPersona.interested_in == persona.gender,
+                         DatingPersona.interested_in == "any"))
              .join(Profile, DatingPersona.profile_id == Profile.id)
              .join(User, Profile.user_id == User.id)
              .filter(Profile.status == "approved", User.is_active_account.is_(True),
                      User.is_suspended.is_(False)))
+    if persona.interested_in == "any":
+        # Remove the single-gender condition while keeping reciprocal preferences.
+        query = query.filter(DatingPersona.gender.in_(("male", "female", "nonbinary")))
     if blocked:
         query = query.filter(~DatingPersona.id.in_(blocked))
     return query.all()
@@ -220,7 +226,8 @@ def mutual_matches_for_persona(persona: DatingPersona):
     blocked = _blocked_ids(persona.id)
     return [
         (m, other) for m, other in pairs
-        if other and other.id not in blocked
+        if m.is_mutual_top
+        and other and other.id not in blocked
         and other.is_active_and_visible()
         and persona.is_compatible_with(other)
     ]
