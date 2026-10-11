@@ -46,7 +46,7 @@ def create():
         photo_error = None
         if form.logo.data:
             try:
-                result = upload_image(form.logo.data, folder="platoon5/businesses")
+                result = upload_image(form.logo.data, folder="myplatoon/businesses")
                 business.logo_url = result["url"]
                 business.logo_public_id = result["public_id"]
             except ImageUploadError as exc:
@@ -87,7 +87,7 @@ def edit(business_id):
         photo_error = None
         if form.logo.data:
             try:
-                result = upload_image(form.logo.data, folder="platoon5/businesses")
+                result = upload_image(form.logo.data, folder="myplatoon/businesses")
                 old_public_id = business.logo_public_id
                 business.logo_url = result["url"]
                 business.logo_public_id = result["public_id"]
