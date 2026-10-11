@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}PPA Experience{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:750px">
+  <a href="{{ url_for('ppa.detail', ppa_id=ppa.id) }}" class="small d-inline-block mb-3">← Back to {{ ppa.name }}</a>
+  <div class="p5-card p-4 p-md-5">
+    <div class="text-success small fw-bold">COMMUNITY PPA INFORMATION</div>
+    <h1 class="h3 fw-bold">Share your experience</h1>
+    <p class="mb-1 fw-semibold">{{ ppa.name }}</p>
+    <p class="text-muted small">{{ ppa.lga }}, {{ ppa.state }}</p>
+    <p class="text-muted">Help incoming corps members understand what serving here was like. Your identity will not appear on the public PPA page. Updates are held for review before publication.</p>
+    <div class="alert alert-warning small">Report your own experience and the year it happened. Do not provide personal contacts, private residence addresses or allegations that cannot be substantiated.</div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.service_year) }}
+      {{ field(form.accommodation) }}
+      {{ field(form.allowance) }}
+      {{ field(form.notes) }}
+      {{ form.submit(class="btn btn-p5") }}
+    </form>
+    {% if existing %}
+      <p class="small text-muted mt-3 mb-0">Your current report: {{ existing.status|capitalize }}. Editing will return it for review.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
