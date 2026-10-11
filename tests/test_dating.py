@@ -2,6 +2,7 @@
 mutual-match detection (the two-sided cascade fix), notifications,
 eligibility filtering, pause/report safety controls, and moderation.
 """
+from datetime import datetime
 from tests.conftest import login, _create_user
 
 
@@ -12,7 +13,7 @@ def _make_persona(db, user, gender, interested_in, interests="football, music",
         profile_id=user.profile.id,
         display_name=display_name or user.full_name.split(" ")[0],
         gender=gender, interested_in=interested_in, interests=interests,
-        status="active",
+        status="active", age_confirmed_at=datetime.utcnow(),
     )
     db.session.add(p)
     db.session.commit()
@@ -28,6 +29,7 @@ def test_persona_requires_approved_profile(client, member_user, db):
     # member_user fixture's profile defaults to draft/unapproved
     login(client, "member@example.com")
     resp = client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Test", "gender": "male", "interested_in": "female",
     }, follow_redirects=True)
     assert b"needs to be approved" in resp.data
@@ -44,6 +46,7 @@ def test_create_persona_generates_matches(client, member_user, db):
 
     login(client, "member@example.com")
     resp = client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Me", "gender": "male", "interested_in": "female",
         "interests": "football, music, chess",
     }, follow_redirects=True)
@@ -66,6 +69,7 @@ def test_mutual_match_notifies_both_sides(client, db):
     login(client, "amaka@example.com")
     pf = client.get("/dating/persona")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Amaka", "gender": "female", "interested_in": "male",
         "interests": "hiking, music, football",
     })
@@ -73,6 +77,7 @@ def test_mutual_match_notifies_both_sides(client, db):
 
     login(client, "tunde@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Tunde", "gender": "male", "interested_in": "female",
         "interests": "football, cooking, music",
     })
@@ -99,6 +104,7 @@ def test_same_gender_preference_never_matches(client, db):
 
     login(client, "a2@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "A2", "gender": "male", "interested_in": "female",
         "interests": "football",
     })
@@ -116,6 +122,7 @@ def test_unapproved_profile_not_matched_as_candidate(client, db):
 
     login(client, "approved-a@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "A", "gender": "male", "interested_in": "female",
         "interests": "football",
     })
@@ -135,6 +142,7 @@ def test_paused_persona_excluded_from_new_matching(client, db):
 
     login(client, "target@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Target", "gender": "male", "interested_in": "female",
         "interests": "football",
     })
@@ -147,6 +155,7 @@ def test_toggle_pause(client, member_user, db):
     _approve(db, member_user)
     login(client, "member@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Me", "gender": "male", "interested_in": "female",
     })
 
@@ -172,6 +181,7 @@ def test_report_hides_persona_from_matching(client, db):
 
     login(client, "reporter@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Reporter", "gender": "male", "interested_in": "female",
         "interests": "football",
     })
@@ -203,6 +213,7 @@ def test_cannot_report_self(client, member_user, db):
     _approve(db, member_user)
     login(client, "member@example.com")
     client.post("/dating/persona", data={
+        "age_confirm": "y",
         "display_name": "Me", "gender": "male", "interested_in": "female",
     })
     from app.models import DatingPersona
