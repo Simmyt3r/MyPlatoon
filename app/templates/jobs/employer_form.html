@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}{{ 'Register an Employer' if registering else 'Employer Profile' }}{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:850px">
+  <a href="{{ url_for('jobs.index') }}" class="small d-inline-block mb-3">Jobs &amp; Gigs</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-success small text-uppercase fw-bold">Employer / School registration</div>
+    <h1 class="h3 fw-bold mb-2">{{ 'Register your organisation' if registering else ('Edit organisation' if employer else 'Add an organisation to your account') }}</h1>
+    <p class="text-muted">Schools, companies, NGOs and other organisations can offer legitimate paid work to MyPlatoon members. Registration is free; your organisation must be reviewed before jobs become public.</p>
+    {% if registering %}<div class="alert alert-info small">Employer accounts are separate from NYSC member accounts. You do not need an NYSC state, batch, platoon or corps number to register a school or business.</div>{% endif %}
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {% if registering %}
+        <h2 class="h6 fw-bold mb-3">Account details</h2>
+        {{ field(form.full_name) }}
+        {{ field(form.email) }}
+        <div class="row g-2">
+          <div class="col-md-6">{{ field(form.password) }}</div>
+          <div class="col-md-6">{{ field(form.confirm_password) }}</div>
+        </div>
+      {% endif %}
+      <h2 class="h6 fw-bold mb-3 mt-3">Organisation details</h2>
+      {{ field(form.name) }}
+      {{ field(form.kind) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.state) }}</div>
+        <div class="col-md-6">{{ field(form.lga) }}</div>
+      </div>
+      {{ field(form.address) }}
+      {{ field(form.description, rows=4) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.contact_email) }}</div>
+        <div class="col-md-6">{{ field(form.contact_phone) }}</div>
+      </div>
+      {{ field(form.website) }}
+      <p class="small text-muted">These contact details are for employer moderation. They are not automatically published to applicants.</p>
+      {{ form.submit(class="btn btn-p5") }}
+      <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">Cancel</a>
+    </form>
+    <p class="small text-muted mt-3 mb-0">Do not impersonate another organisation or advertise vacancies that require candidates to pay fees, disclose financial credentials or violate NYSC service obligations.</p>
+  </section>
+</div>
+{% endblock %}
