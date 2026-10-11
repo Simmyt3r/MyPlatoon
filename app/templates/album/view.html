@@ -33,6 +33,13 @@
     </p>
     <form method="POST" action="{{ url_for('album.generate') }}" data-confirm="Generate a new album version now?">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label class="form-label fw-semibold" for="album-platoon">Choose platoon</label>
+      <select class="form-select mb-3" name="platoon_id" id="album-platoon" required>
+        <option value="">Select a platoon</option>
+        {% for p in platoons %}
+        <option value="{{ p.id }}">{{ p.label }}</option>
+        {% endfor %}
+      </select>
       <button class="btn btn-p5-outline" type="submit"><i class="fa-solid fa-arrows-rotate me-1"></i>Generate New Version</button>
     </form>
   </div>
