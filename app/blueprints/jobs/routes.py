@@ -414,3 +414,74 @@ def review_listing(job_id):
     notify(job.employer.owner, "Listing {}: {}.".format(job.title, decision),
            category="info")
     return redirect(url_for("jobs.admin_listings"))
+
+
+
+@bp.route("/<int:job_id>/report", methods=["GET", "POST"])
+@login_required
+@limiter.limit("5 per day", methods=["POST"])
+def report_job(job_id):
+    """A member may flag a suspicious paid vacancy without contacting its owner."""
+    from app.forms.job_forms import JobReportForm
+    from app.models import JobReport
+    job = JobListing.query.get_or_404(job_id)
+    if current_user.role != "member" or not current_user.is_active:
+        abort(403)
+    # Permit an applicant to report a listing even if closed since applying.
+    applicant = JobApplication.query.filter_by(
+        job_id=job_id, applicant_user_id=current_user.id).first()
+    if not job.is_open and applicant is None:
+        abort(404)
+    previous = JobReport.query.filter_by(
+        job_id=job_id, reporter_id=current_user.id).first()
+    if previous:
+        flash("Your report is already in the moderation queue.", "info")
+        return redirect(url_for("jobs.index"))
+    form = JobReportForm()
+    if form.validate_on_submit():
+        report = JobReport(job_id=job_id, reporter_id=current_user.id,
+                           reason=form.reason.data.strip())
+        db.session.add(report)
+        db.session.commit()
+        log_action(current_user, "jobs.report", "JobReport", report.id)
+        for admin in User.query.filter_by(role="admin").all():
+            notify(admin, "A job or gig listing requires fraud/safety review.",
+                   category="warning")
+        flash("Your report has been sent confidentially for review.", "success")
+        return redirect(url_for("jobs.index"))
+    return render_template("jobs/report.html", form=form, job=job)
+
+
+@bp.route("/admin/reports")
+@login_required
+def admin_reports():
+    _admin()
+    reports = (JobReport.query.filter_by(status="pending")
+               .order_by(JobReport.created_at.asc()).limit(100).all())
+    return render_template("jobs/admin_reports.html", reports=reports)
+
+
+@bp.route("/admin/reports/<int:report_id>/review", methods=["POST"])
+@login_required
+def review_report(report_id):
+    _admin()
+    from app.models import JobReport
+    report = JobReport.query.get_or_404(report_id)
+    if report.status != "pending":
+        abort(403)
+    decision = request.form.get("decision")
+    if decision not in ("dismissed", "actioned"):
+        abort(400)
+    if decision == "actioned":
+        report.listing.status = "closed"
+    report.status = decision
+    report.reviewed_at = datetime.utcnow()
+    report.reviewed_by_id = current_user.id
+    db.session.commit()
+    log_action(current_user, "jobs.report_" + decision, "JobReport", report.id)
+    if decision == "actioned":
+        notify(report.listing.employer.owner,
+               "Your job listing '{}' was closed after a safety review.".format(
+                   report.listing.title), category="warning")
+    flash("Report reviewed.", "success")
+    return redirect(url_for("jobs.admin_reports"))
