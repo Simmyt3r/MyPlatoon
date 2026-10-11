@@ -54,6 +54,7 @@ def _register_blueprints(app):
     from app.blueprints.directory.routes import bp as directory_bp
     from app.blueprints.admin.routes import bp as admin_bp
     from app.blueprints.album.routes import bp as album_bp
+    from app.blueprints.ppa.routes import bp as ppa_bp
     from app.blueprints.dating.routes import bp as dating_bp
 
     app.register_blueprint(main_bp)
