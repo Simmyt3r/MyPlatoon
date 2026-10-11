@@ -103,4 +103,4 @@ def download(version_id):
 
     return send_file(io.BytesIO(pdf_bytes), mimetype="application/pdf",
                       as_attachment=True,
-                      download_name=f"platoon5-album-v{version.version_label}.pdf")
+                      download_name=f"myplatoon-{version.platoon_id or 'legacy'}-album-v{version.version_label}.pdf")
