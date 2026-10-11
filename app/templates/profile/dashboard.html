@@ -3,6 +3,19 @@
 {% block content %}
 <div class="container my-4">
   <h4 class="mb-3">WELCOME, {{ current_user.full_name.upper() }}</h4>
+  <div class="p5-card p5-card-body mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <span class="small text-muted d-block">Your NYSC community</span>
+        <h5 class="fw-bold mb-1">{{ profile.platoon_label }}</h5>
+        <span class="small">{{ 'Prospective Corps Member (PCM)' if profile.service_stage == 'pcm' else ('Serving Corps Member' if profile.service_stage == 'serving' else 'NYSC Alumnus') }}</span>
+      </div>
+      <a href="{{ url_for('profile.edit') }}" class="btn btn-p5 btn-sm">{{ 'Add my camp platoon' if not profile.platoon else 'Update platoon' }}</a>
+    </div>
+    {% if not profile.platoon %}
+    <p class="small text-muted mt-3 mb-0">You can join as a PCM now. Once NYSC officials assign you to a platoon at orientation camp, update your details. <a href="{{ url_for('main.platoon_guide') }}">What is a platoon?</a></p>
+    {% endif %}
+  </div>
 
   <div class="p5-card p5-card-body mb-4">
     <div class="d-flex justify-content-between align-items-center mb-2">
