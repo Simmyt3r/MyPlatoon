@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Dating Connections{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width:1000px">
+  <header class="mb-4">
+    <div class="text-success small fw-bold text-uppercase">Opt-in Dating</div>
+    <h1 class="h3 fw-bold mb-2">Your mutual connections</h1>
+    <p class="text-muted mb-0">These members have personally expressed interest in you, and you've expressed interest in them. Unlike automatic top picks, these are reciprocal choices.</p>
+  </header>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ url_for('dating.browse') }}" class="btn btn-p5-outline btn-sm">Discover people</a>
+    <a href="{{ url_for('dating.persona') }}" class="btn btn-p5-outline btn-sm">Privacy and persona settings</a>
+  </div>
+  {% if people %}
+  <div class="row g-3">
+    {% for other in people %}
+    <div class="col-12 col-md-6">
+      <article class="p5-card p-3 p-md-4 h-100">
+        <div class="d-flex gap-3 align-items-start">
+          <img src="{{ other.profile.photo_url if other.show_profile_photo and other.profile.photo_url else url_for('static', filename='img/placeholder-avatar.png') }}"
+               alt="Portrait of {{ other.display_name or 'Dating participant' }}"
+               width="76" height="76" style="object-fit:cover;border-radius:12px;">
+          <div class="flex-grow-1">
+            <div class="small text-success fw-semibold">Mutual interest</div>
+            <h2 class="h5 fw-bold mb-1">{{ other.display_name or 'A member' }}</h2>
+            {% if other.tagline %}<p class="small text-muted mb-2">{{ other.tagline }}</p>{% endif %}
+            <a href="{{ url_for('dating.person_detail', persona_id=other.id) }}" class="btn btn-p5 btn-sm">View persona</a>
+          </div>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="p5-card p-4 text-center">
+    <i class="fa-regular fa-heart fa-2x text-success mb-3" aria-hidden="true"></i>
+    <h2 class="h5 fw-bold">No mutual connections yet</h2>
+    <p class="text-muted">Express interest in an eligible dating persona. If they also choose you, both of you will receive a private notification.</p>
+    <a href="{{ url_for('dating.browse') }}" class="btn btn-p5">Explore suggestions</a>
+  </div>
+  {% endif %}
+  <p class="small text-muted mt-4">Mutual interest is not permission to contact someone outside MyPlatoon or share their personal information. Messages and direct contact exchange are not part of this release.</p>
+</div>
+{% endblock %}
