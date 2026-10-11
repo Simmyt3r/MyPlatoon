@@ -217,9 +217,11 @@ def person_detail(persona_id):
             or not viewer.is_compatible_with(target)
             or is_blocked(viewer.id, target.id)):
         abort(404)
+    from app.services.dating_chat_service import can_message
     shared = viewer.shared_interests_with(target)
     return render_template("dating/person_detail.html", viewer=viewer,
                            target=target, shared=shared,
+                           connected=can_message(viewer, target),
                            interested=target.id in sent_interest_ids(viewer))
 
 
