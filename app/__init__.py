@@ -67,6 +67,7 @@ def _register_blueprints(app):
     app.register_blueprint(album_bp, url_prefix="/album")
     app.register_blueprint(ppa_bp, url_prefix="/ppas")
     app.register_blueprint(dating_bp, url_prefix="/dating")
+    app.register_blueprint(jobs_bp, url_prefix="/jobs")
 
 
 def _register_error_handlers(app):
