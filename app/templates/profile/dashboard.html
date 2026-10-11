@@ -58,6 +58,23 @@
 
   <div class="row g-3">
     <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('jobs.index') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center">
+          <i class="fa-solid fa-briefcase fa-2x mb-2 text-success" aria-hidden="true"></i>
+          <div>Jobs &amp; Gigs</div>
+          <span class="small text-muted">Flexible work and career opportunities</span>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('jobs.my_applications') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center">
+          <i class="fa-solid fa-paper-plane fa-2x mb-2 text-success" aria-hidden="true"></i>
+          <div>My Job Applications</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
       <a href="{{ url_for('main.services') }}" class="text-decoration-none">
         <div class="p5-card p5-card-body text-center">
           <i class="fa-solid fa-file-lines fa-2x mb-2 text-success" aria-hidden="true"></i>
