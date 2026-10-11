@@ -6,6 +6,7 @@ Metrics are capped per person to resist spam and size-based dominance.
 """
 from collections import defaultdict
 from datetime import datetime, timedelta
+from sqlalchemy.orm import selectinload
 
 from app.models import (
     Platoon, PlatoonRating, Profile, User, PPA, PPAExperience, Business,
@@ -16,7 +17,9 @@ MIN_RATINGS = 2
 ACTIVITY_DAYS = 90
 
 
-def leaderboard(state=None, year=None, batch=None, stream=None, limit=100):
+def leaderboard(state=None, year=None, batch=None, stream=None):
+    # Enumerate all eligible real cohorts. Limiting the raw list to the
+    # alphabetically first 100 would produce incorrect national ranks.
     base = Platoon.query
     if state:
         base = base.filter(Platoon.state == state)
@@ -27,13 +30,16 @@ def leaderboard(state=None, year=None, batch=None, stream=None, limit=100):
     if stream:
         base = base.filter(Platoon.stream == stream)
     cohorts = (base.order_by(Platoon.service_year.desc(), Platoon.state,
-                             Platoon.batch, Platoon.stream, Platoon.number)
-               .limit(max(1, min(limit, 200))).all())
+                             Platoon.batch, Platoon.stream, Platoon.number).all())
     if not cohorts:
         return []
 
     ids = [p.id for p in cohorts]
-    profiles = (Profile.query.join(User, Profile.user_id == User.id)
+    profiles = (Profile.query.options(
+                    selectinload(Profile.user),
+                    selectinload(Profile.skills),
+                    selectinload(Profile.businesses),
+                ).join(User, Profile.user_id == User.id)
                 .filter(Profile.platoon_id.in_(ids),
                         Profile.status == "approved",
                         Profile.service_stage.in_(("serving", "alumni")),
