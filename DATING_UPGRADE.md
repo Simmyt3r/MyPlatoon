@@ -118,6 +118,8 @@ old Neon-to-Aiven transfer if it exists before switching database URLs.
 - `tests/test_dating_v2.py`: adults-only self-attestation, profile/photo
   privacy, two-way blocks, deletion, preference compatibility and mutual
   interest consent.
+- `tests/test_dating_chat.py`: message access, withdrawal, blocks, XSS,
+  abuse reports, moderation and deletion.
 - Run `python -m pytest -q tests/test_dating.py tests/test_dating_v2.py`.
 - `.github/workflows/national-tests.yml` also runs the entire project
   test suite on pushes.
