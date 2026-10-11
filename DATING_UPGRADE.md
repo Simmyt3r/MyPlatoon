@@ -87,6 +87,10 @@ directions**.
 | `/dating/report/<id>` | GET/POST | Request moderation |
 | `/dating/pause` | POST | Pause / resume discovery |
 | `/dating/delete` | POST | Delete dating persona (not the account) |
+| `/dating/messages/<id>` | GET/POST | Private text conversation for reciprocal active adults |
+| `/dating/messages/report/<message_id>` | GET/POST | Confidential recipient report |
+| `/dating/moderation/messages` | GET | Admin-only reports queue |
+| `/dating/moderation/messages/<report_id>/review` | POST | Admin hide/dismiss decision |
 
 State-changing actions require logged-in accounts and CSRF tokens; the
 existing application and route-specific rate limits remain active.
