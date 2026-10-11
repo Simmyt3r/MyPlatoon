@@ -16,9 +16,19 @@ bp = Blueprint("album", __name__)
 @bp.route("/")
 @login_required
 def view():
-    latest = latest_published_album()
-    history = AlbumVersion.query.order_by(AlbumVersion.generated_at.desc()).limit(10).all()
-    return render_template("album/view.html", latest=latest, history=history)
+    own = current_user.profile
+    platoon_id = own.platoon_id if own and own.status == "approved" else None
+    latest = latest_published_album(platoon_id)
+    history_query = AlbumVersion.query
+    if not current_user.is_admin:
+        if platoon_id is None:
+            history_query = history_query.filter(AlbumVersion.id == -1)
+        else:
+            history_query = history_query.filter_by(platoon_id=platoon_id)
+    history = history_query.order_by(AlbumVersion.generated_at.desc()).limit(10).all()
+    platoons = Platoon.query.order_by(Platoon.state, Platoon.service_year.desc(),
+                                      Platoon.batch, Platoon.stream, Platoon.number).all() if current_user.is_admin else []
+    return render_template("album/view.html", latest=latest, history=history, platoons=platoons)
 
 
 @bp.route("/generate", methods=["POST"])
