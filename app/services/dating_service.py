@@ -133,7 +133,6 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
     scored.sort(key=lambda pair: pair[1], reverse=True)
     top = scored[:top_n]
 
-    newly_matched = []
     results = []
 
     for rank, (other, score) in enumerate(top, start=1):
@@ -146,11 +145,11 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
         else:
             match.high_ranks_low = rank
 
-        if match.is_mutual_top and match.status == "candidate" and not match.matched_notified:
+        if match.is_mutual_top and match.status == "candidate":
+            # Historical match status is a reciprocal *ranking*, not an
+            # expression of interest. No notification is generated here.
             match.status = "matched"
             match.matched_at = datetime.utcnow()
-            match.matched_notified = True
-            newly_matched.append(match)
 
         results.append((match, other, score))
 
