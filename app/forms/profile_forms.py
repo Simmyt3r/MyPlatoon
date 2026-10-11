@@ -19,6 +19,14 @@ GENDER_CHOICES = [("", "Prefer not to say"), ("male", "Male"), ("female", "Femal
 
 
 class ProfileForm(FlaskForm):
+    service_stage = SelectField("NYSC Journey", choices=SERVICE_STAGES,
+                                default="pcm")
+    nysc_state = SelectField("Orientation Camp State",
+                             choices=[("", "Choose your camp state")] + [(s, s) for s in NYSC_STATES], default="")
+    service_year = IntegerField("Orientation Year")
+    nysc_batch = SelectField("Batch", choices=[("", "Choose batch"), ("A", "A"), ("B", "B"), ("C", "C")], default="")
+    nysc_stream = SelectField("Stream", choices=[("", "Choose stream"), ("I", "I"), ("II", "II")], default="")
+    platoon_number = IntegerField("Platoon Number (from camp)")
     photo = FileField("Profile Photograph", validators=[
         Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"], "Images only.")])
     nickname = StringField("Nickname", validators=[Optional(), Length(max=80)])
