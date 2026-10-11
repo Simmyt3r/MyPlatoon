@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 {% from "partials/_form_field.html" import field %}
-{% block title %}Report{% endblock %}
+{% block title %}Report Dating Persona{% endblock %}
 {% block body_class %}app-shell-focused{% endblock %}
 {% block content %}
-<h4 class="p5-section-title">Report {{ target.display_name or 'This Person' }}</h4>
-<div class="p5-card p5-card-body">
-  <p class="text-muted small">
-    Reports are reviewed by an administrator. This person will stop appearing in
-    anyone's matches immediately while it's reviewed.
-  </p>
-  <form method="POST" novalidate>
-    {{ form.hidden_tag() }}
-    {{ field(form.reason, rows=4) }}
-    <button type="submit" class="btn btn-danger">Submit Report</button>
-  </form>
+<div class="container py-4" style="max-width:760px">
+  <a href="{{ url_for('dating.browse') }}" class="small d-inline-block mb-3">Back to suggestions</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-danger small text-uppercase fw-semibold">Safety and moderation</div>
+    <h1 class="h3 fw-bold mb-3">Report {{ target.display_name or 'this persona' }}</h1>
+    <p class="text-muted">Describe the behaviour or content that concerns you. The report is reviewed by a moderator, and the reported persona is temporarily removed from discovery while it is reviewed.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.reason, rows=4) }}
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-flag me-1" aria-hidden="true"></i>Submit report</button>
+        <a href="{{ url_for('dating.browse') }}" class="btn btn-p5-outline">Cancel</a>
+      </div>
+    </form>
+    <p class="small text-muted mt-3 mb-0">If someone has threatened you or there is immediate danger, contact your local emergency services. Do not post private contact details in a report.</p>
+  </section>
 </div>
 {% endblock %}
