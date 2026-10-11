@@ -19,6 +19,7 @@ class DatingPersonaForm(FlaskForm):
                              description="e.g. hiking, movies, cooking, football")
     age_confirm = BooleanField(
         "I confirm that I am at least 18 years old and agree to use Dating respectfully.",
+        validators=[DataRequired(message="You must confirm that you are 18 or older.")],
         description="Dating is an optional adults-only feature. We do not collect your date of birth for it.")
     submit = SubmitField("Save My Dating Persona")
 
