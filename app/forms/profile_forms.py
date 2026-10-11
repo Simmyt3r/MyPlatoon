@@ -2,6 +2,8 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, SelectField, IntegerField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange, Regexp
+from app.models.platoon import SERVICE_STAGES, NYSC_STATES
+from app.services.platoon_membership import validate_platoon_fields
 
 VISIBILITY_CHOICES = [
     ("public", "Public"),
