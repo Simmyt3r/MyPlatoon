@@ -70,17 +70,15 @@ def is_blocked(persona_a_id, persona_b_id):
 
 def _eligible_candidates(persona: DatingPersona):
     blocked = _blocked_ids(persona.id)
+    gender_filter = (DatingPersona.gender.in_(("male", "female", "nonbinary"))
+                     if persona.interested_in == "any" else
+                     DatingPersona.gender == persona.interested_in)
     query = (DatingPersona.query
              .filter(DatingPersona.id != persona.id)
              .filter(DatingPersona.status == "active")
              .filter(DatingPersona.is_reported.is_(False))
              .filter(DatingPersona.age_confirmed_at.isnot(None))
-             .filter(or_(
-                 DatingPersona.gender == persona.interested_in,
-                 DatingPersona.gender.in_(("male", "female", "nonbinary"))
-                 if persona.interested_in == "any" else
-                 DatingPersona.gender == persona.interested_in,
-             ))
+             .filter(gender_filter)
              .filter(or_(DatingPersona.interested_in == persona.gender,
                          DatingPersona.interested_in == "any"))
              .join(Profile, DatingPersona.profile_id == Profile.id)
