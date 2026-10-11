@@ -53,6 +53,7 @@ class DatingPersona(db.Model):
     gender = db.Column(db.String(10), nullable=False)
     interested_in = db.Column(db.String(10), nullable=False)
     interests = db.Column(db.String(500))  # comma-separated tags, same pattern as skills
+    show_profile_photo = db.Column(db.Boolean, default=False, nullable=False)
 
     # Self-attested 18+ eligibility. Never store a DOB solely for Dating.
     # NULL on pre-upgrade personas forces confirmation before further use.
