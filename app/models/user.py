@@ -17,7 +17,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    role = db.Column(db.String(20), nullable=False, default="member")  # admin | member
+    role = db.Column(db.String(20), nullable=False, default="member")  # admin | member | employer
     is_active_account = db.Column(db.Boolean, default=True, nullable=False)
     is_suspended = db.Column(db.Boolean, default=False, nullable=False)
 
