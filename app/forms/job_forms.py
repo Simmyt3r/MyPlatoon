@@ -3,7 +3,7 @@ from datetime import date
 
 from flask_wtf import FlaskForm
 from wtforms import (
-    StringField, PasswordField, SelectField, TextAreaField, IntegerField,
+    StringField, PasswordField, SelectField, SelectMultipleField, TextAreaField, IntegerField,
     DateField, BooleanField, SubmitField,
 )
 from wtforms.validators import (
@@ -131,3 +131,22 @@ class JobReportForm(FlaskForm):
         validators=[DataRequired(), Length(min=15, max=500)],
         description="Examples: recruiting fee, identity-document demand, misleading pay, harassment or suspicious address. Your identity is visible only to moderators.")
     submit = SubmitField("Submit confidential report")
+
+
+
+class JobPreferenceForm(FlaskForm):
+    preferred_state = SelectField(
+        "Preferred work state", choices=[("", "Use my NYSC posting state")] + STATES[1:],
+        validators=[Optional()])
+    preferred_kinds = SelectMultipleField(
+        "Opportunity types", choices=JOB_KINDS,
+        validators=[Optional()],
+        description="Select more than one with Ctrl-click; leave blank to see all types.")
+    available_hours = IntegerField(
+        "Maximum hours available per week (optional)",
+        validators=[Optional(), NumberRange(min=1, max=84)])
+    remote_ok = BooleanField("Include remote opportunities", default=True)
+    enabled = BooleanField(
+        "Send me in-app alerts when a newly approved job matches these preferences",
+        default=False)
+    submit = SubmitField("Save discovery preferences")
