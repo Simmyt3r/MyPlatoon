@@ -6,7 +6,7 @@ from app.models.skill import Skill, profile_skills
 from app.models.business import Business, BusinessCategory, DEFAULT_CATEGORIES
 from app.models.album import AlbumVersion, Announcement, AuditLog, Notification
 from app.models.feed import AnnouncementReaction, AnnouncementComment, REACTION_TYPES
-from app.models.dating import DatingPersona, DatingMatch, DatingBlock, DatingInterest, GENDER_CHOICES, PERSONA_STATUSES, MATCH_STATUSES, score_label
+from app.models.dating import DatingPersona, DatingMatch, DatingBlock, DatingInterest, DatingMessage, DatingMessageReport, GENDER_CHOICES, PERSONA_STATUSES, MATCH_STATUSES, score_label
 
 __all__ = [
     "User", "Platoon", "SERVICE_STAGES", "NYSC_STATES", "BATCH_CHOICES", "STREAM_CHOICES",
@@ -16,5 +16,5 @@ __all__ = [
     "Business", "BusinessCategory", "DEFAULT_CATEGORIES",
     "AlbumVersion", "Announcement", "AuditLog", "Notification",
     "AnnouncementReaction", "AnnouncementComment", "REACTION_TYPES",
-    "DatingPersona", "DatingMatch", "DatingBlock", "DatingInterest", "GENDER_CHOICES", "PERSONA_STATUSES", "MATCH_STATUSES", "score_label",
+    "DatingPersona", "DatingMatch", "DatingBlock", "DatingInterest", "DatingMessage", "DatingMessageReport", "GENDER_CHOICES", "PERSONA_STATUSES", "MATCH_STATUSES", "score_label",
 ]
