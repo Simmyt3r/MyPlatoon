@@ -97,9 +97,11 @@ existing application and route-specific rate limits remain active.
 
 ## Data migration
 
-The new revision is `f1a9c3de7b21` after `63f21ac4db09`.
-It adds `age_confirmed_at`, `show_profile_photo`, `dating_blocks` and
-`dating_interests`. All existing member and dating-persona records remain
+The v2 revision `f1a9c3de7b21` follows `63f21ac4db09`.
+The latest revision is **`b5d917c62a03`** for private messages and
+recipient reports. These migrations add `age_confirmed_at`,
+`show_profile_photo`, `dating_blocks`, `dating_interests`,
+`dating_messages` and `dating_message_reports`. All existing member and dating-persona records remain
 intact. **No older persona is silently marked age-confirmed or
 photo-sharing-enabled**.
 
