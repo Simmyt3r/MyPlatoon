@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Applicants for {{ job.title }}{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1050px">
+  <a class="small d-inline-block mb-3" href="{{ url_for('jobs.employer_dashboard') }}">Employer dashboard</a>
+  <h1 class="h3 fw-bold">Applications for {{ job.title }}</h1>
+  <p class="text-muted small">Candidate contact details below were supplied for this particular job. Do not resell or use them for unsolicited marketing.</p>
+  {% for a in applications %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h2 class="h5 fw-bold">{{ a.applicant.full_name }}</h2>
+        <div class="small text-muted">{{ a.contact_email }}{% if a.contact_phone %} · {{ a.contact_phone }}{% endif %}</div>
+        <div class="small text-muted">Applied {{ a.created_at.strftime('%d %b %Y') }}</div>
+      </div>
+      <span class="badge text-bg-light border">{{ a.status|capitalize }}</span>
+    </div>
+    <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ a.cover_note }}</p>
+    <form method="POST" action="{{ url_for('jobs.application_status', application_id=a.id) }}" class="d-flex flex-wrap align-items-end gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div><label class="form-label small fw-semibold">Application status</label>
+        <select name="status" class="form-select form-select-sm">
+          {% for s in ['submitted','shortlisted','declined','hired'] %}
+            <option value="{{ s }}" {{ 'selected' if a.status==s }}>{{ s|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-p5 btn-sm">Update</button>
+    </form>
+  </article>
+  {% else %}
+  <div class="p5-card p-4 text-muted">No applications for this job yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}
