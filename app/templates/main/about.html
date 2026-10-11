@@ -10,6 +10,8 @@
   <p>
     Members can create profiles, showcase skills and businesses, and decide whether their profile and contact details are public, private or limited to their own platoon. Platoon-specific albums bring campmates together across time. A PCM can join before NYSC assigns any platoon number.
   </p>
+  <p><a href="{{ url_for('main.platoon_guide') }}">What is an NYSC platoon?</a> · <a href="{{ url_for('main.nerd') }}">NERD mobilisation guide</a></p>
+  <p class="small text-muted">MyPlatoon is not an official NYSC or NERD service. All camp details are self-reported until independently reviewed.</p>
   {% if APP_MOTTO %}<p class="p5-motto">{{ APP_MOTTO }}</p>{% endif %}
   {% if POWERED_BY %}<p class="text-muted">{{ POWERED_BY }}</p>{% endif %}
 </div>
