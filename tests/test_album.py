@@ -1,13 +1,27 @@
 from tests.conftest import login
 
 
+def _attach_platoon(db, *users):
+    """Create a real orientation cohort for album tests."""
+    from app.models import Platoon
+    platoon = Platoon.find_or_create("Benue", 2026, "B", "II", 5)
+    for user in users:
+        user.profile.service_stage = "serving"
+        user.profile.platoon = platoon
+        user.profile.status = "approved"
+    db.session.commit()
+    return platoon
+
+
+
 def test_album_generation_only_includes_approved_profiles(app, admin_user, member_user, approved_member, db):
     member_user.profile.status = "pending"  # should NOT appear in album
     db.session.commit()
 
     with app.app_context():
         from app.services.album_service import generate_new_album_version
-        version, pdf_bytes = generate_new_album_version(admin_user)
+        platoon = _attach_platoon(db, approved_member)
+        version, pdf_bytes = generate_new_album_version(admin_user, platoon.id)
 
         assert version.member_count == 1  # only approved_member
         assert pdf_bytes[:4] == b"%PDF"  # valid PDF header
@@ -44,8 +58,9 @@ def test_only_admin_can_generate_album(client, member_user):
 def test_album_version_label_increments(app, admin_user, approved_member, db):
     with app.app_context():
         from app.services.album_service import generate_new_album_version
-        v1, _ = generate_new_album_version(admin_user)
-        v2, _ = generate_new_album_version(admin_user)
+        platoon = _attach_platoon(db, approved_member)
+        v1, _ = generate_new_album_version(admin_user, platoon.id)
+        v2, _ = generate_new_album_version(admin_user, platoon.id)
         assert v1.version_label == "1.0"
         assert v2.version_label == "1.1"
 
@@ -87,7 +102,8 @@ def test_download_route_serves_correct_pdf_headers(monkeypatch, client, member_u
     from app.models import AlbumVersion
     from app.services import album_service
 
-    version = AlbumVersion(version_label="1.0", pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
+    platoon = _attach_platoon(db, member_user)
+    version = AlbumVersion(version_label="1.0", platoon_id=platoon.id, pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
                             member_count=1, status="published")
     db.session.add(version)
     db.session.commit()
@@ -100,7 +116,7 @@ def test_download_route_serves_correct_pdf_headers(monkeypatch, client, member_u
 
     assert resp.status_code == 200
     assert resp.mimetype == "application/pdf"
-    assert "platoon5-album-v1.0.pdf" in resp.headers.get("Content-Disposition", "")
+    assert "myplatoon-" in resp.headers.get("Content-Disposition", "")
     assert resp.data == b"%PDF-1.4 fake content"
 
     db.session.refresh(version)
@@ -111,7 +127,8 @@ def test_download_route_handles_fetch_failure_gracefully(monkeypatch, client, me
     from app.models import AlbumVersion
     from app.services.album_service import AlbumFetchError
 
-    version = AlbumVersion(version_label="1.0", pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
+    platoon = _attach_platoon(db, member_user)
+    version = AlbumVersion(version_label="1.0", platoon_id=platoon.id, pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
                             member_count=1, status="published")
     db.session.add(version)
     db.session.commit()
@@ -139,7 +156,8 @@ def test_download_failure_shows_admin_the_real_diagnosis(monkeypatch, client, ad
     from app.models import AlbumVersion
     from app.services.album_service import AlbumFetchError
 
-    version = AlbumVersion(version_label="1.0", pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
+    platoon = _attach_platoon(db, member_user)
+    version = AlbumVersion(version_label="1.0", platoon_id=platoon.id, pdf_url="https://res.cloudinary.com/demo/raw/upload/fake.pdf",
                             member_count=1, status="published")
     db.session.add(version)
     db.session.commit()
@@ -202,12 +220,15 @@ def test_new_albums_download_correctly_even_when_cloudinary_blocks_delivery(monk
 
     monkeypatch.setattr(album_service.cloudinary.uploader, "upload", fake_upload)
 
+    from app.models import Platoon
+    platoon = Platoon.find_or_create("Benue", 2026, "B", "II", 5)
+    db.session.commit()
     login(client, "admin@example.com")
     album_page = client.get("/album/")
     import re
     m = re.search(rb'name=["\']csrf_token["\'][^>]*value=["\']([^"\']+)["\']', album_page.data)
     token = m.group(1).decode() if m else ""
-    client.post("/album/generate", data={"csrf_token": token}, follow_redirects=True)
+    client.post("/album/generate", data={"csrf_token": token, "platoon_id": platoon.id}, follow_redirects=True)
 
     from app.models import AlbumVersion
     version = AlbumVersion.query.first()
@@ -247,7 +268,8 @@ def test_cloudinary_upload_failure_never_blocks_generation(monkeypatch, app, adm
 
         monkeypatch.setattr(album_service.cloudinary.uploader, "upload", broken_upload)
 
-        version, pdf_bytes = album_service.generate_new_album_version(admin_user)
+        platoon = _attach_platoon(db, approved_member)
+        version, pdf_bytes = album_service.generate_new_album_version(admin_user, platoon.id)
 
         assert version.pdf_url == ""  # no secondary copy, but...
         assert version.pdf_data is not None  # ...the database copy is always there
