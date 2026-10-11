@@ -25,12 +25,20 @@ def index():
     business_count = Business.query.filter_by(is_active=True).count()
     platoon_count = Platoon.query.count()
 
-    # "Stories" strip: recently-active approved members with a photo, most
-    # recently updated first -- a lightweight way to surface real people
-    # without inventing a separate content type just for this.
-    stories = (Profile.query.filter_by(status="approved")
-               .filter(Profile.profile_visibility.in_(["public", "platoon"]))
-               .filter(Profile.photo_url.isnot(None))
+    # Show only public or same-platoon profiles in the national activity strip.
+    visible_query = Profile.query.filter_by(status="approved")
+    own = current_user.profile if current_user.is_authenticated else None
+    if current_user.is_authenticated and current_user.is_admin:
+        visible_query = visible_query.filter(Profile.profile_visibility.in_(["public", "platoon"]))
+    elif own and own.status == "approved" and own.platoon_id:
+        visible_query = visible_query.filter(or_(
+            Profile.profile_visibility == "public",
+            and_(Profile.profile_visibility == "platoon",
+                 Profile.platoon_id == own.platoon_id),
+        ))
+    else:
+        visible_query = visible_query.filter(Profile.profile_visibility == "public")
+    stories = (visible_query.filter(Profile.photo_url.isnot(None))
                .order_by(Profile.updated_at.desc()).limit(12).all())
 
     feed_announcements = (Announcement.query.filter_by(is_active=True)
