@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy import or_, and_
 
 from app.extensions import db
-from app.models import DatingPersona, DatingMatch, DatingBlock, Profile, User
+from app.models import DatingPersona, DatingMatch, DatingBlock, DatingInterest, Profile, User
 from app.services.notification_service import notify
 
 TOP_N = 10
@@ -156,9 +156,8 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
 
     db.session.commit()
 
-    for match in newly_matched:
-        _notify_mutual_match(match)
-
+    # Rankings are just suggestions. Do NOT notify users or claim mutual
+    # romantic interest until each explicitly expresses interest.
     if _cascade:
         for other, _score in top:
             generate_matches_for_persona(other, top_n=top_n, _cascade=False)
@@ -168,18 +167,6 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
     # require live reciprocal rankings as well as active status.
 
     return results
-
-
-def _notify_mutual_match(match: DatingMatch):
-    low_user = match.persona_low.profile.user
-    high_user = match.persona_high.profile.user
-    low_name = match.persona_low.display_name or low_user.full_name.split(" ")[0]
-    high_name = match.persona_high.display_name or high_user.full_name.split(" ")[0]
-
-    notify(low_user, f"You have a new mutual match suggestion with {high_name}. Explore it at your own pace.",
-           category="success")
-    notify(high_user, f"You have a new mutual match suggestion with {low_name}. Explore it at your own pace.",
-           category="success")
 
 
 def browse_matches_for_persona(persona: DatingPersona):
@@ -251,6 +238,14 @@ def block_persona(blocker: DatingPersona, target: DatingPersona):
         return existing
     row = DatingBlock(blocker_id=blocker.id, blocked_id=target.id)
     db.session.add(row)
+    # Once blocked, prior interest does not survive. Unblocking never
+    # silently recreates an earlier relationship.
+    DatingInterest.query.filter(or_(
+        and_(DatingInterest.sender_id == blocker.id,
+             DatingInterest.recipient_id == target.id),
+        and_(DatingInterest.sender_id == target.id,
+             DatingInterest.recipient_id == blocker.id),
+    )).delete(synchronize_session=False)
     db.session.commit()
     return row
 
@@ -265,5 +260,85 @@ def delete_dating_persona(persona: DatingPersona):
         DatingBlock.blocker_id == persona.id,
         DatingBlock.blocked_id == persona.id,
     )).delete(synchronize_session=False)
+    DatingInterest.query.filter(or_(
+        DatingInterest.sender_id == persona.id,
+        DatingInterest.recipient_id == persona.id,
+    )).delete(synchronize_session=False)
     db.session.delete(persona)
     db.session.commit()
+
+
+
+def sent_interest_ids(persona: DatingPersona):
+    if not persona:
+        return set()
+    return {row.recipient_id for row in DatingInterest.query.filter_by(
+        sender_id=persona.id).all()}
+
+
+def mutual_connections(persona: DatingPersona):
+    """Only show people who deliberately expressed interest in each other."""
+    if not persona or not persona.is_active_and_visible():
+        return []
+    blocked = _blocked_ids(persona.id)
+    outgoing = DatingInterest.query.filter_by(sender_id=persona.id).order_by(
+        DatingInterest.created_at.desc()).all()
+    inward_ids = {
+        row.sender_id for row in DatingInterest.query.filter_by(recipient_id=persona.id).all()
+    }
+    connections = []
+    for liked in outgoing:
+        if liked.recipient_id in blocked or liked.recipient_id not in inward_ids:
+            continue
+        other = db.session.get(DatingPersona, liked.recipient_id)
+        if (other and other.is_active_and_visible()
+                and persona.is_compatible_with(other)):
+            connections.append(other)
+    return connections
+
+
+def express_interest(sender: DatingPersona, target: DatingPersona):
+    """Return (created, reciprocated). One-sided interest is invisible.
+
+    Notifications are generated exactly when the second side opts in, not
+    when the ranking algorithm happens to place two members together.
+    """
+    if sender.id == target.id:
+        raise ValueError("Cannot express interest in yourself")
+    if not sender.is_active_and_visible() or not target.is_active_and_visible():
+        raise ValueError("Both Dating personas must be active")
+    if not sender.is_compatible_with(target) or is_blocked(sender.id, target.id):
+        raise ValueError("These Dating personas cannot connect")
+
+    existing = DatingInterest.query.filter_by(
+        sender_id=sender.id, recipient_id=target.id).first()
+    if existing:
+        return False, bool(DatingInterest.query.filter_by(
+            sender_id=target.id, recipient_id=sender.id).first())
+
+    reciprocal = DatingInterest.query.filter_by(
+        sender_id=target.id, recipient_id=sender.id).first() is not None
+    db.session.add(DatingInterest(sender_id=sender.id, recipient_id=target.id))
+    db.session.commit()
+    if reciprocal:
+        # These are private, mutual invitations and do not expose any
+        # personal address, phone number, employer, or profile detail.
+        sender_name = sender.display_name or "A member"
+        target_name = target.display_name or "A member"
+        notify(sender.profile.user,
+               f"You and {target_name} both expressed interest! See Dating connections.",
+               category="success")
+        notify(target.profile.user,
+               f"You and {sender_name} both expressed interest! See Dating connections.",
+               category="success")
+    return True, reciprocal
+
+
+def withdraw_interest(sender: DatingPersona, target_id: int):
+    interest = DatingInterest.query.filter_by(
+        sender_id=sender.id, recipient_id=target_id).first()
+    if interest is None:
+        return False
+    db.session.delete(interest)
+    db.session.commit()
+    return True
