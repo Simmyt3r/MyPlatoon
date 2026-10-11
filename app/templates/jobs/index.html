@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Jobs & Gigs{% endblock %}
+{% block meta_description %}Discover reviewed school vacancies, part-time gigs and jobs suitable for serving NYSC members across Nigeria.{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1120px">
+  <header class="p5-card p-4 p-md-5 mb-4">
+    <div class="text-success small fw-bold text-uppercase mb-2">MyPlatoon opportunity board</div>
+    <h1 class="h2 fw-bold mb-2">Jobs &amp; Gigs</h1>
+    <p class="text-muted mb-3">Find flexible school and business gigs during service, or discover internships, contracts and full-time opportunities across Nigeria. Every public listing is reviewed by MyPlatoon moderators.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('jobs.employer_register') }}" class="btn btn-p5">Post jobs as an employer</a>
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('jobs.my_applications') if current_user.role == 'member' else url_for('jobs.employer_dashboard') }}" class="btn btn-p5-outline">My {{ 'applications' if current_user.role == 'member' else 'listings' }}</a>
+      {% endif %}
+    </div>
+    <p class="small text-muted mt-3 mb-0"><i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i>No recruitment, application or activation fees through MyPlatoon. Do not pay a stranger to secure a job or disclose your NIN or banking PIN.</p>
+  </header>
+
+  <form method="GET" class="p5-card p-3 p-md-4 mb-4" aria-label="Search jobs and gigs">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" for="job-search">Job title or organisation</label>
+        <input class="form-control" id="job-search" name="q" value="{{ q }}" maxlength="90" placeholder="e.g. Weekend tutor, web developer">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" for="job-state">State</label>
+        <select class="form-select" id="job-state" name="state">
+          <option value="">All states</option>
+          {% for s in states %}<option value="{{ s }}" {{ 'selected' if state==s }}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" for="job-kind">Opportunity type</label>
+        <select class="form-select" id="job-kind" name="kind">
+          <option value="">All types</option>
+          {% for key,label in kinds %}<option value="{{ key }}" {{ 'selected' if kind==key }}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" for="job-mode">Work arrangement</label>
+        <select class="form-select" id="job-mode" name="mode">
+          <option value="">Any arrangement</option>
+          {% for key,label in modes %}<option value="{{ key }}" {{ 'selected' if mode==key }}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5 d-flex align-items-end">
+        <label class="d-flex align-items-center gap-2 pb-2">
+          <input type="checkbox" name="serving" value="1" {{ 'checked' if serving }}>
+          <span>Show gigs and part-time jobs</span>
+        </label>
+      </div>
+      <div class="col-md-4 d-flex align-items-end gap-2">
+        <button class="btn btn-p5 flex-grow-1" type="submit">Search opportunities</button>
+        <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="d-flex align-items-center justify-content-between flex-wrap mb-3 gap-2">
+    <h2 class="h5 fw-bold mb-0">Available opportunities</h2>
+    <span class="text-muted small">{{ pagination.total }} public listing{{ '' if pagination.total == 1 else 's' }}</span>
+  </div>
+  <div class="row g-3">
+    {% for job in pagination.items %}
+    <div class="col-md-6">
+      <article class="p5-card p-3 p-md-4 h-100">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+          <h3 class="h5 fw-bold mb-0"><a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="text-decoration-none">{{ job.title }}</a></h3>
+          <span class="badge text-bg-light border">{{ job.kind_label }}</span>
+        </div>
+        <p class="small text-muted mb-2"><i class="fa-solid fa-building me-1" aria-hidden="true"></i>{{ job.employer.name }}</p>
+        <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>{{ job.state }}{% if job.lga %}, {{ job.lga }}{% endif %} · {{ job.work_label }}</p>
+        <p class="mb-2 fw-semibold">₦{{ "{:,}".format(job.pay_min) }}{% if job.pay_max != job.pay_min %} – ₦{{ "{:,}".format(job.pay_max) }}{% endif %} <span class="small text-muted">/{{ job.pay_label|replace('Per ','')|lower }}</span></p>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <span class="small text-muted">Apply by {{ job.closing_date.strftime('%d %b %Y') }}</span>
+          <a class="btn btn-p5 btn-sm" href="{{ url_for('jobs.detail', job_id=job.id) }}">View details</a>
+        </div>
+      </article>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="p5-card text-center p-5">
+      <i class="fa-solid fa-briefcase fa-2x text-muted mb-3" aria-hidden="true"></i>
+      <p class="fw-semibold">No reviewed vacancies match your search yet.</p>
+      <p class="text-muted mb-0">Try a different state or job type. Employers can submit new opportunities for review.</p>
+    </div></div>
+    {% endfor %}
+  </div>
+  {% if pagination.pages > 1 %}
+  <nav class="d-flex align-items-center gap-2 justify-content-center mt-4" aria-label="Job results pages">
+    {% if pagination.has_prev %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('jobs.index', q=q, state=state, kind=kind, mode=mode, serving='1' if serving else '', page=pagination.prev_num) }}">Previous</a>{% endif %}
+    <span class="small">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('jobs.index', q=q, state=state, kind=kind, mode=mode, serving='1' if serving else '', page=pagination.next_num) }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+  <p class="small text-muted mt-4">MyPlatoon reviews submissions, but cannot guarantee an employer's legitimacy, payment, working conditions or NYSC permission. Verify independently. Service commitments, PPA attendance and safety come first.</p>
+</div>
+{% endblock %}
