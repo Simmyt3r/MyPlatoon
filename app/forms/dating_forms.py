@@ -18,6 +18,9 @@ class DatingPersonaForm(FlaskForm):
                                  validators=[DataRequired()])
     interests = StringField("Interests (comma-separated)", validators=[Optional(), Length(max=500)],
                              description="e.g. hiking, movies, cooking, football")
+    show_profile_photo = BooleanField(
+        "Show my MyPlatoon profile picture to other Dating participants",
+        description="Off by default. Your profile picture stays hidden in Dating until you enable it.")
     age_confirm = BooleanField(
         "I confirm that I am at least 18 years old and agree to use Dating respectfully.",
         validators=[DataRequired(message="You must confirm that you are 18 or older.")],
