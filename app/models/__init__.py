@@ -16,5 +16,5 @@ __all__ = [
     "Business", "BusinessCategory", "DEFAULT_CATEGORIES",
     "AlbumVersion", "Announcement", "AuditLog", "Notification",
     "AnnouncementReaction", "AnnouncementComment", "REACTION_TYPES",
-    "DatingPersona", "DatingMatch", "GENDER_CHOICES", "PERSONA_STATUSES", "MATCH_STATUSES", "score_label",
+    "DatingPersona", "DatingMatch", "DatingBlock", "GENDER_CHOICES", "PERSONA_STATUSES", "MATCH_STATUSES", "score_label",
 ]
