@@ -72,7 +72,7 @@ def edit():
         photo_error = None
         if form.photo.data:
             try:
-                result = upload_image(form.photo.data, folder="platoon5/profiles")
+                result = upload_image(form.photo.data, folder="myplatoon/profiles")
                 old_public_id = profile.photo_public_id
                 profile.photo_url = result["url"]
                 profile.photo_public_id = result["public_id"]
