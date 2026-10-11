@@ -81,6 +81,13 @@
         <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-book fa-2x mb-2 text-success"></i><div>Digital Album</div></div>
       </a>
     </div>
+    {% if ENABLE_DATING %}
+    <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('dating.home') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center"><i class="fa-regular fa-heart fa-2x mb-2 text-success" aria-hidden="true"></i><div>Dating</div><span class="small text-muted">Optional for adults 18+</span></div>
+      </a>
+    </div>
+    {% endif %}
     <div class="col-sm-6 col-lg-4">
       <a href="{{ url_for('directory.members') }}" class="text-decoration-none">
         <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-users fa-2x mb-2 text-success"></i><div>Member Directory</div></div>
