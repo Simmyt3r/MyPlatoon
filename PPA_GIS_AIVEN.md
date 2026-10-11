@@ -53,7 +53,7 @@ redacts database secrets.
    This has priority over any old `DATABASE_URL` configured in Vercel.
    Set `AUTO_CREATE_TABLES=false`, `FLASK_ENV=production` and your existing
    `SECRET_KEY` and other required settings.
-8. Redeploy **after** migrations. Confirm `/ppas/` loads and that admin
+9. Redeploy **after** migrations. Confirm `/ppas/` loads and that admin
    review and member submission work.
 
 Use Aiven's real service credentials from its console. Do not paste passwords
