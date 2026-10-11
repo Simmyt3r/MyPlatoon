@@ -151,6 +151,9 @@
       <a href="{{ url_for('main.nerd') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.nerd' }}" aria-label="NERD and NYSC mobilisation guide">
         <i class="fa-solid fa-graduation-cap"></i>NERD Guide
       </a>
+      <a href="{{ url_for('ppa.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'ppa' }}">
+        <i class="fa-solid fa-map-location-dot"></i>PPA Lookup
+      </a>
       <a href="{{ url_for('directory.businesses') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.businesses' }}">
         <i class="fa-solid fa-store"></i>Businesses
       </a>
