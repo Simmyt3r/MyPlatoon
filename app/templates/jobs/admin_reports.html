@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Job Safety Reports{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1080px">
+  <h1 class="h3 fw-bold">Job fraud &amp; safety reports</h1>
+  <p class="text-muted">These reports are confidential. Investigate evidence before closing a listing. Do not disclose the reporter's identity to employers.</p>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ url_for('jobs.admin_employers') }}" class="btn btn-p5-outline btn-sm">Employers</a>
+    <a href="{{ url_for('jobs.admin_listings') }}" class="btn btn-p5-outline btn-sm">Listings</a>
+  </div>
+  {% for report in reports %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <div class="d-flex justify-content-between gap-2 flex-wrap">
+      <h2 class="h5 fw-bold">{{ report.listing.title }} · {{ report.listing.employer.name }}</h2>
+      <span class="small text-muted">Reported {{ report.created_at.strftime('%d %b %Y') }}</span>
+    </div>
+    <p class="small mb-2">Report #{{ report.id }} · Reporter account: {{ report.reporter.email }} (admin-only)</p>
+    <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ report.reason }}</p>
+    <form method="POST" action="{{ url_for('jobs.review_report', report_id=report.id) }}" class="d-flex flex-wrap gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" name="decision" value="actioned" class="btn btn-danger btn-sm">Close listing after review</button>
+      <button type="submit" name="decision" value="dismissed" class="btn btn-p5-outline btn-sm">Dismiss unsubstantiated report</button>
+    </form>
+  </article>
+  {% else %}
+  <div class="p5-card p-4 text-muted">No pending job safety reports.</div>
+  {% endfor %}
+</div>
+{% endblock %}
