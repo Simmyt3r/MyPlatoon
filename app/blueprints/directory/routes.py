@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, abort, current_app
 from flask_login import current_user
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from app.models import Profile, Business, BusinessCategory, Skill, User
 from app.services.privacy_service import can_view_full_profile, serialize_contact
