@@ -53,7 +53,7 @@
       <tbody>
         {% for v in history %}
         <tr>
-          <td>v{{ v.version_label }}</td>
+          <td>v{{ v.version_label }} {% if v.platoon %}<small class="text-muted d-block">{{ v.platoon.label }}</small>{% elif current_user.is_admin %}<small class="text-muted d-block">Legacy admin-only</small>{% endif %}</td>
           <td>{{ v.member_count }}</td>
           <td>{{ v.generated_at.strftime('%d %b %Y') }}</td>
           <td>{{ v.download_count }}</td>
