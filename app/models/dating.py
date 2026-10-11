@@ -5,14 +5,11 @@ Design notes (see conversation for the reasoning):
     it exists. A member explicitly creates a DatingPersona.
   * Only approved profiles can create one, consistent with the rest of the
     app's trust model (an admin has already vetted the underlying person).
-  * Matching is fully automatic (no manual swiping) and ranked by a
-    compatibility score -- see app/services/dating_service.py.
-  * The celebratory "It's a Match!" notification only fires when the
-    ranking is MUTUAL (each appears in the other's top matches), not the
-    instant anyone's algorithm ranks a stranger highly. One-sided high
-    rankings still show up in "your top matches" for browsing, but don't
-    notify the other person -- avoids notifying someone that a stranger's
-    system ranked them highly when it isn't reciprocated.
+  * Ranking suggestions are algorithmic and DO NOT imply romantic consent.
+  * Each DatingInterest is a private, explicit choice to express interest.
+    Only a reciprocal pair creates a connection and sends notifications.
+  * Members must self-attest to being 18+ and explicitly enable profile
+    photo sharing; blocking works in both directions.
 """
 from datetime import datetime
 
@@ -22,14 +19,13 @@ GENDER_CHOICES = ("male", "female", "nonbinary")
 PERSONA_STATUSES = ("active", "paused")
 MATCH_STATUSES = ("candidate", "matched", "unmatched")
 
-# Fun, human copy for compatibility score bands -- shown next to the
-# percentage everywhere a match score appears, so a match never just reads
-# as a cold, clinical number.
+# Legacy similarity-score labels (not presented as romance predictions).
+# Dating v2 surfaces shared interests in the user interface instead.
 SCORE_BANDS = (
-    (90, "Soulmate Vibes", "\U0001F4AB"),   # 90-100  💫
-    (75, "Great Match", "\u2728"),          # 75-89   ✨
-    (55, "Worth a Shot", "\U0001F440"),     # 55-74   👀
-    (0, "Wildcard", "\U0001F3B2"),          # 0-54    🎲
+    (90, "Very high similarity", "✦"),
+    (70, "High similarity", "✧"),
+    (40, "Some overlap", "•"),
+    (0, "Little recorded overlap", "·"),
 )
 
 
