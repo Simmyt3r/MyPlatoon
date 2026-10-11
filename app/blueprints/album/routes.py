@@ -49,13 +49,8 @@ def generate():
           "success")
 
     if not version.pdf_url and current_user.is_admin:
-        # Purely informational -- the PDF itself is safely stored in the
-        # database either way (version.pdf_data), so downloads work
-        # regardless. This just means there's no secondary copy on
-        # Cloudinary for e.g. sharing a link outside the app.
-        flash("Note: no Cloudinary backup copy was created for this version "
-              "(Cloudinary isn't configured, or the upload failed) -- this "
-              "doesn't affect downloading it from here.", "info")
+        flash("For member privacy, this album is stored in the database and "
+              "can only be downloaded through authorized MyPlatoon accounts.", "info")
 
     return redirect(url_for("album.view"))
 
