@@ -1,26 +1,41 @@
 {% extends "base.html" %}
 {% from "partials/_dating_match_card.html" import dating_match_card %}
-{% block title %}Your Matches{% endblock %}
+{% block title %}Discover People{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-  <h4 class="p5-section-title mb-0">Your Top Matches, Ranked</h4>
-  <form method="POST" action="{{ url_for('dating.refresh') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <button class="btn btn-p5-outline btn-sm" type="submit"><i class="fa-solid fa-arrows-rotate me-1"></i>Refresh</button>
-  </form>
+<div class="container py-3">
+  <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <div class="text-success small fw-bold text-uppercase">Private dating discovery</div>
+      <h1 class="h3 fw-bold mb-1">Discover people</h1>
+      <p class="text-muted mb-0">Your suggestions reflect shared interests and skills, not a prediction of romantic compatibility.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('dating.matches') }}" class="btn btn-p5-outline btn-sm">Mutual suggestions</a>
+      {% if persona.status == 'active' and not persona.is_reported %}
+      <form method="POST" action="{{ url_for('dating.refresh') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-p5 btn-sm" type="submit"><i class="fa-solid fa-arrows-rotate me-1" aria-hidden="true"></i>Refresh</button>
+      </form>
+      {% endif %}
+    </div>
+  </header>
+  {% if persona.status != 'active' or persona.is_reported %}
+  <div class="p5-card p-4 text-center">
+    <h2 class="h5 fw-bold">Discovery is not currently active</h2>
+    <p class="text-muted">A paused or reported persona does not show up in other people's suggestions.</p>
+    <a href="{{ url_for('dating.persona') }}" class="btn btn-p5">Manage persona</a>
+  </div>
+  {% elif matches %}
+  <div class="row g-3">
+    {% for match, other in matches %}{{ dating_match_card(match, other, persona, show_rank=loop.index) }}{% endfor %}
+  </div>
+  {% else %}
+  <div class="p5-card p-4 text-center">
+    <i class="fa-solid fa-users-viewfinder fa-2x text-success mb-3" aria-hidden="true"></i>
+    <h2 class="h5 fw-bold">No suggestions yet</h2>
+    <p class="text-muted">Add interests or check back when more approved adult members join.</p>
+    <a href="{{ url_for('dating.persona') }}" class="btn btn-p5">Update my interests</a>
+  </div>
+  {% endif %}
 </div>
-
-{% if matches %}
-<div class="row g-3">
-  {% for match, other in matches %}
-    {{ dating_match_card(match, other, persona, show_rank=loop.index) }}
-  {% endfor %}
-</div>
-{% else %}
-<div class="p5-card p5-card-body text-center py-5">
-  <i class="fa-solid fa-heart-crack fa-2x text-muted mb-3"></i>
-  <p class="text-muted mb-3">No matches yet. Add more interests to your persona, or check back soon as more people join!</p>
-  <a href="{{ url_for('dating.persona') }}" class="btn btn-p5">Update My Persona</a>
-</div>
-{% endif %}
 {% endblock %}
