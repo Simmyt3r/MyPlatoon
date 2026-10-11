@@ -56,6 +56,7 @@ def _register_blueprints(app):
     from app.blueprints.album.routes import bp as album_bp
     from app.blueprints.ppa.routes import bp as ppa_bp
     from app.blueprints.dating.routes import bp as dating_bp
+    from app.blueprints.jobs.routes import bp as jobs_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
