@@ -5,6 +5,7 @@ on:
     paths:
       - "app/**"
       - "tests/test_nerd.py"
+      - "tests/test_nerd_requirements.py"
       - "requirements.txt"
       - ".github/workflows/nerd-tests.yml"
   pull_request:
