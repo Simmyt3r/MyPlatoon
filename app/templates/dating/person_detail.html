@@ -34,6 +34,20 @@
         <div class="alert alert-light border small mt-4">
           This is a separate, opted-in Dating persona. No private member profile, phone number or contact address is shown here. Match suggestions aren't mutual consent or a request to connect.
         </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if interested %}
+          <form method="POST" action="{{ url_for('dating.interest_withdraw', persona_id=target.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-p5-outline">Withdraw my interest</button>
+          </form>
+          {% else %}
+          <form method="POST" action="{{ url_for('dating.interest', persona_id=target.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-p5"><i class="fa-regular fa-heart me-1" aria-hidden="true"></i>I'm interested</button>
+          </form>
+          {% endif %}
+        </div>
+        <p class="small text-muted">Your interest stays private unless this person expresses interest too. You can withdraw it.</p>
         <div class="d-flex flex-wrap gap-2">
           <form method="POST" action="{{ url_for('dating.block', persona_id=target.id) }}"
                 data-confirm="Block this persona? Neither of you will appear in the other's Dating suggestions.">
