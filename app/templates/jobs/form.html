@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}{{ 'Edit Vacancy' if job else 'Post a Job or Gig' }}{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:870px">
+  <a href="{{ url_for('jobs.employer_dashboard') }}" class="small d-inline-block mb-3">Back to employer dashboard</a>
+  <div class="p5-card p-4 p-md-5">
+    <div class="text-success fw-bold small text-uppercase">Paid work opportunities</div>
+    <h1 class="h3 fw-bold">{{ 'Edit job listing' if job else 'Create a job or gig listing' }}</h1>
+    <p class="text-muted">You must clearly state responsibilities, pay, hours, location and deadline. Listings are moderated before becoming public. Editing an approved listing returns it to review.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.title) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.job_kind) }}</div>
+        <div class="col-md-6">{{ field(form.work_mode) }}</div>
+        <div class="col-md-6">{{ field(form.state) }}</div>
+        <div class="col-md-6">{{ field(form.lga) }}</div>
+      </div>
+      {{ field(form.location_description) }}
+      {{ field(form.description, rows=6) }}
+      {{ field(form.requirements, rows=5) }}
+      <h2 class="h5 fw-bold mt-3">Compensation and working hours</h2>
+      <div class="row g-2">
+        <div class="col-md-4">{{ field(form.pay_min) }}</div>
+        <div class="col-md-4">{{ field(form.pay_max) }}</div>
+        <div class="col-md-4">{{ field(form.pay_unit) }}</div>
+        <div class="col-md-6">{{ field(form.hours_per_week) }}</div>
+        <div class="col-md-6">{{ field(form.closing_date) }}</div>
+      </div>
+      {{ field(form.schedule_notes) }}
+      {{ field(form.serving_only) }}
+      <p class="small text-muted">For corps-member gigs, use hours that do not conflict with PPA work, CDS activities or other NYSC obligations. MyPlatoon cannot authorise outside employment.</p>
+      {{ form.submit(class="btn btn-p5") }}
+      <a href="{{ url_for('jobs.employer_dashboard') }}" class="btn btn-p5-outline">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
