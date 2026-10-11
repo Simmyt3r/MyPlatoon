@@ -29,8 +29,16 @@ are eligible to browse or be recommended.
 - **Only when the interest is mutual** are both users notified and the other
   person listed under `/dating/connections`.
 - Members can withdraw interest and the pair disappears from Connections.
-- There is no private chat, contact-info disclosure or automatic exchange
-  of phone numbers in this release.
+- Once two members explicitly express interest in each other, they can
+  exchange **private plain-text messages** through `/dating/messages/<id>`.
+  Every message read/send checks active reciprocal consent, approval,
+  age confirmation and blocks. Withdrawing interest or blocking immediately
+  revokes both sides' chat access, even if the URL was bookmarked.
+- Private message notifications never include message bodies.
+- Message recipients can confidentially flag received content to moderators.
+  This continues to work after blocking or withdrawing interest.
+- No images, attachments, automatic phone-number exchange or encrypted
+  end-to-end messaging are provided by this release.
 
 ### Privacy
 
