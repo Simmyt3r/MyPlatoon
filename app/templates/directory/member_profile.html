@@ -13,6 +13,7 @@
         <h4 class="fw-bold mb-0">{{ profile.user.full_name }}</h4>
         {% if profile.nickname %}<p class="text-muted mb-1">"{{ profile.nickname }}"</p>{% endif %}
         <p class="text-success fw-semibold">{{ profile.profession or APP_MEMBER_LABEL }}</p>
+        <p class="small fw-semibold">{{ profile.platoon_label }}</p>
         <p class="text-muted small mb-3">
           <i class="fa-solid fa-location-dot me-1"></i>{{ profile.state_of_origin or '-' }}
           {% if profile.lga %} &bull; {{ profile.lga }}{% endif %}
