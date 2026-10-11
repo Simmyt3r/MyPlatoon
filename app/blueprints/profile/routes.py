@@ -7,6 +7,7 @@ from app.models import Skill
 from app.services.cloudinary_service import upload_image, delete_image, ImageUploadError
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
+from app.services.platoon_membership import assign_platoon, set_form_assignment_defaults
 
 bp = Blueprint("profile", __name__)
 
