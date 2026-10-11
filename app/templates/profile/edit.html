@@ -19,6 +19,20 @@
     </div>
 
     <div class="p5-card p5-card-body mb-4">
+      <h6 class="fw-bold text-success mb-2">NYSC Journey and Your Platoon</h6>
+      <p class="small text-muted">Not yet in camp? Choose PCM and leave the assignment blank. Serving members and alumni must select their actual orientation cohort. <a href="{{ url_for('main.platoon_guide') }}">Learn what a platoon means</a>.</p>
+      {{ field(form.service_stage) }}
+      <div class="row">
+        <div class="col-md-6">{{ field(form.nysc_state) }}</div>
+        <div class="col-md-3">{{ field(form.service_year) }}</div>
+        <div class="col-md-3">{{ field(form.platoon_number) }}</div>
+        <div class="col-md-6">{{ field(form.nysc_batch) }}</div>
+        <div class="col-md-6">{{ field(form.nysc_stream) }}</div>
+      </div>
+      <p class="small text-muted mb-0">Your platoon is unique to your orientation camp's state, year, batch and stream. Changing an approved member's platoon triggers another review.</p>
+    </div>
+
+    <div class="p5-card p5-card-body mb-4">
       <h6 class="fw-bold text-success mb-3">Personal Information</h6>
       <div class="row">
         <div class="col-md-6">{{ field(form.nickname) }}</div>
