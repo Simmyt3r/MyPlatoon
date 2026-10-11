@@ -154,7 +154,10 @@ def generate_new_album_version(generated_by, platoon_id) -> AlbumVersion:
 
     version_label = _next_version_label()
     pdf_bytes = build_album_pdf(approved_profiles, active_businesses, version_label)
-    upload_result = _upload_pdf_bytes(pdf_bytes, version_label)
+    # Never publish a member-only album to a publicly guessable Cloudinary
+    # raw URL. The authenticated /album/download/<id> route controls access,
+    # and the database PDF is the only copy we create for new cohorts.
+    upload_result = {"url": None, "public_id": None}
 
     version = AlbumVersion(
         platoon_id=platoon.id,
