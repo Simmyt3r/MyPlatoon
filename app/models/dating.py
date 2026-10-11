@@ -18,7 +18,7 @@ from datetime import datetime
 
 from app.extensions import db
 
-GENDER_CHOICES = ("male", "female")
+GENDER_CHOICES = ("male", "female", "nonbinary")
 PERSONA_STATUSES = ("active", "paused")
 MATCH_STATUSES = ("candidate", "matched", "unmatched")
 
