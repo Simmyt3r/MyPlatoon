@@ -20,8 +20,10 @@ def _wants_json():
 
 @bp.route("/")
 def index():
+    from app.models import Platoon
     member_count = Profile.query.filter_by(status="approved").count()
     business_count = Business.query.filter_by(is_active=True).count()
+    platoon_count = Platoon.query.count()
 
     # "Stories" strip: recently-active approved members with a photo, most
     # recently updated first -- a lightweight way to surface real people
