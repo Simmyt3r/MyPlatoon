@@ -79,7 +79,8 @@ class DatingPersona(db.Model):
 
     def is_compatible_with(self, other) -> bool:
         """Mutual gender-preference compatibility (see GENDER_CHOICES)."""
-        return self.gender == other.interested_in and other.gender == self.interested_in
+        return ((self.interested_in == "any" or self.interested_in == other.gender)
+                and (other.interested_in == "any" or other.interested_in == self.gender))
 
     def is_active_and_visible(self) -> bool:
         return (self.status == "active" and not self.is_reported
