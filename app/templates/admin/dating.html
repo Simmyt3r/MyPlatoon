@@ -2,7 +2,12 @@
 {% block title %}Dating Reports{% endblock %}
 {% block body_class %}app-shell-focused{% endblock %}
 {% block content %}
-<h4 class="p5-section-title">Reported Dating Personas</h4>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="p5-section-title mb-0">Reported Dating Personas</h1>
+  <a class="btn btn-p5-outline btn-sm" href="{{ url_for('dating.reported_messages') }}">
+    <i class="fa-regular fa-comment-dots me-1" aria-hidden="true"></i>Review reported messages
+  </a>
+</div>
 {% if reported %}
 <div class="table-responsive">
   <table class="table table-hover align-middle bg-white p5-card">
