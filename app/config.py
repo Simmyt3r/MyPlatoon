@@ -46,6 +46,12 @@ class BaseConfig:
     APP_ACCENT_COLOR = os.environ.get("APP_ACCENT_COLOR", "#c79a2e")
     ENABLE_DATING = os.environ.get("ENABLE_DATING", "true").lower() != "false"
 
+    # MyPlatoon independent help desk, NOT an official NERD/NYSC helpline.
+    NERD_HELP_PHONE = os.environ.get("NERD_HELP_PHONE", "09039930006")
+    NERD_HELP_WHATSAPP_URL = os.environ.get(
+        "NERD_HELP_WHATSAPP_URL", "https://wa.me/2349039930006"
+    )
+
     CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME")
     CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY")
     CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET")
