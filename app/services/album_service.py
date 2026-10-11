@@ -171,9 +171,11 @@ def generate_new_album_version(generated_by, platoon_id) -> AlbumVersion:
     return version, pdf_bytes
 
 
-def latest_published_album():
+def latest_published_album(platoon_id):
+    if platoon_id is None:
+        return None
     return (
-        AlbumVersion.query.filter_by(status="published")
+        AlbumVersion.query.filter_by(status="published", platoon_id=platoon_id)
         .order_by(AlbumVersion.generated_at.desc())
         .first()
     )
