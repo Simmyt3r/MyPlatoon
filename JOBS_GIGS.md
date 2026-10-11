@@ -122,8 +122,8 @@ No automated importing of jobs from third-party websites.
 ## Database and deployment
 
 Models: `Employer`, `JobListing`, `JobApplication`.
-Database migration: **`c8a49d127e03`**, following
-`b5d917c62a03`. SQLite is used for tests; the final
+Database revisions: **`c8a49d127e03`** followed by
+**`d6ee891f0d42`** for private job safety reports. SQLite is used for tests; the final
 production target is the dedicated Aiven PostgreSQL `myplatoon`
 database. **Do not execute production migrations or switch Vercel
 environment secrets until the agreed end-of-project configuration**.
