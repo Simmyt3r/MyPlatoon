@@ -73,7 +73,7 @@ def _upload_pdf_bytes(pdf_bytes: bytes, version_label: str) -> dict:
         # The .pdf suffix on the public_id (plus format=) is what tells
         # Cloudinary this raw resource is a PDF -- without it, Cloudinary
         # has no extension to infer a content type from.
-        public_id = f"platoon5/albums/album_v{version_label.replace('.', '_')}.pdf"
+        public_id = f"myplatoon/albums/album_v{version_label.replace('.', '_')}.pdf"
         result = cloudinary.uploader.upload(
             pdf_bytes, resource_type="raw", public_id=public_id, format="pdf", overwrite=True,
         )
