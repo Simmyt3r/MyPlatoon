@@ -47,7 +47,10 @@ moderator review before postings appear publicly.
 Approved members can apply to jobs and follow status updates; the employer
 receives only the contact details deliberately provided on the application.
 No recruitment, activation or application fees are collected, and job
-postings are not NYSC endorsements. See [JOBS_GIGS.md](JOBS_GIGS.md).
+postings are not NYSC endorsements. Personalised recommendations, private
+saved vacancies and opt-in in-app notifications are also available for
+approved members. See [JOBS_GIGS.md](JOBS_GIGS.md) and
+[DISCOVERY_RANKINGS.md](DISCOVERY_RANKINGS.md).
 
 ## Services and career support
 
