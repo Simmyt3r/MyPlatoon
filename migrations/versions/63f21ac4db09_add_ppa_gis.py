@@ -53,6 +53,26 @@ def upgrade():
     op.create_index("ix_ppas_submitted_by_id", "ppas", ["submitted_by_id"])
     op.create_index("ix_ppas_state_lga_status", "ppas", ["state", "lga", "status"])
 
+    op.create_table(
+        "ppa_experiences",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("ppa_id", sa.Integer(), sa.ForeignKey("ppas.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("submitted_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL")),
+        sa.Column("service_year", sa.Integer(), nullable=False),
+        sa.Column("accommodation", sa.String(length=12), nullable=False, server_default="unknown"),
+        sa.Column("allowance", sa.String(length=12), nullable=False, server_default="unknown"),
+        sa.Column("notes", sa.String(length=1200)),
+        sa.Column("status", sa.String(length=16), nullable=False, server_default="pending"),
+        sa.Column("rejection_reason", sa.String(length=500)),
+        sa.Column("verified_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL")),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("ppa_id", "submitted_by_id", name="uq_ppa_experience_member"),
+    )
+    op.create_index("ix_ppa_experiences_ppa_id", "ppa_experiences", ["ppa_id"])
+    op.create_index("ix_ppa_experiences_submitted_by_id", "ppa_experiences", ["submitted_by_id"])
+    op.create_index("ix_ppa_experiences_status", "ppa_experiences", ["status"])
+
     # Aiven PostgreSQL supports PostGIS, installed in the target database
     # separately. Do not add a spatial dependency to local SQLite tests.
     if op.get_bind().dialect.name == "postgresql":
@@ -67,6 +87,10 @@ def upgrade():
 def downgrade():
     if op.get_bind().dialect.name == "postgresql":
         op.execute("DROP INDEX IF EXISTS ix_ppas_geo_gist")
+    op.drop_index("ix_ppa_experiences_status", table_name="ppa_experiences")
+    op.drop_index("ix_ppa_experiences_submitted_by_id", table_name="ppa_experiences")
+    op.drop_index("ix_ppa_experiences_ppa_id", table_name="ppa_experiences")
+    op.drop_table("ppa_experiences")
     op.drop_index("ix_ppas_state_lga_status", table_name="ppas")
     op.drop_index("ix_ppas_submitted_by_id", table_name="ppas")
     op.drop_index("ix_ppas_status", table_name="ppas")
