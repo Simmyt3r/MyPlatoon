@@ -49,6 +49,9 @@ def upgrade():
 
 
 def downgrade():
+    op.drop_index("ix_dating_interests_recipient_id", table_name="dating_interests")
+    op.drop_index("ix_dating_interests_sender_id", table_name="dating_interests")
+    op.drop_table("dating_interests")
     op.drop_index("ix_dating_blocks_blocked_id", table_name="dating_blocks")
     op.drop_index("ix_dating_blocks_blocker_id", table_name="dating_blocks")
     op.drop_table("dating_blocks")
