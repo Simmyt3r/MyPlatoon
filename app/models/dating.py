@@ -179,3 +179,63 @@ class DatingInterest(db.Model):
 
     sender = db.relationship("DatingPersona", foreign_keys=[sender_id])
     recipient = db.relationship("DatingPersona", foreign_keys=[recipient_id])
+
+
+
+class DatingMessage(db.Model):
+    """Plain-text message exchanged by two explicitly connected adults.
+
+    Conversation key is the canonical sorted persona pair. Read access is
+    checked on every request; message retention is separate from visibility.
+    """
+    __tablename__ = "dating_messages"
+    __table_args__ = (
+        db.CheckConstraint("persona_low_id < persona_high_id",
+                           name="ck_dating_message_pair_order"),
+        db.CheckConstraint("length(body) BETWEEN 1 AND 1500",
+                           name="ck_dating_message_body_length"),
+        db.Index("ix_dating_messages_thread", "persona_low_id",
+                 "persona_high_id", "created_at", "id"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    persona_low_id = db.Column(db.Integer,
+        db.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False)
+    persona_high_id = db.Column(db.Integer,
+        db.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False)
+    sender_id = db.Column(db.Integer,
+        db.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False, index=True)
+    body = db.Column(db.String(1500), nullable=False)
+    is_removed = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    sender = db.relationship("DatingPersona", foreign_keys=[sender_id])
+
+    @staticmethod
+    def pair(a, b):
+        return min(a, b), max(a, b)
+
+
+class DatingMessageReport(db.Model):
+    """Private abuse report on a message, visible only to its reporting
+    recipient and administrators. Content itself is NOT copied to notification.
+    """
+    __tablename__ = "dating_message_reports"
+    __table_args__ = (
+        db.UniqueConstraint("message_id", "reporter_id",
+                            name="uq_dating_message_report"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer,
+        db.ForeignKey("dating_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    reporter_id = db.Column(db.Integer,
+        db.ForeignKey("dating_personas.id", ondelete="CASCADE"), nullable=False)
+    reason = db.Column(db.String(500), nullable=False)
+    status = db.Column(db.String(12), nullable=False, default="pending", index=True)
+    reviewed_by_id = db.Column(db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime)
+
+    message = db.relationship("DatingMessage", backref=db.backref(
+        "reports", lazy="dynamic", cascade="all, delete-orphan"))
+    reporter = db.relationship("DatingPersona", foreign_keys=[reporter_id])
