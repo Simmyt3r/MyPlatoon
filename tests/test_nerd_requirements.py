@@ -74,11 +74,15 @@ def test_nerd_requirements_page_is_public(client):
 def test_nerd_checklist_does_not_collect_identity_info_or_files(client):
     response = client.get("/nerd/requirements")
     html = response.get_data(as_text=True)
-    assert '<form' not in html
-    assert 'type="file"' not in html
-    assert 'type="text"' not in html
+    # The normal page shell has a public search form in its HEADER.
+    # Only the checklist region must be free of any identity-entry form.
+    checklist = html.split('id="nerd-checklist"', 1)[1]
+    assert '<form' not in checklist
+    assert 'type="file"' not in checklist
+    assert 'type="text"' not in checklist
+    assert 'type="password"' not in checklist
+    assert 'name="nin"' not in checklist
     assert "No checklist entries are sent to or saved on MyPlatoon servers" in html
-    assert "no information" not in html.lower() or "not" in html.lower()
     assert client.post("/nerd/requirements", data={"nin": "12345678901"}).status_code == 405
 
 
