@@ -12,7 +12,7 @@ from sqlalchemy import or_
 
 from app.extensions import db, limiter
 from app.models import (
-    Employer, JobListing, JobApplication, User, Profile,
+    Employer, JobListing, JobApplication, JobReport, User, Profile,
     EMPLOYER_KINDS, JOB_KINDS, WORK_MODES, PAY_UNITS, APP_STATUSES,
 )
 from app.models.platoon import NYSC_STATES
