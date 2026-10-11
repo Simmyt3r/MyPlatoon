@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My PPA Reports{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:900px">
+  <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 fw-bold">My PPA submissions</h1>
+      <p class="text-muted mb-0">Track reports that are pending, reviewed, or returned for correction.</p>
+    </div>
+    <a href="{{ url_for('ppa.create') }}" class="btn btn-p5"><i class="fa-solid fa-plus me-1"></i>Submit PPA</a>
+  </header>
+  <div class="p5-card p-3 p-md-4">
+    {% for p in entries %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-3 {{ 'border-top' if not loop.first }}">
+        <div>
+          <a href="{{ url_for('ppa.detail', ppa_id=p.id) }}" class="fw-bold text-decoration-none">{{ p.name }}</a>
+          <div class="text-muted small">{{ p.lga }}, {{ p.state }} · Added {{ p.created_at.strftime('%d %b %Y') }}</div>
+          <span class="small {{ 'text-success' if p.status == 'verified' else ('text-danger' if p.status == 'rejected' else 'text-muted') }}">{{ p.status|capitalize }}</span>
+        </div>
+        <a href="{{ url_for('ppa.edit', ppa_id=p.id) }}" class="btn btn-p5-outline btn-sm">Edit</a>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No PPA reports yet. Share information about a workplace you know firsthand to help other corps members.</p>
+    {% endfor %}
+  </div>
+  <a href="{{ url_for('ppa.index') }}" class="small d-inline-block mt-3">Browse all reviewed PPAs</a>
+</div>
+{% endblock %}
