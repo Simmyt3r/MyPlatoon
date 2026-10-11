@@ -58,6 +58,15 @@
 
   <div class="row g-3">
     <div class="col-sm-6 col-lg-4">
+      <a href="{{ url_for('main.services') }}" class="text-decoration-none">
+        <div class="p5-card p5-card-body text-center">
+          <i class="fa-solid fa-file-lines fa-2x mb-2 text-success" aria-hidden="true"></i>
+          <div>Career Services</div>
+          <span class="small text-muted">CareerMirror CV preparation</span>
+        </div>
+      </a>
+    </div>
+    <div class="col-sm-6 col-lg-4">
       <a href="{{ url_for('directory.member_profile', slug=profile.slug) }}" class="text-decoration-none">
         <div class="p5-card p5-card-body text-center"><i class="fa-solid fa-id-card fa-2x mb-2 text-success"></i><div>Your Profile</div></div>
       </a>
