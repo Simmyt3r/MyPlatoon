@@ -2,8 +2,9 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Optional, Length
 
-GENDER_FORM_CHOICES = [("male", "Man"), ("female", "Woman")]
-INTERESTED_IN_CHOICES = [("male", "Men"), ("female", "Women")]
+GENDER_FORM_CHOICES = [("male", "Man"), ("female", "Woman"), ("nonbinary", "Nonbinary")]
+INTERESTED_IN_CHOICES = [("female", "Women"), ("male", "Men"),
+                         ("nonbinary", "Nonbinary people"), ("any", "Everyone")]
 
 
 class DatingPersonaForm(FlaskForm):
