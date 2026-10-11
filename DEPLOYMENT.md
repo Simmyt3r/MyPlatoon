@@ -142,7 +142,10 @@ defaults to disabled in production.
 4. Wait for a successful run. Verify the installed revision is
    `63f21ac4db09` (includes nationwide platoons, PPA records, member
    experience reports, and PostGIS index).
-5. Vercel → Settings → Environment Variables: set `AIVEN_DATABASE_URL`
+5. For new installations, create GitHub `production` secrets
+   `ADMIN_INIT_EMAIL` and `ADMIN_INIT_PASSWORD` (16+ characters) and run
+   Actions → **Bootstrap Aiven MyPlatoon administrator** → Run workflow.
+6. Vercel → Settings → Environment Variables: set `AIVEN_DATABASE_URL`
    to the Aiven **myplatoon** URI; set `AUTO_CREATE_TABLES=false`.
 6. Deploy the updated main branch through Vercel UI.
 
