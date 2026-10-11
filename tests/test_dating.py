@@ -206,7 +206,7 @@ def test_report_hides_persona_from_matching(client, db):
     # even though the DatingMatch row still exists. (There was only one
     # candidate, so browsing now shows the empty state.)
     browse_resp = client.get("/dating/browse")
-    assert b"No matches yet" in browse_resp.data
+    assert b"No suggestions yet" in browse_resp.data
 
 
 def test_cannot_report_self(client, member_user, db):
