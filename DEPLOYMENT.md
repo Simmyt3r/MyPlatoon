@@ -1,7 +1,7 @@
 # Deployment Guide
 
 This guide walks through deploying MyPlatoon, the nationwide NYSC community, to **Vercel**, backed by
-**Neon PostgreSQL** and **Cloudinary** for image storage.
+**Aiven PostgreSQL with PostGIS** and **Cloudinary** for image storage.
 
 > Vercel's Python runtime is serverless: the filesystem is ephemeral and read-only at
 > request time outside of `/tmp`. Nothing in this application writes to local disk for
@@ -13,7 +13,7 @@ This guide walks through deploying MyPlatoon, the nationwide NYSC community, to 
 ## Required: database upgrade for nationwide platoons
 
 **Before exposing the new application on an existing database**, apply
-revision `0d842ac781b6`. Simply deploying the new Python code will NOT alter
+the current migrations through revision `63f21ac4db09`. Simply deploying the new Python code will NOT alter
 the old `profiles` table because SQLAlchemy `create_all()` adds missing
 tables, not missing columns.
 
@@ -34,8 +34,7 @@ The migration script recognizes empty databases, old databases built using
 assigns invented platoons to existing members. If it detects a partially
 migrated schema, it aborts for manual review.
 
-`FLASK_ENV=production` and `DATABASE_URL` remain required for the web
-runtime. The migration workflow reads only the direct connection secret
+`FLASK_ENV=production` and `AIVEN_DATABASE_URL` are required for the new Aiven web runtime. The migration workflow reads only the direct connection secret
 during an explicitly triggered, environment-protected GitHub Actions run.
 
 ---
@@ -55,17 +54,19 @@ git remote add origin https://github.com/Simmyt3r/MyPlatoon.git
 git push -u origin main
 ```
 
-## 2. Neon Database Setup
+## 2. Aiven Database Setup (already provisioned)
 
-1. Create a free account at neon.tech.
-2. Create a new project (choose a region close to your users).
-3. Copy the connection string shown on the project dashboard. It looks like:
-   ```
-   postgresql://<user>:<password>@<endpoint>.neon.tech/<database>?sslmode=require
-   ```
-4. Save this as `DATABASE_URL` — you'll add it to Vercel's environment variables in step 5.
-5. Neon databases sleep when idle on the free tier; the first request after idle may be
-   slightly slower (cold start). This is normal.
+The connected Aiven service is `simmyt3r / pg-31f7f560`.
+The dedicated database **`myplatoon`** and the **PostGIS** extension were
+created and verified on 11 October 2026. Do not point this app at `defaultdb`.
+
+In the [Aiven Console](https://console.aiven.io), open the service and
+copy its PostgreSQL connection URL for database `myplatoon` (SSL required).
+The connection password is private and **not in GitHub**.
+
+**If your previous deployed app already has users**, back up and migrate the
+old database first. A fresh database will have no old member accounts. See
+[PPA_GIS_AIVEN.md](PPA_GIS_AIVEN.md) for the safe migration checklist.
 
 ## 3. Environment Variables
 
@@ -74,7 +75,7 @@ You will need the following (see `.env.example` for the full list with descripti
 | Variable | Where to get it |
 |---|---|
 | `SECRET_KEY` | Generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
-| `DATABASE_URL` | From Neon (step 2) |
+| `AIVEN_DATABASE_URL` | PostgreSQL service URL for **myplatoon** from Aiven Console; include `sslmode=require` |\n| `AUTO_CREATE_TABLES` | Set to `false` for production; use Alembic migrations |
 | `CLOUDINARY_CLOUD_NAME` | From Cloudinary dashboard |
 | `CLOUDINARY_API_KEY` | From Cloudinary dashboard |
 | `CLOUDINARY_API_SECRET` | From Cloudinary dashboard |
@@ -128,46 +129,36 @@ vercel login
 vercel --prod
 ```
 
-## 7. Database Schema
+## 7. Aiven Schema Migration
 
-**Tables are created automatically on first startup** — the app calls a safe,
-idempotent `db.create_all()` at boot (see `AUTO_CREATE_TABLES` in `.env`), so a brand-new
-Neon database gets its schema the moment the app first runs. You do **not** need to
-manually run `flask db upgrade` just to get a fresh deployment working.
+Production no longer relies on `db.create_all()`. It does not upgrade
+existing tables and can create a partly initialized database, so it now
+defaults to disabled in production.
 
-This covers *initial* table creation only. If you later change a model (add a column,
-rename a field, etc.), `create_all()` won't alter existing tables — use a real Alembic
-migration for that, same as any Flask-SQLAlchemy project:
+1. GitHub → MyPlatoon → Settings → Environments → `production`.
+2. Set secret `DATABASE_URL_UNPOOLED` to the direct Aiven connection URL
+   for **`myplatoon`**.
+3. GitHub → Actions → `Apply MyPlatoon production migrations` → Run workflow.
+4. Wait for a successful run. Verify the installed revision is
+   `63f21ac4db09` (includes nationwide platoons, PPA records, member
+   experience reports, and PostGIS index).
+5. Vercel → Settings → Environment Variables: set `AIVEN_DATABASE_URL`
+   to the Aiven **myplatoon** URI; set `AUTO_CREATE_TABLES=false`.
+6. Deploy the updated main branch through Vercel UI.
 
-Neon connections come in two flavors: a **pooled** connection (via PgBouncer, good for
-normal app traffic) and an **unpooled/direct** connection. Run schema migrations against
-the **unpooled** connection — PgBouncer's transaction-pooling mode can interfere with the
-multi-statement DDL Alembic issues during `flask db upgrade`.
+The workflow's `scripts/upgrade_nysc_schema.py` handles an empty database
+or a verified legacy schema. It refuses partially initialized databases
+rather than overwriting user records.
 
-```bash
-# Use the UNPOOLED connection string for migrations specifically:
-export DATABASE_URL="$DATABASE_URL_UNPOOLED"
-export FLASK_APP=wsgi.py
-flask db migrate -m "Describe the change"
-flask db upgrade
-
-# Then switch back to the pooled connection for normal running/deployment
-# (this is already what's in .env / your Vercel env vars by default).
-```
-
-If you've been relying on auto-create and want to switch to strict Alembic-managed
-migrations going forward, run `flask db stamp head` once against your existing database
-so Alembic knows the current schema is already in place, before running future
-`flask db migrate`/`upgrade` commands.
-
-Commit any migration files under `migrations/versions/` to version control.
+Important: Vercel's existing `DATABASE_URL` from another provider may
+remain configured; `AIVEN_DATABASE_URL` has priority when set.
 
 ## 7b. Your First Admin Account
 
 The simplest path: set `ADMIN_INIT_EMAIL` and `ADMIN_INIT_PASSWORD` in your Vercel
-project's environment variables (Production). The next time the app starts, it creates
-that admin account automatically — same mechanism as the table/category auto-creation
-above. It only ever runs once (it's a no-op if that email already exists) and never
+project's environment variables (Production). After the database migration, you can run the CLI admin bootstrap; setting
+these variables also enables its initial-admin creation during startup only
+when automatic bootstrap is enabled. It only ever runs once (it's a no-op if that email already exists) and never
 overwrites a password you've since changed. Use a real password here, at least 8
 characters — there's no default baked into the code, so nothing is created until you set
 this yourself.
