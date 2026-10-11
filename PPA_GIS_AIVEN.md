@@ -43,7 +43,12 @@ redacts database secrets.
    Confirm the migration completes. The latest Alembic revision is
    `63f21ac4db09`. This sets up the application tables, PPA table and
    PostGIS spatial index.
-7. Vercel → connected MyPlatoon project → **Settings → Environment Variables**:
+7. For a brand-new database, set `ADMIN_INIT_EMAIL` and a strong
+   `ADMIN_INIT_PASSWORD` (16+ characters) as GitHub `production` environment
+   secrets, then run **Actions → Bootstrap Aiven MyPlatoon administrator →
+   Run workflow**. This also seeds business categories. It never resets an
+   existing admin's password or elevates existing members.
+8. Vercel → connected MyPlatoon project → **Settings → Environment Variables**:
    set `AIVEN_DATABASE_URL` to the exact same Aiven **myplatoon** URI.
    This has priority over any old `DATABASE_URL` configured in Vercel.
    Set `AUTO_CREATE_TABLES=false`, `FLASK_ENV=production` and your existing
