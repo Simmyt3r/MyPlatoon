@@ -27,6 +27,14 @@
   <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">1</div><div class="p5-stat-label">Platoon</div></div></div>
 </div>
 
+<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="NERD resource">
+  <div>
+    <div class="fw-bold"><i class="fa-solid fa-graduation-cap text-success me-2" aria-hidden="true"></i>Preparing for NYSC mobilisation?</div>
+    <p class="small text-muted mb-0">Visit the NERD guide for official registration links, academic submission steps, and independent help on 09039930006.</p>
+  </div>
+  <a href="{{ url_for('main.nerd') }}" class="btn btn-p5 text-nowrap">NERD guide</a>
+</section>
+
 {% if stories %}
 <div class="p5-stories">
   {% for p in stories %}
