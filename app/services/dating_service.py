@@ -8,11 +8,11 @@ score, and each side's rank of the other. The celebratory notification
 only fires the first time a pair becomes MUTUAL (each ranks the other in
 their own top N) -- see app/models/dating.py for why.
 """
-import hashlib
 from datetime import datetime
+from sqlalchemy import or_, and_
 
 from app.extensions import db
-from app.models import DatingPersona, DatingMatch, Profile
+from app.models import DatingPersona, DatingMatch, DatingBlock, Profile, User
 from app.services.notification_service import notify
 
 TOP_N = 10
@@ -27,54 +27,63 @@ def _jaccard(a: set, b: set) -> float:
     return len(a & b) / len(union)
 
 
-def _spark(persona_a_id: int, persona_b_id: int) -> float:
-    """A small, stable (not truly random) +/- offset per pair, so the score
-    isn't purely mechanical without flickering between recomputations."""
-    key = f"{min(persona_a_id, persona_b_id)}:{max(persona_a_id, persona_b_id)}"
-    digest = hashlib.sha256(key.encode()).hexdigest()
-    # Map the first 4 hex chars to a stable value in [-10, 10]
-    value = int(digest[:4], 16) / 0xFFFF  # 0..1
-    return (value - 0.5) * 20
-
-
 def compute_compatibility(persona_a: DatingPersona, persona_b: DatingPersona) -> float:
-    """Symmetric 0-100 compatibility score between two personas."""
+    """Transparent shared-interest similarity, not a predictive love score.
+
+    No random offsets, state of origin or demographic inferences.
+    The value is a discovery ranking only, not a measure of consent,
+    attraction, personal suitability or relationship success.
+    """
     profile_a, profile_b = persona_a.profile, persona_b.profile
 
-    skills_a = {s.name.lower() for s in profile_a.skills}
-    skills_b = {s.name.lower() for s in profile_b.skills}
-    skills_score = _jaccard(skills_a, skills_b) * 40
+    interests_a = {i.casefold() for i in persona_a.interest_list()}
+    interests_b = {i.casefold() for i in persona_b.interest_list()}
+    skills_a = {s.name.casefold() for s in profile_a.skills}
+    skills_b = {s.name.casefold() for s in profile_b.skills}
 
-    interests_a = {i.lower() for i in persona_a.interest_list()}
-    interests_b = {i.lower() for i in persona_b.interest_list()}
-    interests_score = _jaccard(interests_a, interests_b) * 30
+    interests_score = 80 * _jaccard(interests_a, interests_b)
+    skills_score = 20 * _jaccard(skills_a, skills_b)
 
-    state_bonus = 0.0
-    if profile_a.state_of_origin and profile_b.state_of_origin:
-        if profile_a.state_of_origin.strip().lower() == profile_b.state_of_origin.strip().lower():
-            state_bonus = 15.0
+    return round(min(100.0, max(0.0, interests_score + skills_score)), 1)
 
-    profession_bonus = 0.0
-    if profile_a.profession and profile_b.profession:
-        if profile_a.profession.strip().lower() == profile_b.profession.strip().lower():
-            profession_bonus = 5.0
 
-    spark = _spark(persona_a.id, persona_b.id)
+def _blocked_ids(persona_id):
+    """Include blocks initiated by either party."""
+    rows = DatingBlock.query.filter(or_(
+        DatingBlock.blocker_id == persona_id,
+        DatingBlock.blocked_id == persona_id,
+    )).all()
+    return {
+        row.blocked_id if row.blocker_id == persona_id else row.blocker_id
+        for row in rows
+    }
 
-    raw = skills_score + interests_score + state_bonus + profession_bonus + spark
-    return round(max(20.0, min(100.0, raw)), 1)
+
+def is_blocked(persona_a_id, persona_b_id):
+    return DatingBlock.query.filter(or_(
+        and_(DatingBlock.blocker_id == persona_a_id,
+             DatingBlock.blocked_id == persona_b_id),
+        and_(DatingBlock.blocker_id == persona_b_id,
+             DatingBlock.blocked_id == persona_a_id),
+    )).first() is not None
 
 
 def _eligible_candidates(persona: DatingPersona):
-    return (DatingPersona.query
-            .filter(DatingPersona.id != persona.id)
-            .filter(DatingPersona.status == "active")
-            .filter(DatingPersona.is_reported.is_(False))
-            .filter(DatingPersona.gender == persona.interested_in)
-            .filter(DatingPersona.interested_in == persona.gender)
-            .join(Profile, DatingPersona.profile_id == Profile.id)
-            .filter(Profile.status == "approved")
-            .all())
+    blocked = _blocked_ids(persona.id)
+    query = (DatingPersona.query
+             .filter(DatingPersona.id != persona.id)
+             .filter(DatingPersona.status == "active")
+             .filter(DatingPersona.is_reported.is_(False))
+             .filter(DatingPersona.age_confirmed_at.isnot(None))
+             .filter(DatingPersona.gender == persona.interested_in)
+             .filter(DatingPersona.interested_in == persona.gender)
+             .join(Profile, DatingPersona.profile_id == Profile.id)
+             .join(User, Profile.user_id == User.id)
+             .filter(Profile.status == "approved", User.is_active_account.is_(True),
+                     User.is_suspended.is_(False)))
+    if blocked:
+        query = query.filter(~DatingPersona.id.in_(blocked))
+    return query.all()
 
 
 def _get_or_create_match(persona_a: DatingPersona, persona_b: DatingPersona) -> DatingMatch:
@@ -101,6 +110,20 @@ def generate_matches_for_persona(persona: DatingPersona, top_n: int = TOP_N, _ca
     Returns the list of (DatingMatch, other_persona, score) for this
     persona's new top N, best first.
     """
+    if not persona.is_active_and_visible():
+        return []
+    # Clear stale candidate ranks: a previous match should not remain a
+    # "top pick" after preferences change or a new candidate outranks it.
+    ranked_pairs = DatingMatch.query.filter(or_(
+        DatingMatch.persona_low_id == persona.id,
+        DatingMatch.persona_high_id == persona.id,
+    )).all()
+    for pair in ranked_pairs:
+        if pair.persona_low_id == persona.id:
+            pair.low_ranks_high = None
+        else:
+            pair.high_ranks_low = None
+
     candidates = _eligible_candidates(persona)
     scored = [(c, compute_compatibility(persona, c)) for c in candidates]
     scored.sort(key=lambda pair: pair[1], reverse=True)
@@ -151,11 +174,10 @@ def _notify_mutual_match(match: DatingMatch):
     high_user = match.persona_high.profile.user
     low_name = match.persona_low.display_name or low_user.full_name.split(" ")[0]
     high_name = match.persona_high.display_name or high_user.full_name.split(" ")[0]
-    pct = int(round(match.score))
 
-    notify(low_user, f"\U0001F389 It's a match! You and {high_name} are {pct}% compatible. Say hello!",
+    notify(low_user, f"You have a new mutual match suggestion with {high_name}. Explore it at your own pace.",
            category="success")
-    notify(high_user, f"\U0001F389 It's a match! You and {low_name} are {pct}% compatible. Say hello!",
+    notify(high_user, f"You have a new mutual match suggestion with {low_name}. Explore it at your own pace.",
            category="success")
 
 
@@ -174,9 +196,15 @@ def browse_matches_for_persona(persona: DatingPersona):
 
     rows.sort(key=rank_of)
     pairs = [(m, m.other_persona(persona.id)) for m in rows]
-    # A candidate may have paused or been reported since this row was last
-    # touched -- don't surface them even though the stale rank row remains.
-    return [(m, other) for m, other in pairs if other.is_active_and_visible()]
+    if not persona.is_active_and_visible():
+        return []
+    blocked = _blocked_ids(persona.id)
+    return [
+        (m, other) for m, other in pairs
+        if other and other.id not in blocked
+        and other.is_active_and_visible()
+        and persona.is_compatible_with(other)
+    ]
 
 
 def mutual_matches_for_persona(persona: DatingPersona):
@@ -187,7 +215,15 @@ def mutual_matches_for_persona(persona: DatingPersona):
             .order_by(DatingMatch.matched_at.desc())
             .all())
     pairs = [(m, m.other_persona(persona.id)) for m in rows]
-    return [(m, other) for m, other in pairs if other.is_active_and_visible()]
+    if not persona.is_active_and_visible():
+        return []
+    blocked = _blocked_ids(persona.id)
+    return [
+        (m, other) for m, other in pairs
+        if other and other.id not in blocked
+        and other.is_active_and_visible()
+        and persona.is_compatible_with(other)
+    ]
 
 
 def report_persona(persona: DatingPersona, reason: str):
@@ -199,4 +235,33 @@ def report_persona(persona: DatingPersona, reason: str):
     """
     persona.is_reported = True
     persona.report_reason = (reason or "").strip()[:500] or "No reason given."
+    db.session.commit()
+
+
+
+def block_persona(blocker: DatingPersona, target: DatingPersona):
+    """Hide both ways without affecting others; the blocked user is not notified."""
+    if blocker.id == target.id:
+        raise ValueError("A dating persona cannot block itself.")
+    existing = DatingBlock.query.filter_by(
+        blocker_id=blocker.id, blocked_id=target.id).first()
+    if existing:
+        return existing
+    row = DatingBlock(blocker_id=blocker.id, blocked_id=target.id)
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def delete_dating_persona(persona: DatingPersona):
+    """Delete this persona and any match/block rows, without deleting the member."""
+    DatingMatch.query.filter(or_(
+        DatingMatch.persona_low_id == persona.id,
+        DatingMatch.persona_high_id == persona.id,
+    )).delete(synchronize_session=False)
+    DatingBlock.query.filter(or_(
+        DatingBlock.blocker_id == persona.id,
+        DatingBlock.blocked_id == persona.id,
+    )).delete(synchronize_session=False)
+    db.session.delete(persona)
     db.session.commit()
