@@ -140,7 +140,7 @@ defaults to disabled in production.
    for **`myplatoon`**.
 3. GitHub → Actions → `Apply MyPlatoon production migrations` → Run workflow.
 4. Wait for a successful run. Verify the installed revision is
-   `f1a9c3de7b21` (includes nationwide platoons, PPA records, member
+   `b5d917c62a03` (includes nationwide platoons, PPA records, member
    experience reports, PostGIS index, adult Dating consent and blocks).
 5. For new installations, create GitHub `production` secrets
    `ADMIN_INIT_EMAIL` and `ADMIN_INIT_PASSWORD` (16+ characters) and run
