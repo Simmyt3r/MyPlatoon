@@ -36,6 +36,22 @@
     </div>
   </section>
 
+  {% if ENABLE_DATING and current_user.is_authenticated %}
+  <section class="p5-card p-4 mb-4" aria-label="Optional dating for adults">
+    <div class="d-flex flex-column flex-sm-row align-items-start gap-3">
+      <div class="rounded-3 p-3" style="background:#fce8ec;color:#a71d47">
+        <i class="fa-solid fa-heart fa-xl" aria-hidden="true"></i>
+      </div>
+      <div class="flex-grow-1">
+        <h2 class="h5 fw-bold mb-2">Dating: optional adult community</h2>
+        <p class="text-muted mb-3">Discover mutual interests with other adults who explicitly opt in. Keep your dating profile separate, control photo sharing, and block, report, pause or delete it at any time.</p>
+        <a href="{{ url_for('dating.home') }}" class="btn btn-p5-outline">Explore Dating</a>
+        <p class="small text-muted mb-0 mt-2">Available to adults aged 18 and older with approved member profiles.</p>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
   <section aria-labelledby="nysc-services-heading">
     <h2 class="h5 fw-bold mb-3" id="nysc-services-heading">NYSC journey resources</h2>
     <div class="row g-3">
