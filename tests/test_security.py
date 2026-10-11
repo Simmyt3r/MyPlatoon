@@ -30,8 +30,14 @@ def test_platoon_only_profile_hidden_from_guests(client, approved_member, db):
     assert resp.status_code == 404
 
 
-def test_platoon_only_profile_visible_to_other_approved_members(client, approved_member, member_user, db):
+def test_platoon_only_profile_visible_to_same_cohort(client, approved_member, member_user, db):
+    from app.models import Platoon
+    platoon = Platoon.find_or_create("Benue", 2026, "B", "II", 5)
     approved_member.profile.profile_visibility = "platoon"
+    approved_member.profile.service_stage = "serving"
+    approved_member.profile.platoon = platoon
+    member_user.profile.service_stage = "serving"
+    member_user.profile.platoon = platoon
     member_user.profile.status = "approved"
     db.session.commit()
 
