@@ -29,8 +29,7 @@
   <div class="p5-card p5-card-body mb-4">
     <h6 class="fw-bold">Generate New Version</h6>
     <p class="small text-muted">
-      This compiles all currently approved profiles into a fresh PDF. Only do this
-      when there are meaningful changes since the last version.
+      Select the exact state, year, batch, stream and platoon. Only that platoon's approved and shareable profiles will enter the PDF.
     </p>
     <form method="POST" action="{{ url_for('album.generate') }}" data-confirm="Generate a new album version now?">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
