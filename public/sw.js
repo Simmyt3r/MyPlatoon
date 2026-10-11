@@ -1,4 +1,4 @@
-// Platoon 5 Digital Album -- Service Worker
+// MyPlatoon -- Service Worker
 //
 // This is a server-rendered Flask app, not a single-page app, so the
 // service worker's job is deliberately modest: make the app installable,
@@ -9,7 +9,7 @@
 // directory, admin actions, etc. always need a live connection, and
 // pretending otherwise would risk showing stale or private data.
 
-const CACHE_NAME = "platoon5-shell-v1";
+const CACHE_NAME = "myplatoon-shell-v2";
 const APP_SHELL = [
   "/static/css/style.css",
   "/static/js/app.js",
