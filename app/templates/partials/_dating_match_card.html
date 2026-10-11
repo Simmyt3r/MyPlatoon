@@ -1,4 +1,4 @@
-{% macro dating_match_card(match, other, viewer_persona, show_rank=none) %}
+{% macro dating_match_card(match, other, viewer_persona, show_rank=none, liked_ids=none) %}
 {% set shared = viewer_persona.shared_interests_with(other) if viewer_persona else [] %}
 <div class="col-12 col-md-6 col-xl-4">
   <article class="p5-card h-100 overflow-hidden">
@@ -26,6 +26,18 @@
       {% else %}
       <p class="small text-muted mb-3">Explore interests and see whether you connect.</p>
       {% endif %}
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        {% if liked_ids and other.id in liked_ids %}
+          <span class="badge bg-light border text-success"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Interest sent</span>
+        {% else %}
+          <form method="POST" action="{{ url_for('dating.interest', persona_id=other.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-p5 btn-sm">
+              <i class="fa-regular fa-heart me-1" aria-hidden="true"></i>I'm interested
+            </button>
+          </form>
+        {% endif %}
+      </div>
       <div class="d-flex flex-wrap align-items-center gap-2 mt-auto">
         <a href="{{ url_for('dating.person_detail', persona_id=other.id) }}" class="btn btn-p5 btn-sm flex-grow-1">
           View dating persona
