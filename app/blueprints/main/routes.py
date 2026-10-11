@@ -50,6 +50,11 @@ def nerd():
     return render_template("main/nerd.html")
 
 
+@bp.route("/platoons/guide")
+def platoon_guide():
+    return render_template("main/platoon_guide.html")
+
+
 @bp.route("/about")
 def about():
     return render_template("main/about.html")
