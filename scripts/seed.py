@@ -23,7 +23,7 @@ load_dotenv()
 from app import create_app
 from app.extensions import db
 from app.models import (
-    User, Profile, Skill, Business, BusinessCategory, DEFAULT_CATEGORIES, Announcement,
+    User, Profile, Skill, Business, BusinessCategory, DEFAULT_CATEGORIES, Announcement, Platoon,
 )
 
 SAMPLE_MEMBERS = [
@@ -87,7 +87,7 @@ def run():
         # --- Admin ---
         admin_email = "admin.demo@example.com"
         if not User.query.filter_by(email=admin_email).first():
-            admin = User(full_name="Platoon 5 Admin (Demo)", email=admin_email, role="admin")
+            admin = User(full_name="MyPlatoon Administrator (Demo)", email=admin_email, role="admin")
             admin.set_password("ChangeMe123!")
             db.session.add(admin)
             db.session.flush()
@@ -117,6 +117,15 @@ def run():
                 phone_visibility="platoon",
                 whatsapp_visibility="platoon",
             )
+            # Demo cohorts are fictional and must not be copied onto real members.
+            if m["status"] == "approved":
+                profile.service_stage = "serving"
+                demo_camp = {
+                    "chidinma.demo@example.com": ("Anambra", 2026, "B", "II", 5),
+                    "musa.demo@example.com": ("Kano", 2026, "B", "II", 5),
+                    "blessing.demo@example.com": ("Akwa Ibom", 2026, "A", "I", 2),
+                }[m["email"]]
+                profile.platoon = Platoon.find_or_create(*demo_camp)
             db.session.add(profile)
             db.session.flush()
 
@@ -155,8 +164,8 @@ def run():
         if not Announcement.query.first():
             admin = User.query.filter_by(email=admin_email).first()
             db.session.add(Announcement(
-                title="Welcome to the Platoon 5 Digital Album!",
-                body="Complete your profile and submit it for approval to appear in the directory and album.",
+                title="Welcome to MyPlatoon!",
+                body="Join as a PCM or add your camp platoon and connect with your NYSC community.",
                 created_by_id=admin.id if admin else None,
             ))
             db.session.commit()
