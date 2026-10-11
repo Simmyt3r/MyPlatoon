@@ -157,6 +157,7 @@ def generate_new_album_version(generated_by, platoon_id) -> AlbumVersion:
     upload_result = _upload_pdf_bytes(pdf_bytes, version_label)
 
     version = AlbumVersion(
+        platoon_id=platoon.id,
         version_label=version_label,
         pdf_url=upload_result["url"] or "",
         pdf_public_id=upload_result["public_id"],
