@@ -111,10 +111,20 @@ def _register_context_processors(app):
         suggested_profiles = []
         recent_notifications = []
         if current_user and getattr(current_user, "is_authenticated", False):
-            query = (Profile.query.filter_by(status="approved")
-                     .filter(Profile.profile_visibility.in_(["public", "platoon"])))
-            if current_user.profile:
-                query = query.filter(Profile.id != current_user.profile.id)
+            query = Profile.query.filter_by(status="approved")
+            own = current_user.profile
+            if current_user.is_admin:
+                query = query.filter(Profile.profile_visibility.in_(["public", "platoon"]))
+            elif own and own.status == "approved" and own.platoon_id:
+                query = query.filter(or_(
+                    Profile.profile_visibility == "public",
+                    and_(Profile.profile_visibility == "platoon",
+                         Profile.platoon_id == own.platoon_id),
+                ))
+            else:
+                query = query.filter(Profile.profile_visibility == "public")
+            if own:
+                query = query.filter(Profile.id != own.id)
             suggested_profiles = query.order_by(Profile.updated_at.desc()).limit(5).all()
 
             recent_notifications = (Notification.query
