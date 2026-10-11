@@ -6,7 +6,7 @@
   <article class="p5-card overflow-hidden">
     <div class="row g-0">
       <div class="col-md-5">
-        <img src="{{ target.profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+        <img src="{{ target.profile.photo_url if target.show_profile_photo and target.profile.photo_url else url_for('static', filename='img/placeholder-avatar.png') }}"
              alt="Portrait of {{ target.display_name or 'participant' }}" class="w-100 h-100"
              style="object-fit:cover;max-height:500px;min-height:260px;">
       </div>
