@@ -21,7 +21,7 @@ NATIONAL_REVISION = "0d842ac781b6"
 BASE_TABLES = {
     "users", "profiles", "album_versions", "announcements",
     "business_categories", "businesses", "audit_logs", "notifications",
-    "skills", "dating_personas", "dating_matches",
+    "skills", "profile_skills", "dating_personas", "dating_matches",
     "announcement_reactions", "announcement_comments",
 }
 
