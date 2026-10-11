@@ -225,3 +225,29 @@ def test_rating_previous_cohort_is_disregarded_if_member_moves(client, db):
     rating = PlatoonRating.query.one()
     assert rating.platoon_id == p2.id
     assert rating.stars == 4
+
+
+
+def test_national_rankings_do_not_omit_late_alphabet_states_after_100_cohorts(db):
+    # Historical bug: the scoreboard took the first 100 states/cohorts in
+    # alphabetical order and called the winner the national strongest.
+    # A Zamfara cohort must not disappear behind 100 Abia/Adamawa rows.
+    for index in range(102):
+        state = "Abia" if index < 99 else "Adamawa"
+        number = index + 1 if index < 99 else index - 98
+        Platoon.find_or_create(state, 2026, "A", "I", number)
+    target = Platoon.find_or_create("Zamfara", 2026, "B", "II", 5)
+    db.session.commit()
+    voters = []
+    for index in range(3):
+        user = _create_user(db, "zamfara-{}@example.com".format(index))
+        join_cohort(db, user, target)
+        voters.append(user)
+    db.session.add(PlatoonRating(platoon_id=target.id, user_id=voters[0].id, stars=4))
+    db.session.add(PlatoonRating(platoon_id=target.id, user_id=voters[1].id, stars=5))
+    db.session.commit()
+    rows = leaderboard()
+    assert len(rows) == 103
+    row = next(item for item in rows if item["platoon"].id == target.id)
+    assert row["qualified"]
+    assert row["rank"] == 1
