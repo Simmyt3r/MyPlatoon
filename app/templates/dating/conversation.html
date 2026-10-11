@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Chat with {{ target.display_name or 'a connection' }}{% endblock %}
+{% block content %}
+<div class="container py-3" style="max-width:850px">
+  <nav class="mb-3 small"><a href="{{ url_for('dating.connections') }}"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Dating connections</a></nav>
+  <section class="p5-card overflow-hidden" aria-label="Private Dating conversation">
+    <header class="d-flex align-items-center justify-content-between gap-3 p-3 p-md-4 border-bottom">
+      <div class="d-flex align-items-center gap-3">
+        <img src="{{ target.profile.photo_url if target.show_profile_photo and target.profile.photo_url else url_for('static', filename='img/placeholder-avatar.png') }}"
+             alt="" width="52" height="52" style="object-fit:cover;border-radius:50%">
+        <div>
+          <h1 class="h5 fw-bold mb-1">{{ target.display_name or 'Dating connection' }}</h1>
+          <div class="small text-muted">Private conversation · Mutual interest required</div>
+        </div>
+      </div>
+      <a href="{{ url_for('dating.person_detail', persona_id=target.id) }}" class="btn btn-p5-outline btn-sm">View persona</a>
+    </header>
+
+    <div class="p-3 p-md-4" style="background:#f7faf7;min-height:260px" id="dating-chat-log" aria-label="Messages">
+      <p class="text-muted small mb-3">Only you and this connection can view messages while you both maintain an active connection. A moderator can review individual messages you report. Do not share sensitive personal or financial information.</p>
+      {% if pagination.has_next %}
+      <div class="text-center mb-3">
+        <a class="btn btn-p5-outline btn-sm" href="{{ url_for('dating.conversation', persona_id=target.id, page=pagination.next_num) }}">
+          <i class="fa-solid fa-arrow-up me-1" aria-hidden="true"></i>Older messages
+        </a>
+      </div>
+      {% endif %}
+      {% for message in messages %}
+      {% set mine = message.sender_id == viewer.id %}
+      <div class="d-flex mb-3 {{ 'justify-content-end' if mine else 'justify-content-start' }}">
+        <div style="max-width:85%;min-width:120px" class="rounded-3 px-3 py-2 {{ 'text-white' if mine else 'bg-white border' }}"
+             {% if mine %}style="max-width:85%;min-width:120px;background:#14663e"{% endif %}>
+          {% if message.is_removed %}
+          <p class="mb-1 fst-italic small {{ 'text-white' if mine else 'text-muted' }}">This message was removed by a moderator.</p>
+          {% else %}
+          <p class="mb-1" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ message.body }}</p>
+          {% endif %}
+          <div class="d-flex justify-content-between align-items-center gap-3">
+            <time class="small {{ 'text-white' if mine else 'text-muted' }}" datetime="{{ message.created_at.isoformat() }}Z" style="opacity:.75">{{ message.created_at.strftime('%d %b %H:%M') }} UTC</time>
+            {% if not mine %}
+              <a class="small {{ 'text-white' if mine else 'text-danger' }}" href="{{ url_for('dating.report_message', message_id=message.id) }}" aria-label="Report this message">Report</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="text-center py-4"><i class="fa-regular fa-comments fa-2x text-success mb-2" aria-hidden="true"></i><p class="text-muted">No messages yet. Start with a kind introduction.</p></div>
+      {% endfor %}
+    </div>
+    <form method="POST" class="border-top p-3 p-md-4" action="{{ url_for('dating.conversation', persona_id=target.id) }}">
+      {{ form.hidden_tag() }}
+      <label class="form-label fw-semibold" for="dating-message-body">Your message</label>
+      <textarea class="form-control {{ 'is-invalid' if form.body.errors else '' }}" name="body" id="dating-message-body" maxlength="1500" rows="3" required placeholder="Write a respectful message">{{ form.body.data or '' }}</textarea>
+      {% if form.body.errors %}<div class="text-danger small mt-1">{{ form.body.errors|join(', ') }}</div>{% endif %}
+      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mt-2">
+        <span class="small text-muted">Text only · 1,500 characters maximum</span>
+        <button class="btn btn-p5" type="submit"><i class="fa-solid fa-paper-plane me-1" aria-hidden="true"></i>Send</button>
+      </div>
+    </form>
+  </section>
+  <section class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <p class="small text-muted mb-0">You can end this connection at any time by withdrawing interest or blocking the person.</p>
+    <form method="POST" action="{{ url_for('dating.block', persona_id=target.id) }}" data-confirm="Block this person? You will no longer be able to open this conversation.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm">Block this person</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
