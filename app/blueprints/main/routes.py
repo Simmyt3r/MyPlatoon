@@ -44,9 +44,7 @@ def index():
     feed_announcements = (Announcement.query.filter_by(is_active=True)
                            .order_by(Announcement.created_at.desc()).limit(15).all())
 
-    featured = (Profile.query.filter_by(status="approved")
-                .filter(Profile.profile_visibility.in_(["public", "platoon"]))
-                .order_by(Profile.updated_at.desc()).limit(6).all())
+    featured = visible_query.order_by(Profile.updated_at.desc()).limit(6).all()
 
     return render_template("main/index.html", member_count=member_count,
                             business_count=business_count, stories=stories,
