@@ -138,3 +138,25 @@ class JobApplication(db.Model):
 
     listing = db.relationship("JobListing", back_populates="applications")
     applicant = db.relationship("User")
+
+
+
+class JobReport(db.Model):
+    """Confidential user report of potentially fraudulent or unsafe work."""
+    __tablename__ = "job_reports"
+    __table_args__ = (
+        db.UniqueConstraint("job_id", "reporter_id", name="uq_job_report_per_user"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey("job_listings.id", ondelete="CASCADE"),
+                       nullable=False, index=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+                            nullable=False, index=True)
+    reason = db.Column(db.String(500), nullable=False)
+    status = db.Column(db.String(12), nullable=False, default="pending", index=True)
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime)
+
+    listing = db.relationship("JobListing")
+    reporter = db.relationship("User", foreign_keys=[reporter_id])
