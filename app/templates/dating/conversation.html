@@ -28,8 +28,8 @@
       {% for message in messages %}
       {% set mine = message.sender_id == viewer.id %}
       <div class="d-flex mb-3 {{ 'justify-content-end' if mine else 'justify-content-start' }}">
-        <div style="max-width:85%;min-width:120px" class="rounded-3 px-3 py-2 {{ 'text-white' if mine else 'bg-white border' }}"
-             {% if mine %}style="max-width:85%;min-width:120px;background:#14663e"{% endif %}>
+        <div class="rounded-3 px-3 py-2 {{ 'text-white' if mine else 'bg-white border' }}"
+             style="max-width:85%;min-width:120px;{{ 'background:#14663e;' if mine else '' }}">
           {% if message.is_removed %}
           <p class="mb-1 fst-italic small {{ 'text-white' if mine else 'text-muted' }}">This message was removed by a moderator.</p>
           {% else %}
