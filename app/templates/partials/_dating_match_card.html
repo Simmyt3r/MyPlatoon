@@ -3,7 +3,7 @@
 <div class="col-12 col-md-6 col-xl-4">
   <article class="p5-card h-100 overflow-hidden">
     <div class="position-relative">
-      <img src="{{ other.profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+      <img src="{{ other.profile.photo_url if other.show_profile_photo and other.profile.photo_url else url_for('static', filename='img/placeholder-avatar.png') }}"
            class="p5-card-photo" alt="Portrait of {{ other.display_name or 'a participant' }}"
            loading="lazy" style="width:100%;object-fit:cover;aspect-ratio:4/3;">
       {% if match.status == 'matched' and match.is_mutual_top %}
