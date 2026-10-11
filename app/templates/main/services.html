@@ -55,8 +55,11 @@
             <i class="fa-solid fa-graduation-cap fa-lg text-success" aria-hidden="true"></i>
             <h3 class="h5 fw-bold mb-0">NERD &amp; Mobilisation Guide</h3>
           </div>
-          <p>Find information about NERD academic records, mobilisation preparation and links to official registration resources.</p>
-          <a href="{{ url_for('main.nerd') }}" class="btn btn-p5-outline mt-auto">Read the NERD guide</a>
+          <p>Find NERD guidance and organise the 38 personal, academic and document requirements using a private preparation checklist.</p>
+          <div class="d-flex flex-wrap gap-2 mt-auto">
+            <a href="{{ url_for('main.nerd_requirements') }}" class="btn btn-p5-outline">NERD checklist</a>
+            <a href="{{ url_for('main.nerd') }}" class="btn btn-p5-outline">NERD guide</a>
+          </div>
         </article>
       </div>
     </div>
