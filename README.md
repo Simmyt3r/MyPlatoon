@@ -1,5 +1,12 @@
 # Platoon 5 Digital Album & Networking Directory
 
+## NERD guidance for prospective corps members
+
+MyPlatoon offers a public [NERD & NYSC mobilisation guide](/nerd) with links to the official NERD student enrolment, academic deposit receipt, and NYSC registration resources. MyPlatoon support is available on **09039930006**.
+
+**Important:** MyPlatoon is independent. The guide does not connect to NERD's API, issue government certificates or collect NERD login credentials. See [NERD_INTEGRATION.md](NERD_INTEGRATION.md) for current scope, official source links and partnership prerequisites.
+
+
 **Powered by Silabs & Co Technologies Ltd — With Love for One Nigeria**
 
 A production-ready web platform for members of NYSC 2026 Batch B Stream II,
