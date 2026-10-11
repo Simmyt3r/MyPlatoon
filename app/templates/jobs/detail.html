@@ -33,6 +33,14 @@
     <div class="d-flex flex-wrap gap-2 mt-4">
       {% if can_apply %}
         <a class="btn btn-p5" href="{{ url_for('jobs.apply', job_id=job.id) }}">Apply for this opportunity</a>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.role == 'member' and job.is_open %}
+        <form method="POST" action="{{ url_for('jobs.save', job_id=job.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-p5-outline"><i class="fa-regular fa-bookmark me-1"></i>Save privately</button>
+        </form>
+      {% endif %}
+      {% if false %}
       {% elif already %}
         <span class="btn btn-p5-outline disabled">Application {{ already.status }}</span>
       {% elif current_user.is_authenticated and current_user.role == 'member' %}
