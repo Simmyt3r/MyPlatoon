@@ -37,6 +37,7 @@ def upgrade():
         batch_op.create_foreign_key("fk_profile_platoon", "platoons",
                                     ["platoon_id"], ["id"])
         batch_op.create_index("ix_profiles_platoon_id", ["platoon_id"])
+        batch_op.create_index("ix_profiles_service_stage", ["service_stage"])
     with op.batch_alter_table("album_versions") as batch_op:
         batch_op.add_column(sa.Column("platoon_id", sa.Integer(), nullable=True))
         batch_op.create_foreign_key("fk_album_platoon", "platoons",
@@ -50,6 +51,7 @@ def downgrade():
         batch_op.drop_constraint("fk_album_platoon", type_="foreignkey")
         batch_op.drop_column("platoon_id")
     with op.batch_alter_table("profiles") as batch_op:
+        batch_op.drop_index("ix_profiles_service_stage")
         batch_op.drop_index("ix_profiles_platoon_id")
         batch_op.drop_constraint("fk_profile_platoon", type_="foreignkey")
         batch_op.drop_column("platoon_id")
