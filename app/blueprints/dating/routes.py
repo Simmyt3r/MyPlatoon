@@ -80,6 +80,7 @@ def persona():
         target.gender = form.gender.data
         target.interested_in = form.interested_in.data
         target.interests = form.interests.data.strip() if form.interests.data else None
+        target.show_profile_photo = bool(form.show_profile_photo.data)
         # An age declaration is not a government ID check. Never save DOB here.
         target.age_confirmed_at = target.age_confirmed_at or datetime.utcnow()
         if is_new:
