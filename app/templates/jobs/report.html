@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Report Suspicious Job{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:760px">
+  <a class="small d-inline-block mb-3" href="{{ url_for('jobs.detail', job_id=job.id) }}">Back to job details</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-danger fw-bold small text-uppercase">Help protect other members</div>
+    <h1 class="h3 fw-bold">Report an unsafe job listing</h1>
+    <p class="text-muted"><strong>{{ job.title }}</strong> · {{ job.employer.name }}</p>
+    <p>This report goes to MyPlatoon moderators, not the employer. Describe recruitment fees, misleading pay, unsafe meeting arrangements, impersonation, discrimination or harassment.</p>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.reason, rows=5) }}
+      <button class="btn btn-danger" type="submit">Send confidential report</button>
+      <a class="btn btn-p5-outline" href="{{ url_for('jobs.detail', job_id=job.id) }}">Cancel</a>
+    </form>
+    <p class="small text-muted mt-3 mb-0">MyPlatoon is not an emergency service. For immediate danger or financial fraud, contact the appropriate authorities.</p>
+  </section>
+</div>
+{% endblock %}
