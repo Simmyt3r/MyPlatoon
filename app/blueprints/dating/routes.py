@@ -11,7 +11,8 @@ from app.models.dating import score_label
 from app.services.dating_service import (
     generate_matches_for_persona, browse_matches_for_persona,
     mutual_matches_for_persona, report_persona, is_blocked,
-    block_persona, delete_dating_persona,
+    block_persona, delete_dating_persona, sent_interest_ids,
+    mutual_connections, express_interest, withdraw_interest,
 )
 from app.services.audit_service import log_action
 
@@ -54,8 +55,10 @@ def home():
 
     top_matches = browse_matches_for_persona(persona)[:5]
     mutuals = mutual_matches_for_persona(persona)
+    connections = mutual_connections(persona)
     return render_template("dating/home.html", persona=persona,
-                            top_matches=top_matches, mutuals=mutuals)
+                            top_matches=top_matches, mutuals=mutuals,
+                            connections=connections, liked_ids=sent_interest_ids(persona))
 
 
 @bp.route("/persona", methods=["GET", "POST"])
@@ -128,7 +131,8 @@ def browse():
     if persona.age_confirmed_at is None:
         return redirect(url_for("dating.persona"))
     matches = browse_matches_for_persona(persona)
-    return render_template("dating/browse.html", persona=persona, matches=matches)
+    return render_template("dating/browse.html", persona=persona, matches=matches,
+                           liked_ids=sent_interest_ids(persona))
 
 
 @bp.route("/matches")
@@ -142,7 +146,8 @@ def matches():
     if persona.age_confirmed_at is None:
         return redirect(url_for("dating.persona"))
     mutuals = mutual_matches_for_persona(persona)
-    return render_template("dating/matches.html", persona=persona, mutuals=mutuals)
+    return render_template("dating/matches.html", persona=persona, mutuals=mutuals,
+                           liked_ids=sent_interest_ids(persona))
 
 
 @bp.route("/pause", methods=["POST"])
@@ -214,7 +219,8 @@ def person_detail(persona_id):
         abort(404)
     shared = viewer.shared_interests_with(target)
     return render_template("dating/person_detail.html", viewer=viewer,
-                           target=target, shared=shared)
+                           target=target, shared=shared,
+                           interested=target.id in sent_interest_ids(viewer))
 
 
 @bp.route("/block/<int:persona_id>", methods=["POST"])
@@ -276,3 +282,56 @@ def delete():
     log_action(current_user, "dating.persona_deleted", "DatingPersona", deleted_id)
     flash("Your dating persona, suggestions and blocks have been removed. Your MyPlatoon account remains.", "success")
     return redirect(url_for("dating.home"))
+
+
+
+@bp.route("/connections")
+@login_required
+@dating_enabled_required
+def connections():
+    persona = getattr(current_user.profile, "dating_persona", None)
+    if not persona:
+        return redirect(url_for("dating.home"))
+    if persona.age_confirmed_at is None:
+        return redirect(url_for("dating.persona"))
+    people = mutual_connections(persona)
+    return render_template("dating/connections.html", persona=persona, people=people)
+
+
+@bp.route("/interest/<int:persona_id>", methods=["POST"])
+@login_required
+@dating_enabled_required
+@limiter.limit("20 per hour")
+def interest(persona_id):
+    viewer = getattr(current_user.profile, "dating_persona", None)
+    if not viewer or viewer.age_confirmed_at is None:
+        abort(403)
+    target = DatingPersona.query.get_or_404(persona_id)
+    if target.id == viewer.id:
+        abort(400)
+    try:
+        created, reciprocal = express_interest(viewer, target)
+    except ValueError:
+        abort(403)
+    if reciprocal and created:
+        flash("You both expressed interest! This connection is now in your Dating connections.", "success")
+    elif created:
+        flash("Interest recorded privately. The other person won't be notified unless they also express interest.", "info")
+    else:
+        flash("You've already expressed interest in this persona.", "info")
+    return redirect(url_for("dating.person_detail", persona_id=target.id))
+
+
+@bp.route("/interest/<int:persona_id>/withdraw", methods=["POST"])
+@login_required
+@dating_enabled_required
+@limiter.limit("20 per hour")
+def interest_withdraw(persona_id):
+    viewer = getattr(current_user.profile, "dating_persona", None)
+    if not viewer or viewer.age_confirmed_at is None:
+        abort(403)
+    changed = withdraw_interest(viewer, persona_id)
+    if changed:
+        log_action(current_user, "dating.interest_withdrawn", "DatingPersona", persona_id)
+    flash("Your expression of interest has been withdrawn.", "info")
+    return redirect(url_for("dating.browse"))
