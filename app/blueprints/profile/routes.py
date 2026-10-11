@@ -40,6 +40,7 @@ def dashboard():
 def edit():
     profile = current_user.profile
     form = ProfileForm(obj=profile)
+    set_form_assignment_defaults(form, profile)
     if not form.is_submitted():
         form.skills.data = ", ".join(s.name for s in profile.skills)
 
