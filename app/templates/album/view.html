@@ -2,7 +2,12 @@
 {% block title %}Digital Album{% endblock %}
 {% block content %}
 <div class="container my-4">
-  <h4 class="p5-section-title">{{ APP_NAME }}</h4>
+  <h4 class="p5-section-title">Your Platoon's Digital Album</h4>
+  {% if current_user.profile and not current_user.profile.platoon %}
+  <div class="alert alert-info">You're awaiting camp assignment. <a href="{{ url_for('profile.edit') }}">Add your platoon</a> to access its album.</div>
+  {% elif current_user.profile and current_user.profile.platoon %}
+  <p class="text-muted small">{{ current_user.profile.platoon.label }}</p>
+  {% endif %}
 
   {% if latest %}
   <div class="p5-card p5-card-body text-center py-5 mb-4">
