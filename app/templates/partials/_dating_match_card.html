@@ -1,39 +1,47 @@
 {% macro dating_match_card(match, other, viewer_persona, show_rank=none) %}
-{% set label, emoji = score_label(match.score) %}
-<div class="col-sm-6 col-lg-4">
-  <div class="p5-card h-100">
+{% set shared = viewer_persona.shared_interests_with(other) if viewer_persona else [] %}
+<div class="col-12 col-md-6 col-xl-4">
+  <article class="p5-card h-100 overflow-hidden">
     <div class="position-relative">
       <img src="{{ other.profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
-           class="p5-card-photo" alt="{{ other.display_name }}">
-      <span class="badge position-absolute top-0 end-0 m-2" style="background:rgba(0,0,0,0.65); font-size:0.85rem;">
-        {{ emoji }} {{ match.score|round|int }}%
+           class="p5-card-photo" alt="Portrait of {{ other.display_name or 'a participant' }}"
+           loading="lazy" style="width:100%;object-fit:cover;aspect-ratio:4/3;">
+      {% if match.status == 'matched' and match.is_mutual_top %}
+      <span class="badge bg-success position-absolute top-0 start-0 m-2">
+        <i class="fa-solid fa-heart me-1" aria-hidden="true"></i> Mutual top pick
       </span>
-      {% if match.status == 'matched' %}
-      <span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="fa-solid fa-heart"></i> Matched</span>
       {% endif %}
       {% if show_rank %}
-      <span class="badge bg-dark position-absolute bottom-0 start-0 m-2">#{{ show_rank }}</span>
+      <span class="badge bg-dark position-absolute top-0 end-0 m-2">Suggestion {{ show_rank }}</span>
       {% endif %}
     </div>
-    <div class="p5-card-body">
-      <h6 class="fw-bold mb-0">{{ other.display_name or other.profile.user.full_name.split(' ')[0] }}</h6>
-      <p class="small mb-1" style="color:var(--p5-gold-dark, #8a6207); font-weight:600;">{{ label }}</p>
-      {% if other.tagline %}<p class="small text-muted mb-2 fst-italic">"{{ other.tagline }}"</p>{% endif %}
-
-      {% set shared = viewer_persona.shared_interests_with(other) if viewer_persona else [] %}
+    <div class="p-3 p-md-4">
+      <h3 class="h5 fw-bold mb-1">{{ other.display_name or 'A member' }}</h3>
+      {% if other.tagline %}<p class="small text-muted mb-2">{{ other.tagline }}</p>{% endif %}
       {% if shared %}
-      <div class="mb-2">
-        {% for i in shared[:3] %}<span class="p5-chip">{{ i }}</span>{% endfor %}
+      <div class="d-flex flex-wrap align-items-center gap-1 mb-3">
+        <span class="small fw-semibold text-success me-1">{{ shared|length }} shared interest{{ '' if shared|length == 1 else 's' }}</span>
+        {% for interest in shared[:3] %}<span class="badge bg-light text-dark border">{{ interest }}</span>{% endfor %}
       </div>
+      {% else %}
+      <p class="small text-muted mb-3">Explore interests and see whether you connect.</p>
       {% endif %}
-
-      <div class="d-flex gap-2 mt-2">
-        <a href="{{ url_for('directory.member_profile', slug=other.profile.slug) }}" class="btn btn-p5-outline btn-sm flex-fill">View Profile</a>
-        <a href="{{ url_for('dating.report', persona_id=other.id) }}" class="btn btn-outline-danger btn-sm" title="Report">
-          <i class="fa-solid fa-flag"></i>
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-auto">
+        <a href="{{ url_for('dating.person_detail', persona_id=other.id) }}" class="btn btn-p5 btn-sm flex-grow-1">
+          View dating persona
+        </a>
+        <form method="POST" action="{{ url_for('dating.block', persona_id=other.id) }}" class="d-inline"
+              data-confirm="Block this person from your Dating suggestions? They will not be notified.">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-p5-outline btn-sm" aria-label="Block {{ other.display_name or 'this person' }}"
+                  title="Block and hide"><i class="fa-solid fa-ban" aria-hidden="true"></i></button>
+        </form>
+        <a href="{{ url_for('dating.report', persona_id=other.id) }}" class="btn btn-outline-danger btn-sm"
+           title="Report this dating persona" aria-label="Report {{ other.display_name or 'this person' }}">
+          <i class="fa-solid fa-flag" aria-hidden="true"></i>
         </a>
       </div>
     </div>
-  </div>
+  </article>
 </div>
 {% endmacro %}
