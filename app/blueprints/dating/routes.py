@@ -335,3 +335,124 @@ def interest_withdraw(persona_id):
         log_action(current_user, "dating.interest_withdrawn", "DatingPersona", persona_id)
     flash("Your expression of interest has been withdrawn.", "info")
     return redirect(url_for("dating.browse"))
+
+
+
+@bp.route("/messages/<int:persona_id>", methods=["GET", "POST"])
+@login_required
+@dating_enabled_required
+@limiter.limit("40 per hour", methods=["POST"])
+def conversation(persona_id):
+    """A private text conversation only for two actively consenting adults."""
+    from app.forms.dating_forms import DatingMessageForm
+    from app.services.dating_chat_service import can_message, conversation_query, send_text
+
+    viewer = getattr(current_user.profile, "dating_persona", None)
+    if viewer is None or viewer.age_confirmed_at is None:
+        return redirect(url_for("dating.persona"))
+    target = DatingPersona.query.get_or_404(persona_id)
+    if not can_message(viewer, target):
+        # Respond the same whether the user was blocked, interest was withdrawn,
+        # the target paused, or the pair was never connected.
+        abort(404)
+
+    form = DatingMessageForm()
+    if form.validate_on_submit():
+        try:
+            send_text(viewer, target, form.body.data)
+        except (PermissionError, ValueError):
+            abort(403)
+        return redirect(url_for("dating.conversation", persona_id=target.id, page=1))
+
+    # Latest 30 messages first in DB for efficient bounded reads; reverse on
+    # display to show chronological text bubbles. Older pages are explicit.
+    page = max(1, request.args.get("page", 1, type=int))
+    pagination = (conversation_query(viewer.id, target.id)
+                  .order_by(db.desc("created_at"), db.desc("id"))
+                  .paginate(page=page, per_page=30, error_out=False))
+    return render_template(
+        "dating/conversation.html", viewer=viewer, target=target,
+        form=form, messages=list(reversed(pagination.items)),
+        pagination=pagination,
+    )
+
+
+@bp.route("/messages/report/<int:message_id>", methods=["GET", "POST"])
+@login_required
+@dating_enabled_required
+@limiter.limit("5 per day", methods=["POST"])
+def report_message(message_id):
+    """The recipient may report received text even after unmatching/blocking."""
+    from app.models import DatingMessage, DatingMessageReport, User
+    from app.forms.dating_forms import DatingMessageReportForm
+    from app.services.dating_chat_service import received_message
+    from app.services.notification_service import notify
+
+    viewer = getattr(current_user.profile, "dating_persona", None)
+    if viewer is None or viewer.age_confirmed_at is None:
+        abort(403)
+    message = DatingMessage.query.get_or_404(message_id)
+    if not received_message(message, viewer.id):
+        abort(404)
+    previous = DatingMessageReport.query.filter_by(
+        message_id=message.id, reporter_id=viewer.id).first()
+    if previous:
+        flash("You've already reported this message. A moderator can review it.", "info")
+        return redirect(url_for("dating.connections"))
+
+    form = DatingMessageReportForm()
+    if form.validate_on_submit():
+        report = DatingMessageReport(
+            message_id=message.id, reporter_id=viewer.id,
+            reason=form.reason.data.strip(),
+        )
+        db.session.add(report)
+        db.session.commit()
+        log_action(current_user, "dating.message_report", "DatingMessage", message.id)
+        for admin in User.query.filter_by(role="admin").all():
+            notify(admin, "A private Dating message was reported for moderation.",
+                   category="warning")
+        flash("Your report has been submitted confidentially. You may also block the person.", "success")
+        return redirect(url_for("dating.connections"))
+    return render_template("dating/report_message.html", form=form, message=message)
+
+
+@bp.route("/moderation/messages")
+@login_required
+def reported_messages():
+    """Private message report queue; never visible to ordinary members."""
+    from app.services.dating_chat_service import message_reports_for_admin
+    if not current_user.is_admin:
+        abort(403)
+    status = request.args.get("status", "pending")
+    if status not in ("pending", "removed", "dismissed"):
+        status = "pending"
+    return render_template("dating/moderate_messages.html",
+                           reports=message_reports_for_admin(status), status=status)
+
+
+@bp.route("/moderation/messages/<int:report_id>/review", methods=["POST"])
+@login_required
+@limiter.limit("120 per hour")
+def moderate_message(report_id):
+    """Explicit admin action: hide abusive message or dismiss report."""
+    from app.models import DatingMessageReport
+    if not current_user.is_admin:
+        abort(403)
+    report = DatingMessageReport.query.get_or_404(report_id)
+    decision = request.form.get("decision")
+    if decision not in ("removed", "dismissed"):
+        abort(400)
+    if report.status != "pending":
+        flash("This report has already been reviewed.", "info")
+        return redirect(url_for("dating.reported_messages"))
+    report.status = decision
+    report.reviewed_by_id = current_user.id
+    report.reviewed_at = datetime.utcnow()
+    if decision == "removed":
+        report.message.is_removed = True
+    db.session.commit()
+    log_action(current_user, "dating.message_" + decision,
+               "DatingMessageReport", report.id)
+    flash("Message report reviewed.", "success")
+    return redirect(url_for("dating.reported_messages"))
