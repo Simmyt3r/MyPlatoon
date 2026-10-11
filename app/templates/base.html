@@ -177,7 +177,7 @@
       <a href="{{ url_for('directory.businesses') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.businesses' }}">
         <i class="fa-solid fa-store"></i>Businesses
       </a>
-      {% if current_user.is_authenticated %}
+      {% if current_user.is_authenticated and current_user.role != 'employer' %}
       <a href="{{ url_for('album.view') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'album.view' }}">
         <i class="fa-solid fa-book"></i>Digital Album
       </a>
