@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import (
     StringField, SelectField, TextAreaField, DecimalField, SubmitField
 )
-from wtforms.validators import DataRequired, Length, Optional, NumberRange, URL
+from wtforms.validators import DataRequired, Length, Optional, NumberRange, URL, Regexp
 from app.models.platoon import NYSC_STATES
 from app.models.ppa import PPA_SECTORS, PPA_YES_NO
 
@@ -22,7 +22,7 @@ class PPAForm(FlaskForm):
     sector = SelectField("Organisation sector", choices=PPA_SECTORS,
         validators=[DataRequired()])
     website = StringField("Official organisation website (optional)",
-        validators=[Optional(), URL(require_tld=True), Length(max=250)])
+        validators=[Optional(), URL(require_tld=True), Regexp(r"^https?://", message="Use an http or https URL."), Length(max=250)])
     accommodation = SelectField("Does the PPA offer corps-member accommodation?",
         choices=PPA_YES_NO, default="unknown", validators=[DataRequired()])
     allowance = SelectField("Does the PPA pay a separate allowance?",
@@ -51,3 +51,17 @@ class PPAReviewForm(FlaskForm):
     reason = TextAreaField("Reason (needed when rejecting)",
         validators=[Optional(), Length(max=500)])
     submit = SubmitField("Save decision")
+
+
+
+class PPAExperienceForm(FlaskForm):
+    service_year = DecimalField("Year you served at this PPA", places=0, validators=[
+        DataRequired(), NumberRange(min=1973, max=2100)])
+    accommodation = SelectField("Accommodation while you served",
+        choices=PPA_YES_NO, validators=[DataRequired()], default="unknown")
+    allowance = SelectField("Separate PPA allowance while you served",
+        choices=PPA_YES_NO, validators=[DataRequired()], default="unknown")
+    notes = TextAreaField("Your experience / practical advice", validators=[
+        Optional(), Length(max=1200)],
+        description="No personal phone numbers, private addresses or unsupported allegations.")
+    submit = SubmitField("Send contribution for review")
