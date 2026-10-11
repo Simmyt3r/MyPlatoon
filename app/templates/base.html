@@ -95,6 +95,7 @@
           {% else %}
           <li><a class="dropdown-item" href="{{ url_for('profile.dashboard') }}"><i class="fa-solid fa-gauge me-2 text-success"></i>Dashboard</a></li>
           {% endif %}
+          {% if current_user.role != 'employer' %}
           <li><a class="dropdown-item" href="{{ url_for('profile.edit') }}"><i class="fa-solid fa-user-pen me-2 text-success"></i>Edit Profile</a></li>
           <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
           <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
