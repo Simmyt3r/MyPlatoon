@@ -31,6 +31,7 @@ def register():
         db.session.flush()  # get user.id before creating the profile
 
         profile = Profile(user_id=user.id)
+        assign_platoon(profile, form)
         db.session.add(profile)
         db.session.commit()
 
