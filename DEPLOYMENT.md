@@ -1,12 +1,42 @@
 # Deployment Guide
 
-This guide walks through deploying the Platoon 5 Digital Album to **Vercel**, backed by
+This guide walks through deploying MyPlatoon, the nationwide NYSC community, to **Vercel**, backed by
 **Neon PostgreSQL** and **Cloudinary** for image storage.
 
 > Vercel's Python runtime is serverless: the filesystem is ephemeral and read-only at
 > request time outside of `/tmp`. Nothing in this application writes to local disk for
 > persistence — uploaded images go to Cloudinary, generated PDFs go to Cloudinary, and
 > all structured data goes to PostgreSQL.
+
+---
+
+## Required: database upgrade for nationwide platoons
+
+**Before exposing the new application on an existing database**, apply
+revision `0d842ac781b6`. Simply deploying the new Python code will NOT alter
+the old `profiles` table because SQLAlchemy `create_all()` adds missing
+tables, not missing columns.
+
+For dashboard-only setup:
+
+1. Back up the production PostgreSQL database.
+2. GitHub repository → Settings → Environments → `production`.
+3. Add an environment secret `DATABASE_URL_UNPOOLED` containing the direct
+   PostgreSQL migration connection string (not a pooled runtime connection).
+4. GitHub → Actions → **Apply MyPlatoon production migrations** → Run workflow.
+5. Confirm the run succeeds before redeploying the latest `main` build in Vercel.
+6. In Vercel, set `APP_NAME=MyPlatoon`, `APP_SHORT_NAME=MyPlatoon`,
+   `APP_BRAND_INITIALS=MP`, and a correct production `APP_BASE_URL` if
+   branding or URLs were previously overridden in the project settings.
+
+The migration script recognizes empty databases, old databases built using
+`db.create_all()`, and installations with an Alembic version table. It never
+assigns invented platoons to existing members. If it detects a partially
+migrated schema, it aborts for manual review.
+
+`FLASK_ENV=production` and `DATABASE_URL` remain required for the web
+runtime. The migration workflow reads only the direct connection secret
+during an explicitly triggered, environment-protected GitHub Actions run.
 
 ---
 
@@ -19,9 +49,9 @@ This guide walks through deploying the Platoon 5 Digital Album to **Vercel**, ba
 ```bash
 git init
 git add .
-git commit -m "Initial commit: Platoon 5 Digital Album"
+git commit -m "Initial MyPlatoon deployment"
 git branch -M main
-git remote add origin https://github.com/<your-org>/platoon5-album.git
+git remote add origin https://github.com/Simmyt3r/MyPlatoon.git
 git push -u origin main
 ```
 
@@ -48,7 +78,7 @@ You will need the following (see `.env.example` for the full list with descripti
 | `CLOUDINARY_CLOUD_NAME` | From Cloudinary dashboard |
 | `CLOUDINARY_API_KEY` | From Cloudinary dashboard |
 | `CLOUDINARY_API_SECRET` | From Cloudinary dashboard |
-| `APP_BASE_URL` | Your production URL, e.g. `https://platoon5.vercel.app` |
+| `APP_BASE_URL` | Your production URL, e.g. `https://your-myplatoon-deployment.vercel.app` |
 | `FLASK_ENV` | `production` |
 
 **Never commit real values for any of these.**
@@ -58,8 +88,8 @@ You will need the following (see `.env.example` for the full list with descripti
 1. Create a free account at cloudinary.com.
 2. From the dashboard, copy your **Cloud Name**, **API Key**, and **API Secret**.
 3. No further configuration is required — the application uploads directly via the
-   Cloudinary SDK using these credentials and organizes assets under `platoon5/profiles`,
-   `platoon5/businesses`, and `platoon5/albums`.
+   Cloudinary SDK using these credentials and organizes assets under `myplatoon/profiles`,
+   `myplatoon/businesses`, and `myplatoon/albums`.
 4. Optional: set upload restrictions (max file size, allowed formats) in your Cloudinary
    account settings as a second layer of defense on top of the application's own validation.
 
