@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Dating Message Reports{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1060px">
+  <h1 class="h3 fw-bold">Dating message reports</h1>
+  <p class="text-muted">Confidential moderation. Review the reported text and the complaint; neither is a public feed item.</p>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('admin.dating_moderation') }}" class="btn btn-p5-outline btn-sm">Persona reports</a>
+    {% for item in ['pending','removed','dismissed'] %}
+    <a href="{{ url_for('dating.reported_messages', status=item) }}" class="btn btn-sm {{ 'btn-p5' if status == item else 'btn-p5-outline' }}">{{ item|capitalize }}</a>
+    {% endfor %}
+  </div>
+  {% for report in reports %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <h2 class="h6 fw-bold mb-0">Report #{{ report.id }} · {{ report.status|capitalize }}</h2>
+      <time class="small text-muted">{{ report.created_at.strftime('%d %b %Y %H:%M') }} UTC</time>
+    </header>
+    <p class="small mb-1"><strong>Reporter:</strong> {{ report.reporter.display_name or 'Dating participant' }} (Persona {{ report.reporter_id }})</p>
+    <p class="small mb-1"><strong>Sender:</strong> {{ report.message.sender.display_name or 'Dating participant' }} (Persona {{ report.message.sender_id }})</p>
+    <div class="border rounded-3 p-3 mb-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ report.message.body }}</div>
+    <p class="small mb-3"><strong>Report reason:</strong> {{ report.reason }}</p>
+    {% if status == 'pending' %}
+    <form method="POST" action="{{ url_for('dating.moderate_message', report_id=report.id) }}" class="d-flex flex-wrap gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger btn-sm" name="decision" value="removed">Hide message</button>
+      <button type="submit" class="btn btn-p5-outline btn-sm" name="decision" value="dismissed">Dismiss report</button>
+    </form>
+    {% endif %}
+  </article>
+  {% else %}
+  <div class="p5-card p-4 text-muted">No {{ status }} reports.</div>
+  {% endfor %}
+</div>
+{% endblock %}
