@@ -305,3 +305,81 @@ def test_moderated_employer_contacts_not_public(client, db):
     html = client.get("/jobs/{}".format(job.id)).get_data(as_text=True)
     assert "hiring@school.example" not in html
     assert "09010010010" not in html
+
+
+
+def test_member_confidentially_reports_suspicious_job(client, db):
+    from app.models import JobReport
+    owner, org = prepare_org(db)
+    job = prepare_job(db, org)
+    reporter = _create_user(db, "reporter@example.com")
+    login(client, reporter.email)
+    response = client.post("/jobs/{}/report".format(job.id), data={
+        "reason": "The employer asked me to transfer an application processing fee."
+    })
+    assert response.status_code == 302
+    entry = JobReport.query.one()
+    assert entry.reporter_id == reporter.id
+    assert entry.status == "pending"
+    # Repeated reports should be idempotent: one reporter per listing.
+    client.post("/jobs/{}/report".format(job.id), data={
+        "reason": "Another attempt to report the same listing to moderators."
+    })
+    assert JobReport.query.count() == 1
+
+
+def test_job_report_is_not_disclosed_to_employer(client, db):
+    from app.models import JobReport
+    owner, org = prepare_org(db)
+    job = prepare_job(db, org)
+    member = _create_user(db, "reporter@example.com")
+    report = JobReport(job_id=job.id, reporter_id=member.id,
+                       reason="Employer demanded an unexplained advance payment.")
+    db.session.add(report)
+    db.session.commit()
+    login(client, owner.email)
+    assert client.get("/jobs/admin/reports").status_code == 403
+    assert client.post("/jobs/admin/reports/{}/review".format(report.id),
+                       data={"decision": "actioned"}).status_code == 403
+    public_detail = client.get("/jobs/{}".format(job.id)).get_data(as_text=True)
+    assert "Employer demanded an unexplained" not in public_detail
+    assert "reporter@example.com" not in public_detail
+
+
+def test_admin_closes_reported_listing_and_preserves_report(client, db):
+    from app.models import JobReport
+    owner, org = prepare_org(db)
+    job = prepare_job(db, org)
+    reporter = _create_user(db, "reporter@example.com")
+    report = JobReport(job_id=job.id, reporter_id=reporter.id,
+                       reason="This job asks candidates to pay for an application kit.")
+    db.session.add(report)
+    db.session.commit()
+    admin = _create_user(db, "jobs-admin@example.com", role="admin")
+    login(client, admin.email)
+    page = client.get("/jobs/admin/reports")
+    assert page.status_code == 200
+    assert "application kit" in page.get_data(as_text=True)
+    r = client.post("/jobs/admin/reports/{}/review".format(report.id),
+                    data={"decision": "actioned"})
+    assert r.status_code == 302
+    assert job.status == "closed"
+    assert report.status == "actioned"
+    assert client.get("/jobs/{}".format(job.id)).status_code == 200  # admin preview
+    client.get("/auth/logout")
+    assert client.get("/jobs/{}".format(job.id)).status_code == 404
+
+
+def test_report_requires_legitimate_member_and_uses_validation(client, db):
+    from app.models import JobReport
+    owner, org = prepare_org(db)
+    job = prepare_job(db, org)
+    member = _create_user(db, "reporter@example.com")
+    login(client, member.email)
+    r = client.post("/jobs/{}/report".format(job.id),
+                    data={"reason": "bad"})
+    assert r.status_code == 200
+    assert JobReport.query.count() == 0
+    client.get("/auth/logout")
+    login(client, owner.email)
+    assert client.get("/jobs/{}/report".format(job.id)).status_code == 403
