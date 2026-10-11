@@ -1,4 +1,4 @@
-# Platoon 5 Digital Album & Networking Directory
+# MyPlatoon · Nationwide NYSC Community
 
 ## NERD guidance for prospective corps members
 
@@ -9,20 +9,56 @@ MyPlatoon offers a public [NERD & NYSC mobilisation guide](/nerd) with links to 
 
 **Powered by Silabs & Co Technologies Ltd — With Love for One Nigeria**
 
-A production-ready web platform for members of NYSC 2026 Batch B Stream II,
-Platoon 5 to build professional profiles, showcase businesses and skills,
-connect with one another, and generate an official digital PDF album.
+MyPlatoon is a nationwide, independent NYSC community for prospective corps
+members (PCMs), serving corps members and ex-corps members. The platform
+connects each member to their actual orientation-camp cohort, not a single
+hardcoded Platoon 5. Users may share skills, businesses and selected profile
+details while respecting platoon-level privacy. Albums are community
+publications, not official NYSC documents.
 
 ---
 
+## Nationwide membership rules
+
+- Every member has a **platoon assignment state**.
+- **PCM:** platoon is `NULL` and the UI says “Awaiting camp assignment.”
+- **Serving member or alumnus:** must enter complete camp details before registration can finish or profile changes can be accepted.
+- Platoon uniqueness: state + camp year + batch + stream + platoon number. The same number in two camps does not mean the same community.
+- Members' camp details are self-reported, NOT verified by an NYSC API.
+- Contact information or profiles marked **platoon-only** are visible exclusively to approved members of that same recorded cohort.
+- Albums belong to one platoon. Previous unspecific album records are visible only to administrators.
+- Old accounts are intentionally not assigned invented platoon numbers; users must supply them.
+
+PCM guide: `/platoons/guide`. NERD guide: `/nerd`.
+
+## Database upgrade before deployment
+
+The new fields require a schema migration on existing deployments. **Do not rely on
+`db.create_all()` to add columns to the existing `profiles` table.**
+
+In GitHub, go to **Settings → Environments**, create/select `production`, and
+configure a secret named `DATABASE_URL_UNPOOLED` with a database migration
+connection URL. Take a database backup before updating an existing deployment.
+
+Then go to **Actions → Apply MyPlatoon production migrations → Run workflow**.
+The workflow runs `scripts/upgrade_nysc_schema.py`, detecting clean databases,
+fully verified old unversioned installations, or already-versioned installations.
+It refuses ambiguous partial schemas rather than erasing data.
+
+See `migrations/versions/0d842ac781b6_nationwide_platoons.py` and
+`DEPLOYMENT.md`. After migrations, redeploy via your Vercel dashboard.
+
 ## Features
 
+- **NYSC journey and platoons** — PCM (awaiting assignment), serving and alumni.
+  A platoon is uniquely identified by orientation **state, year, batch, stream and
+  platoon number**. PCMs do not have to invent an assignment.
 - **Member profiles** — personal, professional, and business information, skills, social links
 - **Privacy controls** — per-field visibility (public / platoon-only / private) for phone, WhatsApp,
   address, and the overall profile; conservative defaults (addresses are private unless changed)
 - **Admin workflow** — draft → pending → approved/rejected/suspended, with audit-logged approvals
 - **Member & business directories** — search, filter, pagination, mobile-first cards
-- **Digital PDF album** — ReportLab-generated, versioned, with per-member QR codes linking to
+- **Platoon-scoped PDF album** — generated per verified cohort identity, with QR codes linking to
   live profiles; regenerated on demand rather than on every change
 - **Secure image uploads** — validated, re-encoded (metadata stripped), stored on Cloudinary —
   never on the application server's filesystem
@@ -34,7 +70,7 @@ connect with one another, and generate an official digital PDF album.
   sent one-sidedly. Includes pause-anytime, a report-and-hide safety flow, and an admin
   moderation queue. Entirely separate storage from the main professional profile/directory —
   dating data never appears in search, the PDF album, or CSV exports.
-- **Automated tests** — 90 pytest cases covering auth, profiles, businesses, admin
+- **Automated tests** — pytest cases covering auth, profiles, businesses, admin
   authorization, album/PDF generation, security boundaries, generic-platform behavior,
   and the dating matching/notification/moderation flow
 
