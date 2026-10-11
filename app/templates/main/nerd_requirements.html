@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}NERD Requirements Checklist{% endblock %}
+{% block meta_description %}Prepare personal information, contact details, next of kin, academic data, supervisor and HOD details, and five documents for NERD registration.{% endblock %}
+{% block extra_head %}
+<style>
+  .nerd-requirements-wrap { max-width: 1000px; margin: 0 auto; }
+  .nerd-requirements-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: .5rem 1rem; }
+  .nerd-check { display: flex; align-items: flex-start; gap: .65rem; padding: .6rem .75rem; border: 1px solid #e4e9e5; border-radius: .65rem; background: #fff; cursor: pointer; }
+  .nerd-check:hover { background: #f6fbf7; }
+  .nerd-check input { margin-top: .28rem; flex-shrink: 0; accent-color: #0b7a3b; }
+  .nerd-check:has(input:checked) { background: #eef8f0; border-color: #a2cfac; }
+  .nerd-section { break-inside: avoid; page-break-inside: avoid; }
+  .nerd-heading-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+  .nerd-count { font-size:.84rem; font-weight:600; color:#4b6351; }
+  @media print {
+    body { background: #fff !important; }
+    .p5-topbar, .p5-sidebar-left, .p5-sidebar-right, .p5-bottom-nav, .p5-footer,
+    .nerd-no-print, .p5-sidebar-card { display: none !important; }
+    .p5-shell, .p5-main-col, .nerd-requirements-wrap { display:block !important; width:100% !important; max-width:none !important; margin:0 !important; }
+    .nerd-section, .p5-card { box-shadow: none !important; border:1px solid #bbb !important; }
+    .nerd-check { padding:.3rem .5rem; }
+    .nerd-requirements-grid { grid-template-columns: repeat(2,1fr); }
+    a[href]:after { content:""; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4 nerd-requirements-wrap">
+  <nav aria-label="Breadcrumb" class="small mb-3 nerd-no-print">
+    <a href="{{ url_for('main.nerd') }}">NERD Guide</a>
+    <span class="text-muted mx-2">/</span>
+    <span>Requirements Checklist</span>
+  </nav>
+
+  <section class="p5-card p-4 p-md-5 mb-4">
+    <div class="text-success fw-bold text-uppercase small mb-2">
+      <i class="fa-solid fa-clipboard-check me-1" aria-hidden="true"></i> NERD preparation
+    </div>
+    <h1 class="h3 fw-bold mb-2">NERD Requirements Checklist</h1>
+    <p class="mb-3">Prepare your details and documents before starting your NERD enrolment. This checklist is based on the requirements supplied to MyPlatoon and is provided for organisation only. Your institution and the official NERD portal may request different or additional items.</p>
+    <div class="alert alert-info mb-3" role="note">
+      <strong>Private by design:</strong> This page only lets you tick items you already have. It does not ask for your NIN, contact details, next-of-kin information or uploaded files. No checklist entries are sent to or saved on MyPlatoon servers, and your ticks are cleared when you leave or reload the page.
+    </div>
+    <div class="nerd-no-print">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <strong>Preparation progress</strong>
+        <span class="fw-semibold" id="nerd-progress-label" role="status" aria-live="polite">0 of {{ total }} items ready</span>
+      </div>
+      <progress class="w-100" id="nerd-progress" max="{{ total }}" value="0" aria-label="NERD preparation progress" style="height:1rem"></progress>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="button" class="btn btn-p5-outline btn-sm" id="nerd-print">
+          <i class="fa-solid fa-print me-1" aria-hidden="true"></i> Print checklist
+        </button>
+        <button type="button" class="btn btn-p5-outline btn-sm" id="nerd-reset">
+          <i class="fa-solid fa-rotate-left me-1" aria-hidden="true"></i> Clear ticks
+        </button>
+        <a class="btn btn-p5 btn-sm" href="https://databank.ned.gov.ng/info/student-lecturers-sign-up"
+           target="_blank" rel="noopener noreferrer">Official NERD sign-up guidance <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <div id="nerd-checklist">
+    {% for section in sections %}
+    <section class="p5-card p-3 p-md-4 mb-3 nerd-section" aria-labelledby="nerd-heading-{{ section.key }}">
+      <div class="nerd-heading-row mb-1">
+        <h2 class="h5 fw-bold mb-0" id="nerd-heading-{{ section.key }}">{{ loop.index }}. {{ section.title }}</h2>
+        <span class="nerd-count" id="nerd-count-{{ section.key }}">{{ section.items|length }} items</span>
+      </div>
+      <p class="small text-muted mb-3">{{ section.subtitle }}</p>
+      <div class="nerd-requirements-grid">
+        {% for item_key, label in section.items %}
+        <label class="nerd-check" for="nerd-{{ section.key }}-{{ item_key }}">
+          <input type="checkbox" id="nerd-{{ section.key }}-{{ item_key }}" data-nerd-checklist-item data-nerd-section="{{ section.key }}">
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if section.key == 'personal' %}
+        <p class="small text-muted mt-3 mb-0">Your NIN is highly sensitive. Enter it only in the authorised official workflow. Never share a photograph of your NIN through an unsolicited message.</p>
+      {% elif section.key == 'next-of-kin' %}
+        <p class="small text-muted mt-3 mb-0">Ask your next of kin for permission before providing their contact details.</p>
+      {% elif section.key in ('supervisor', 'hod') %}
+        <p class="small text-muted mt-3 mb-0">Confirm the relevant academic officer's current official contact details with your institution.</p>
+      {% elif section.key == 'documents' %}
+        <p class="small text-muted mt-3 mb-0">Use a readable image or file in the format specified by your school or official NERD service. This checklist does not upload or store files.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <section class="p5-card p-3 p-md-4 mb-4">
+    <h2 class="h5 fw-bold mb-2">When everything is ready</h2>
+    <p>Confirm the exact current procedure with your institution's NERD focal person. The NERD website states that students can enrol with an institution-issued email, while some identity and credential services require institutional validation and access credentials.</p>
+    <div class="d-flex flex-wrap gap-2 nerd-no-print">
+      <a class="btn btn-p5" href="https://databank.ned.gov.ng/register" target="_blank" rel="noopener noreferrer">Go to official NERD registration <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i></a>
+      <a class="btn btn-p5-outline" href="https://databank.ned.gov.ng/info/nerd-receipt" target="_blank" rel="noopener noreferrer">Official receipt information</a>
+      <a class="btn btn-p5-outline" href="{{ url_for('main.nerd') }}#nerd-help">MyPlatoon help: {{ NERD_HELP_PHONE }}</a>
+    </div>
+    <p class="small text-muted mt-3 mb-0">MyPlatoon is independent of NERD and NYSC. Ticking a checklist item does not submit your information, certify a document, or confirm NYSC mobilisation eligibility.</p>
+  </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/nerd_checklist.js') }}" defer></script>
+{% endblock %}
