@@ -25,14 +25,14 @@
 
   <div class="table-responsive">
     <table class="table table-hover align-middle bg-white p5-card">
-      <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>State</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Platoon</th><th></th></tr></thead>
       <tbody>
         {% for p in pagination.items %}
         <tr>
           <td>{{ p.user.full_name }}</td>
           <td>{{ p.user.email }}</td>
           <td><span class="badge badge-status-{{ p.status }}">{{ p.status }}</span></td>
-          <td>{{ p.state_of_origin or '-' }}</td>
+          <td><small>{{ p.platoon_label }}</small></td>
           <td><a href="{{ url_for('admin.member_detail', profile_id=p.id) }}" class="btn btn-sm btn-p5-outline">Review</a></td>
         </tr>
         {% else %}
