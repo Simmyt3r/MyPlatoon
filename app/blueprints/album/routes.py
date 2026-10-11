@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, send_fil
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models import AlbumVersion
+from app.models import AlbumVersion, Platoon
 from app.services.album_service import (
     generate_new_album_version, latest_published_album, fetch_album_pdf_bytes, AlbumFetchError,
 )
