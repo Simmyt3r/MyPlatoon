@@ -110,6 +110,11 @@ def _register_context_processors(app):
 
     @app.context_processor
     def inject_globals():
+        # The marketing landing is deliberately standalone: this template
+        # needs no app-shell variables, login-manager user lookup, database
+        # or deployment-specific branding. Keep "/" usable before setup.
+        if request.endpoint == "main.index":
+            return {}
         from flask_login import current_user
         from app.services.notification_service import unread_count
         from app.models import Profile, Notification
