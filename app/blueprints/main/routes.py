@@ -31,11 +31,6 @@ def index():
 @bp.route("/feed")
 def feed():
     """Community activity stays available separately from the public landing."""
-    from app.models import Platoon
-    member_count = Profile.query.filter_by(status="approved").count()
-    business_count = Business.query.filter_by(is_active=True).count()
-    platoon_count = Platoon.query.count()
-
     # Show only public or same-platoon profiles in the national activity strip.
     visible_query = Profile.query.filter_by(status="approved")
     own = current_user.profile if current_user.is_authenticated else None
