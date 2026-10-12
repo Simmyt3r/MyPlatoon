@@ -20,6 +20,17 @@ def _wants_json():
 
 @bp.route("/")
 def index():
+    """Static marketing landing: no database, auth or deployment setup required.
+
+    This entry point intentionally does not inspect current_user or query any
+    table. The independent landing template has no app-shell dependencies.
+    """
+    return render_template("main/landing.html")
+
+
+@bp.route("/feed")
+def feed():
+    """Community activity stays available separately from the public landing."""
     from app.models import Platoon
     member_count = Profile.query.filter_by(status="approved").count()
     business_count = Business.query.filter_by(is_active=True).count()
@@ -212,7 +223,7 @@ def react_to_announcement(announcement_id):
             "total": announcement.total_reactions(),
             "your_reaction": announcement.reaction_for(current_user),
         })
-    return redirect(request.referrer or url_for("main.index"))
+    return redirect(request.referrer or url_for("main.feed"))
 
 
 @bp.route("/feed/announcement/<int:announcement_id>/comment", methods=["POST"])
@@ -240,7 +251,7 @@ def comment_on_announcement(announcement_id):
                 "comment_count": len(announcement.comments),
             })
 
-    return redirect(request.referrer or url_for("main.index"))
+    return redirect(request.referrer or url_for("main.feed"))
 
 
 @bp.route("/notifications")
