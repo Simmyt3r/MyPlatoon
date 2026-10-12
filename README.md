@@ -1,5 +1,23 @@
 # MyPlatoon · Nationwide NYSC Community
 
+## Public landing and community feed
+
+The root **`/`** is a fast, self-contained marketing landing with a short
+description of MyPlatoon's NYSC community, key features and Join / Sign in
+buttons. It uses no database queries, authentication/session lookups, live
+member counts, external JS/CSS, or deployment-specific branding values.
+That means the public introduction is still renderable before the final
+Aiven/Vercel configuration or during a database outage. This does **not**
+mean database-dependent features (registration, feed, directories, jobs,
+etc.) will work without their production database.
+
+The existing announcement stream, reactions and community stories have
+moved to **`/feed`** and are still available through the sidebar/mobile
+Feed links. Shared announcement links now point to `/feed#announcement-ID`.
+The public landing intentionally stays content-light: what MyPlatoon is,
+who it serves, four essential benefits and clear calls to action.
+Tests in `tests/test_landing.py` verify rendering with SQL queries blocked.
+
 ## NERD guidance for prospective corps members
 
 **New:** The public [NERD requirements checklist](/nerd/requirements)
