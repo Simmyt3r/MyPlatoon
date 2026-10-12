@@ -111,12 +111,15 @@ def test_search_empty_query_shows_prompt(client):
     assert resp.status_code == 200
 
 
-def test_feed_homepage_renders_with_announcements_and_reactions(client, member_user, admin_user, db):
+def test_community_feed_renders_with_announcements_and_reactions(client, member_user, admin_user, db):
     ann = _make_announcement(db, admin_user, title="Welcome!")
     login(client, "member@example.com")
-    resp = client.get("/")
+    resp = client.get("/feed")
     assert resp.status_code == 200
     assert b"Welcome!" in resp.data
+    assert b"Community feed" in resp.data
+    # Marketing and community posts are intentionally separate.
+    assert b"Welcome!" not in client.get("/").data
 
 
 def test_categories_auto_seeded_on_app_creation(app, db):
