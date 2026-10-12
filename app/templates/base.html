@@ -153,8 +153,8 @@
         {{ current_user.full_name }}
       </a>
       {% endif %}
-      <a href="{{ url_for('main.index') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.index' }}">
-        <i class="fa-solid fa-house"></i>Home Feed
+      <a href="{{ url_for('main.feed') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.feed' }}">
+        <i class="fa-solid fa-house"></i>Community Feed
       </a>
       <a href="{{ url_for('directory.members') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'directory.members' }}">
         <i class="fa-solid fa-users"></i>Members
