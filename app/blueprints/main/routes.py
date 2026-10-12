@@ -50,12 +50,9 @@ def feed():
     feed_announcements = (Announcement.query.filter_by(is_active=True)
                            .order_by(Announcement.created_at.desc()).limit(15).all())
 
-    featured = visible_query.order_by(Profile.updated_at.desc()).limit(6).all()
-
-    return render_template("main/index.html", member_count=member_count,
-                            business_count=business_count, platoon_count=platoon_count, stories=stories,
-                            feed_announcements=feed_announcements, featured=featured,
-                            reaction_types=REACTION_TYPES)
+    return render_template("main/index.html", stories=stories,
+                           feed_announcements=feed_announcements,
+                           reaction_types=REACTION_TYPES)
 
 
 @bp.route("/services")
