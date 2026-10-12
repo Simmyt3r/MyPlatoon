@@ -1,66 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Home Feed{% endblock %}
-
+{% block title %}Community Feed{% endblock %}
 {% block content %}
-
-{% if not current_user.is_authenticated %}
-<section class="p5-hero text-center mb-4">
-  <div class="container">
-    <h1>{{ APP_NAME|upper }}</h1>
-    <p class="fs-6 mb-1">{{ APP_TAGLINE }}</p>
-    <div class="p5-badge-stripe mx-auto"></div>
-    {% if APP_MOTTO %}<p class="p5-motto">{{ APP_MOTTO }}</p>{% endif %}
-    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
-      <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg fw-bold">
-        <i class="fa-solid fa-user-plus me-1"></i>Join {{ APP_SHORT_NAME }}
-      </a>
-      <a href="{{ url_for('directory.members') }}" class="btn btn-outline-light btn-lg">Explore Members</a>
-      <a href="{{ url_for('main.platoon_guide') }}" class="btn btn-outline-light btn-lg">What is a platoon?</a>
-      <a href="{{ url_for('main.nerd') }}" class="btn btn-outline-light btn-lg">NERD &amp; NYSC Guide</a>
-      <a href="{{ url_for('main.nerd_requirements') }}" class="btn btn-outline-light btn-lg">NERD Checklist</a>
-      <a href="{{ url_for('ppa.index') }}" class="btn btn-outline-light btn-lg">Find a PPA</a>
-      <a href="{{ url_for('jobs.index') }}" class="btn btn-outline-light btn-lg">Jobs &amp; Gigs</a>
-      <a href="{{ url_for('platoons.rankings') }}" class="btn btn-outline-light btn-lg">Platoon Rankings</a>
-      <a href="{{ url_for('main.services') }}" class="btn btn-outline-light btn-lg">Services &amp; Careers</a>
+<section class="p5-card p-3 p-md-4 mb-3">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <span class="small fw-semibold text-success text-uppercase">MyPlatoon community</span>
+      <h1 class="h3 fw-bold mb-1">Community feed</h1>
+      <p class="text-muted mb-0">Updates and stories from across our NYSC community.</p>
     </div>
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <a class="btn btn-p5 btn-sm" href="{{ url_for('admin.announcements') }}">Post announcement</a>
+    {% elif not current_user.is_authenticated %}
+    <a class="btn btn-p5 btn-sm" href="{{ url_for('auth.register') }}">Join MyPlatoon</a>
+    {% endif %}
   </div>
-</section>
-{% endif %}
-
-<div class="row g-3 text-center mb-3">
-  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ member_count }}</div><div class="p5-stat-label">Members</div></div></div>
-  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ business_count }}</div><div class="p5-stat-label">Businesses</div></div></div>
-  <div class="col-4"><div class="p5-stat py-2"><div class="p5-stat-value">{{ platoon_count }}</div><div class="p5-stat-label">Platoons</div></div></div>
-</div>
-
-<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="Platoon rankings">
-  <div>
-    <div class="fw-bold"><i class="fa-solid fa-trophy text-success me-2" aria-hidden="true"></i>Which platoon leads on MyPlatoon?</div>
-    <p class="small text-muted mb-0">Compare activity, contributions and mini star ratings across verified service-year cohorts. One eligible member, one rating.</p>
-  </div>
-  <a href="{{ url_for('platoons.rankings') }}" class="btn btn-p5-outline text-nowrap">View rankings</a>
-</section>
-<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-sm-center justify-content-between gap-3" aria-label="Jobs and gigs">
-  <div>
-    <div class="fw-bold"><i class="fa-solid fa-briefcase text-success me-2" aria-hidden="true"></i>Need flexible work during NYSC?</div>
-    <p class="small text-muted mb-0">Explore school tutoring, part-time work and paid gigs from employers reviewed by MyPlatoon.</p>
-  </div>
-  <a href="{{ url_for('jobs.index') }}" class="btn btn-p5">Browse jobs</a>
-</section>
-<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="NERD resource">
-  <div>
-    <div class="fw-bold"><i class="fa-solid fa-graduation-cap text-success me-2" aria-hidden="true"></i>Preparing for NYSC mobilisation?</div>
-    <p class="small text-muted mb-0">Visit the NERD guide for official registration links, academic submission steps, and independent help on 09039930006.</p>
-  </div>
-  <a href="{{ url_for('main.nerd') }}" class="btn btn-p5 text-nowrap">NERD guide</a>
-</section>
-
-<section class="p5-card p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3" aria-label="Career development service">
-  <div>
-    <div class="fw-bold"><i class="fa-solid fa-file-lines text-success me-2" aria-hidden="true"></i>Prepare for life after NYSC</div>
-    <p class="small text-muted mb-0">Discover CareerMirror for CV preparation and explore tools for your career journey. CareerMirror opens as an external website.</p>
-  </div>
-  <a href="{{ url_for('main.services') }}" class="btn btn-p5-outline text-nowrap">Career services</a>
 </section>
 
 {% if stories %}
@@ -125,7 +78,7 @@
       <button type="button" class="p5-post-action-btn flex-fill js-focus-comment" data-announcement="{{ a.id }}">
         <i class="fa-regular fa-comment"></i> Comment
       </button>
-      <button type="button" class="p5-post-action-btn flex-fill js-share" data-url="{{ request.url_root.rstrip('/') }}{{ url_for('main.index') }}#announcement-{{ a.id }}">
+      <button type="button" class="p5-post-action-btn flex-fill js-share" data-url="{{ request.url_root.rstrip('/') }}{{ url_for('main.feed') }}#announcement-{{ a.id }}">
         <i class="fa-solid fa-share"></i> Share
       </button>
     </div>
