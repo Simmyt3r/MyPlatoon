@@ -250,7 +250,7 @@
 <!-- ============ MOBILE BOTTOM NAV ============ -->
 <nav class="p5-bottom-nav">
   <div class="row row-cols-5 g-0 text-center">
-    <div class="col"><a href="{{ url_for('main.index') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.index' }}"><i class="fa-solid fa-house"></i>Home</a></div>
+    <div class="col"><a href="{{ url_for('main.feed') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.feed' }}"><i class="fa-solid fa-house"></i>Feed</a></div>
     <div class="col"><a href="{{ url_for('directory.members') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.members' }}"><i class="fa-solid fa-users"></i>Members</a></div>
     <div class="col"><a href="{{ url_for('main.services') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.services' }}"><i class="fa-solid fa-layer-group"></i>Services</a></div>
     {% if current_user.is_authenticated %}
