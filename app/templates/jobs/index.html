@@ -8,7 +8,8 @@
     <h1 class="h2 fw-bold mb-2">Jobs &amp; Gigs</h1>
     <p class="text-muted mb-3">Find flexible school and business gigs during service, or discover internships, contracts and full-time opportunities across Nigeria. Every public listing is reviewed by MyPlatoon moderators.</p>
     <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('jobs.employer_register') }}" class="btn btn-p5">Post jobs as an employer</a>
+      <a href="{{ url_for('jobs.gig_owners') }}" class="btn btn-p5">Post a paid gig</a>
+      <a href="{{ url_for('jobs.employer_register') }}" class="btn btn-p5-outline">Register as a school or employer</a>
       {% if current_user.is_authenticated and current_user.role == 'member' %}
         <a href="{{ url_for('jobs.for_me') }}" class="btn btn-p5-outline">Jobs for me</a>
         <a href="{{ url_for('jobs.saved') }}" class="btn btn-p5-outline">Saved jobs</a>
