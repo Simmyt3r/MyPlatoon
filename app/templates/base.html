@@ -91,7 +91,7 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end p5-dropdown-menu">
           {% if current_user.role == 'employer' %}
-          <li><a class="dropdown-item" href="{{ url_for('jobs.employer_dashboard') }}"><i class="fa-solid fa-building me-2 text-success"></i>Employer Dashboard</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('jobs.gig_owner_dashboard') }}"><i class="fa-solid fa-building me-2 text-success"></i>Gig Owner Dashboard</a></li>
           {% else %}
           <li><a class="dropdown-item" href="{{ url_for('profile.dashboard') }}"><i class="fa-solid fa-gauge me-2 text-success"></i>Dashboard</a></li>
           {% endif %}
@@ -146,7 +146,7 @@
   <aside class="p5-sidebar-left">
     <div class="p5-sidebar-card">
       {% if current_user.is_authenticated %}
-      <a href="{{ url_for('profile.dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'profile.dashboard' }}">
+      <a href="{{ url_for('jobs.gig_owner_dashboard') if current_user.role == 'employer' else url_for('profile.dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint in ['profile.dashboard','jobs.gig_owner_dashboard'] }}">
         {% if current_user.profile and current_user.profile.photo_url %}
         <img src="{{ current_user.profile.photo_url }}" alt="">
         {% else %}<i class="fa-solid fa-circle-user"></i>{% endif %}
@@ -205,8 +205,8 @@
       </a>
       {% endif %}
       {% elif current_user.is_authenticated %}
-      <a href="{{ url_for('jobs.employer_dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'jobs.employer_dashboard' }}">
-        <i class="fa-solid fa-building"></i>Employer Dashboard
+      <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint in ['jobs.gig_owner_dashboard','jobs.employer_dashboard'] }}">
+        <i class="fa-solid fa-building"></i>Gig Owner Dashboard
       </a>
       {% else %}
       <a href="{{ url_for('main.about') }}" class="p5-nav-item"><i class="fa-solid fa-circle-info"></i>About</a>
