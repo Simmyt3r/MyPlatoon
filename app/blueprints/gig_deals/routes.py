@@ -71,7 +71,7 @@ def offer(application_id):
     employer = Employer.query.filter_by(owner_user_id=current_user.id).first()
     if employer is None or employer.status != "approved" or not current_user.is_active:
         abort(403)
-    application = JobApplication.query.get_or_404(application_id)
+    application = JobApplication.query.filter_by(id=application_id).with_for_update().first_or_404()
     job = application.listing
     if job.employer_id != employer.id:
         abort(403)
@@ -139,7 +139,9 @@ def respond(deal_id):
         if not current_user.is_active or not current_user.profile or current_user.profile.status != "approved":
             abort(403)
         if (deal.employer.status != "approved" or not deal.employer.owner.is_active or
-                deal.application.listing.status != "published"):
+                deal.application.listing.status != "published" or
+                (deal.application.listing.serving_only and
+                 current_user.profile.service_stage != "serving")):
             abort(409)
         deal.status = "active"
         deal.accepted_at = datetime.utcnow()
