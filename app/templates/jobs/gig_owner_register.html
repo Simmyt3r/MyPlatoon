@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}{{ 'Add Gig Owner Profile' if existing_member else 'Register as a Gig Owner' }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-3 my-md-4" style="max-width:860px">
+  <a href="{{ url_for('jobs.gig_owners') }}" class="small d-inline-block mb-3 text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>Gig owner information</a>
+  <section class="p5-card p-4 p-md-5">
+    <div class="small fw-bold text-success text-uppercase mb-2">Step 1 of 2 · Gig owner registration</div>
+    <h1 class="h3 fw-bold mb-2">{{ 'Add a gig owner profile' if existing_member else 'Create your gig owner account' }}</h1>
+    <p class="text-muted mb-4">Tell us who will offer the work. Your organisation or individual hiring profile is reviewed before any gig becomes public.</p>
+    {% if existing_member %}
+    <div class="alert alert-info small">Your NYSC member account stays the same. We'll add a separate gig owner profile to it.</div>
+    {% else %}
+    <div class="alert alert-info small">This is a hiring account, not a corps member account. You will not need a batch, platoon or NYSC number. Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>.</div>
+    {% endif %}
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      {% if not existing_member %}
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3">Your account</h2>
+      {{ field(form.full_name) }}
+      {{ field(form.email) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.password) }}</div>
+        <div class="col-md-6">{{ field(form.confirm_password) }}</div>
+      </div>
+      {% endif %}
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3 mt-3">Who is hiring?</h2>
+      {{ field(form.kind) }}
+      {{ field(form.name) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.state) }}</div>
+        <div class="col-md-6">{{ field(form.lga) }}</div>
+      </div>
+      {{ field(form.address) }}
+      {{ field(form.description, rows=3) }}
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3 mt-3">Contact for review</h2>
+      {{ field(form.contact_email) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.contact_phone) }}</div>
+        <div class="col-md-6">{{ field(form.website) }}</div>
+      </div>
+      <div class="border rounded-3 p-3 mb-3">
+        {{ field(form.safety_agreement) }}
+        <p class="small text-muted mb-0">Your review contact details are not automatically shown publicly. Provide a real operating address to support our legitimacy checks; do not enter someone else's private residence.</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <button type="submit" class="btn btn-p5"><i class="fa-solid fa-arrow-right me-2" aria-hidden="true"></i>Continue to post a gig</button>
+        <a class="btn btn-p5-outline" href="{{ url_for('jobs.gig_owners') }}">Back</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
