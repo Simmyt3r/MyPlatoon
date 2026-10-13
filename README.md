@@ -53,6 +53,21 @@ member for their **own** platoon. Low-sample groups are provisional,
 and the board is explicitly **not an official NYSC competition result**.
 See [DISCOVERY_RANKINGS.md](DISCOVERY_RANKINGS.md).
 
+## Employer trust and reputation
+
+MyPlatoon now provides public approved-employer reputation profiles based
+on genuinely two-party confirmed completed gigs and deliberately
+consented, independently moderated worker reviews. Three different
+workers and two approved reviews are needed before displaying a star
+score, to reduce tiny-sample inflation. Existing private reviews
+remain private unless the reviewer explicitly opts in. Users can
+withdraw publication consent at any time. Public ratings are anonymous
+and do not identify or expose worker profile/contact details.
+Payment-acknowledgment signals are **not verified bank transfers**.
+
+Moderators review opt-in feedback at `/jobs/deals/admin/reviews`.
+Read [GIG_REPUTATION.md](GIG_REPUTATION.md).
+
 ## Gig hiring and completion
 
 After gig owners create reviewed listings, MyPlatoon now supports

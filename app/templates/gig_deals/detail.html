@@ -82,11 +82,41 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="row g-2 align-items-end">
         <div class="col-md-3"><label for="stars" class="small form-label fw-semibold">Stars</label><select id="stars" name="stars" class="form-select" required>{% for n in range(1,6) %}<option value="{{ n }}">{{ n }} / 5</option>{% endfor %}</select></div>
-        <div class="col-md-6"><label for="comment" class="small form-label fw-semibold">Private feedback (optional)</label><input id="comment" name="comment" class="form-control" maxlength="500" placeholder="Your experience"></div>
+        <div class="col-md-6"><label for="comment" class="small form-label fw-semibold">Feedback (optional)</label><input id="comment" name="comment" class="form-control" maxlength="500" placeholder="Your experience"></div>
         <div class="col-md-3"><button class="btn btn-p5 w-100" type="submit">Save rating</button></div>
       </div>
+      {% if worker %}
+      <label class="d-flex align-items-start gap-2 mt-3 small">
+        <input type="checkbox" name="public_consent" value="yes">
+        <span>Optional: allow MyPlatoon to publish my star rating and written feedback anonymously on this employer's reputation page, <strong>only after moderator approval</strong>. I can withdraw this permission later.</span>
+      </label>
+      {% endif %}
     </form>
-    {% else %}<div class="small text-success fw-semibold">Your rating: {{ my_rating.stars }}/5 · Recorded privately</div>{% endif %}
+    {% else %}
+    <div class="small fw-semibold">Your rating: {{ my_rating.stars }}/5
+      {% if my_rating.public_consent %}
+        · Public sharing {{ my_rating.moderation_status }}
+      {% else %}
+        · Private
+      {% endif %}
+    </div>
+    {% if my_rating.comment %}<p class="small text-muted mb-2">Your feedback: {{ my_rating.comment }}</p>{% endif %}
+    {% if worker %}
+      {% if my_rating.public_consent %}
+      <form method="POST" action="{{ url_for('gig_deals.withdraw_review', deal_id=deal.id) }}" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-p5-outline btn-sm" type="submit">Withdraw public sharing permission</button>
+      </form>
+      {% else %}
+      <form method="POST" action="{{ url_for('gig_deals.publish_review', deal_id=deal.id) }}" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="d-flex gap-2 align-items-start small mb-2"><input type="checkbox" name="public_consent" value="yes" required>
+          <span>I consent to publishing my existing {{ my_rating.stars }}/5 rating{% if my_rating.comment %} and the feedback shown above{% endif %} anonymously after moderator approval. I can withdraw later.</span></label>
+        <button class="btn btn-p5-outline btn-sm" type="submit">Request public review</button>
+      </form>
+      {% endif %}
+    {% endif %}
+    {% endif %}
   </section>
   {% elif deal.status == 'disputed' %}
   <div class="alert alert-warning">A private dispute is with the moderation team. Work-status and payment actions are paused until an administrator reviews the issue.</div>

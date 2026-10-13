@@ -14,6 +14,7 @@
       <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="btn btn-p5-outline">Gig owner view</a>
       <a href="{{ url_for('gig_deals.index') }}" class="btn btn-p5-outline">Manage work agreements</a>
       <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">Edit organisation</a>
+      {% if employer.status == 'approved' %}<a href="{{ url_for('jobs.employer_reputation', employer_id=employer.id) }}" class="btn btn-p5-outline">My public reputation</a>{% endif %}
       <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">Browse jobs</a>
     </div>
   </header>

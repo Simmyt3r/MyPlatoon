@@ -82,6 +82,13 @@ class GigReview(db.Model):
     role = db.Column(db.String(12), nullable=False)
     stars = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.String(500))
+    # Existing reviews remain private after migration. Only a worker's
+    # explicitly opted-in and moderator-approved review can become public.
+    public_consent = db.Column(db.Boolean, nullable=False, default=False)
+    moderation_status = db.Column(db.String(16), nullable=False, default="private", index=True)
+    moderation_note = db.Column(db.String(500))
+    reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     deal = db.relationship("GigDeal", back_populates="reviews")
     reviewer = db.relationship("User")

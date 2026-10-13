@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Moderate Gig Reviews{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1040px">
+  <h1 class="h3 fw-bold">Gig reputation moderation</h1>
+  <p class="text-muted">Publish only feedback from genuine completed gigs with the worker's explicit permission. Inspect text for personal details, harassment, spam and suspicious repeated hiring. Existing private reviews never enter this queue automatically.</p>
+  <div class="d-flex gap-2 mb-4 flex-wrap">
+    {% for key in ['pending','approved','rejected'] %}
+    <a class="btn {{ 'btn-p5' if status == key else 'btn-p5-outline' }} btn-sm" href="{{ url_for('gig_deals.admin_reviews', status=key) }}">{{ key|capitalize }}</a>
+    {% endfor %}
+    <a class="btn btn-p5-outline btn-sm" href="{{ url_for('gig_deals.admin_disputes') }}">Gig disputes</a>
+  </div>
+  {% for r in reviews %}
+  <article class="p5-card p-4 mb-3">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
+      <h2 class="h5 fw-bold mb-0">{{ r.deal.employer.name }} · {{ r.deal.application.listing.title }}</h2>
+      <span class="badge text-bg-light border">{{ r.moderation_status|capitalize }}</span>
+    </div>
+    <div class="small text-muted mb-3">Deal #{{ r.deal.id }} · Review #{{ r.id }} · Consent: {{ 'Yes' if r.public_consent else 'Withdrawn' }} · Gig: {{ r.deal.status }} · Reviewer user #{{ r.reviewer_id }}</div>
+    <div class="border rounded-3 p-3 mb-3">
+      <strong>{{ r.stars }}/5 stars</strong>
+      {% if r.comment %}<p class="mb-0 mt-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ r.comment }}</p>{% endif %}
+    </div>
+    {% if r.moderation_note %}<p class="small text-muted">Previous note: {{ r.moderation_note }}</p>{% endif %}
+    <form method="POST" action="{{ url_for('gig_deals.moderate_review', review_id=r.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="moderation-note-{{ r.id }}" class="form-label small fw-semibold">Moderation note (required for rejection; 10–500 characters)</label>
+      <textarea class="form-control mb-2" name="note" id="moderation-note-{{ r.id }}" maxlength="500" rows="2" placeholder="Remove names/contact details, misleading claims or harassment"></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" name="decision" value="approved" class="btn btn-p5 btn-sm" {{ 'disabled' if not r.public_consent or r.deal.status != 'completed' }}>Approve for public reputation</button>
+        <button type="submit" name="decision" value="rejected" class="btn btn-outline-danger btn-sm">Reject / hide</button>
+      </div>
+    </form>
+  </article>
+  {% else %}<div class="p5-card p-4 text-center text-muted">No {{ status }} gig reviews in this queue.</div>{% endfor %}
+</div>
+{% endblock %}

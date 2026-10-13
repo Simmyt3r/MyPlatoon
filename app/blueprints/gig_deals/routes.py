@@ -280,12 +280,126 @@ def review(deal_id):
     comment = (request.form.get("comment") or "").strip()
     if len(comment) > 500:
         abort(400)
+    public_consent = bool(not owner and request.form.get("public_consent") == "yes")
     db.session.add(GigReview(
         deal_id=deal.id, reviewer_id=current_user.id,
         role="employer" if owner else "worker",
-        stars=stars, comment=comment or None))
+        stars=stars, comment=comment or None,
+        public_consent=public_consent,
+        moderation_status="pending" if public_consent else "private"))
+    if public_consent:
+        _notify_admin_review()
     return _success(deal, "reviewed",
-                    "Your private experience rating has been recorded.")
+                    "Rating saved. " + ("Public sharing requires moderator approval." if
+                    public_consent else "Your feedback is private."))
+
+
+def _notify_admin_review():
+    for admin in User.query.filter_by(role="admin").all():
+        if admin.is_active:
+            _notify(admin.id, "A consented gig review is awaiting public-rating moderation.")
+
+
+@bp.route("/<int:deal_id>/review/publish", methods=["POST"])
+@login_required
+@limiter.limit("10 per hour")
+def publish_review(deal_id):
+    """Explicit, reversible consent for older private worker reviews."""
+    deal = _deal_locked(deal_id)
+    _owner, worker = _participant(deal)
+    if not worker:
+        abort(403)
+    rating = GigReview.query.filter_by(deal_id=deal.id,
+                                       reviewer_id=current_user.id).first_or_404()
+    if rating.role != "worker" or deal.status != "completed":
+        abort(409)
+    if request.form.get("public_consent") != "yes":
+        abort(400)
+    if rating.public_consent and rating.moderation_status in ("pending", "approved"):
+        abort(409)
+    rating.public_consent = True
+    rating.moderation_status = "pending"
+    rating.moderation_note = None
+    rating.reviewed_by_id = None
+    rating.reviewed_at = None
+    _notify_admin_review()
+    return _success(deal, "review_public_requested",
+                    "Your review is still private until a moderator approves public sharing.")
+
+
+@bp.route("/<int:deal_id>/review/withdraw", methods=["POST"])
+@login_required
+@limiter.limit("10 per hour")
+def withdraw_review(deal_id):
+    deal = _deal_locked(deal_id)
+    _owner, worker = _participant(deal)
+    if not worker:
+        abort(403)
+    rating = GigReview.query.filter_by(deal_id=deal.id,
+                                       reviewer_id=current_user.id).first_or_404()
+    if not rating.public_consent:
+        abort(409)
+    rating.public_consent = False
+    rating.moderation_status = "private"
+    rating.moderation_note = None
+    rating.reviewed_by_id = None
+    rating.reviewed_at = None
+    return _success(deal, "review_public_withdrawn",
+                    "Public sharing withdrawn. Your rating remains private.")
+
+
+@bp.route("/admin/reviews")
+@login_required
+def admin_reviews():
+    if not current_user.is_admin:
+        abort(403)
+    status = request.args.get("status", "pending")
+    if status not in ("pending", "approved", "rejected"):
+        abort(400)
+    reviews = (GigReview.query.filter_by(moderation_status=status)
+               .order_by(GigReview.created_at.asc()).limit(100).all())
+    return render_template("gig_deals/admin_reviews.html",
+                           reviews=reviews, status=status)
+
+
+@bp.route("/admin/reviews/<int:review_id>", methods=["POST"])
+@login_required
+def moderate_review(review_id):
+    if not current_user.is_admin:
+        abort(403)
+    rating = GigReview.query.filter_by(id=review_id).with_for_update().first_or_404()
+    decision = request.form.get("decision")
+    if decision not in ("approved", "rejected"):
+        abort(400)
+    if rating.moderation_status not in ("pending", "approved", "rejected"):
+        abort(409)
+    note = (request.form.get("note") or "").strip()
+    if len(note) > 500 or (decision == "rejected" and len(note) < 10):
+        abort(400)
+    deal = rating.deal
+    # A moderator cannot override privacy, fabricate completion or publish
+    # an employer's rating of an individual member.
+    if decision == "approved" and not (
+        rating.public_consent and rating.role == "worker"
+        and rating.reviewer_id == deal.worker_id
+        and deal.status == "completed" and deal.completed_at is not None
+        and not GigDispute.query.filter_by(deal_id=deal.id, status="open").first()
+        and deal.employer.status == "approved" and deal.employer.owner.is_active
+        and rating.reviewer.is_active and rating.reviewer.role == "member"
+        and rating.reviewer.profile
+        and rating.reviewer.profile.status == "approved"
+    ):
+        abort(409)
+    rating.moderation_status = decision
+    rating.moderation_note = note or None
+    rating.reviewed_by_id = current_user.id
+    rating.reviewed_at = datetime.utcnow()
+    _notify(rating.reviewer_id,
+            "Your optional public gig review was {} by moderation.".format(decision))
+    db.session.commit()
+    log_action(current_user, "gig_review." + decision, "GigReview", rating.id)
+    flash("Review moderation updated.", "success")
+    return redirect(url_for("gig_deals.admin_reviews", status="pending"))
 
 
 @bp.route("/admin/disputes")

@@ -738,3 +738,15 @@ def create_gig():
         flash("Your gig has been submitted for publication. It will become visible only when both your profile and listing are approved.", "success")
         return redirect(url_for("jobs.gig_owner_dashboard"))
     return render_template("jobs/gig_post.html", form=form, employer=employer)
+
+
+@bp.route("/employers/<int:employer_id>/reputation")
+def employer_reputation(employer_id):
+    """Public employer-only history, never applicant or private worker data."""
+    from app.services.gig_reputation import employer_reputation as get_reputation
+    employer = Employer.query.get_or_404(employer_id)
+    stats = get_reputation(employer)
+    if stats is None:
+        abort(404)
+    return render_template("jobs/employer_reputation.html",
+                           employer=employer, stats=stats)

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ employer.name }} · Employer Reputation{% endblock %}
+{% block meta_description %}MyPlatoon employer experience, independently approved worker reviews and platform-confirmed gigs.{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1000px">
+  <a href="{{ url_for('jobs.index') }}" class="small text-decoration-none d-inline-block mb-3">← Jobs &amp; Gigs</a>
+  <header class="p5-card p-4 p-md-5 mb-4">
+    <div class="small text-uppercase text-success fw-bold mb-2">MyPlatoon · Employer history</div>
+    <h1 class="h2 fw-bold mb-1">{{ employer.name }}</h1>
+    <p class="text-muted">{{ employer.kind_label }} · {{ employer.state }} · {{ employer.lga }}</p>
+    <p>{{ employer.description }}</p>
+    {% if employer.website %}<p class="small mb-3"><a rel="nofollow noopener noreferrer" target="_blank" href="{{ employer.website }}">Employer website ↗</a></p>{% endif %}
+    <span class="badge text-bg-light border mb-3">MyPlatoon employer registration reviewed</span>
+    <p class="small text-muted mb-0">Registration review does not independently guarantee a job's legitimacy or mean NYSC endorsement. No private recruiting contacts, worker names or personal addresses are shown here.</p>
+  </header>
+
+  <section class="p5-card p-4 p-md-5 mb-4" aria-label="Employer reputation indicators">
+    <h2 class="h4 fw-bold mb-3">Working history on MyPlatoon</h2>
+    <div class="row g-3 mb-3">
+      <div class="col-sm-4"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Two-party completed gigs</div><div class="h3 fw-bold mb-0">{{ stats.completed_gigs }}</div></div></div>
+      <div class="col-sm-4"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Distinct workers</div><div class="h3 fw-bold mb-0">{{ stats.unique_workers }}</div></div></div>
+      <div class="col-sm-4"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Worker-confirmed receipts</div><div class="h3 fw-bold mb-0">{{ stats.payment_acknowledgments }}</div></div></div>
+    </div>
+    {% if stats.qualified %}
+    <div class="p-3 rounded-3" style="background:#edf8ef">
+      <div class="h3 mb-1 fw-bold">{{ stats.score }}/5 <span class="small fw-normal">smoothed community score</span></div>
+      <p class="small text-muted mb-0">{{ stats.public_reviews }} independently approved ratings from distinct workers. Recent, repeated gigs with the same worker count only once toward the star score.</p>
+    </div>
+    {% else %}
+    <div class="alert alert-light border mb-0">
+      <strong>Reputation developing.</strong> A public score appears only after at least {{ stats.minimum_workers }} different approved workers have completed gigs and {{ stats.minimum_reviews }} independently moderated, consented reviews are available. No provisional star score is assigned.
+    </div>
+    {% endif %}
+    <p class="small text-muted mt-3 mb-0">Completion means the worker requested it and employer confirmed it in MyPlatoon. Payment receipt is self-acknowledged by a worker, <strong>not bank verified</strong>. Neither metric is proof of employment safety.</p>
+  </section>
+
+  {% if stats.qualified %}
+  <section class="p5-card p-4 p-md-5 mb-4">
+    <h2 class="h4 fw-bold mb-3">Approved worker feedback</h2>
+    <p class="small text-muted">Feedback is shared only with the reviewer's optional consent and after moderator approval. Names and contact information are never provided.</p>
+    {% for item in stats.reviews %}
+    <article class="border rounded-3 p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+        <strong>{{ item.stars }}/5 stars</strong>
+        <span class="small text-muted">Anonymous completed-gig review · {{ item.created_at.strftime('%b %Y') }}</span>
+      </div>
+      {% if item.comment %}<p class="mt-2 mb-0" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ item.comment }}</p>{% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <p class="text-muted small">Keep your financial credentials private and independently verify all paid work before accepting an offer. Report suspicious jobs using the listing's report option.</p>
+</div>
+{% endblock %}

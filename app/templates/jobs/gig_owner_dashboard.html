@@ -23,6 +23,7 @@
       <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5"><i class="fa-solid fa-plus me-1"></i>Post another gig</a>
       {% endif %}
       <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">Edit hiring profile</a>
+      {% if employer.status == 'approved' %}<a href="{{ url_for('jobs.employer_reputation', employer_id=employer.id) }}" class="btn btn-p5-outline">Public reputation profile</a>{% endif %}
       <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">View public board</a>
       <a href="{{ url_for('gig_deals.index') }}" class="btn btn-p5-outline">Active gig deals &amp; offers</a>
       <a href="{{ url_for('jobs.employer_dashboard') }}" class="btn btn-p5-outline">Full employer dashboard</a>
