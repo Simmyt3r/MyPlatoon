@@ -17,7 +17,7 @@ bp = Blueprint("auth", __name__)
 @limiter.limit("10 per hour")
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("profile.dashboard"))
+        return redirect(url_for("jobs.employer_dashboard" if current_user.role == "employer" else "profile.dashboard"))
 
     form = RegistrationForm()
     if form.validate_on_submit():
