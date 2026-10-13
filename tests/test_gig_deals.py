@@ -167,7 +167,7 @@ def test_unauthorized_member_cannot_read_or_change_private_deal(client, db):
                        data={"reason": "I have been incorrectly charged for work."}).status_code == 403
     assert client.post("/jobs/deals/{}/review".format(deal.id),
                        data={"stars": "5"}).status_code == 403
-    assert str(deal.id) not in client.get("/jobs/deals/").get_data(as_text=True)
+    assert "Weekend mathematics tutor" not in client.get("/jobs/deals/").get_data(as_text=True)
 
 
 def test_employer_cannot_offer_on_someone_elses_application(client, db):
