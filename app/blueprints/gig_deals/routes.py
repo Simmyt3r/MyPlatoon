@@ -250,6 +250,13 @@ def dispute(deal_id):
         abort(409)
     db.session.add(GigDispute(deal_id=deal.id, raised_by_id=current_user.id,
                               reason=reason))
+    # Re-review ratings following disputes. Previously approved ratings
+    # are hidden, even if the employer later confirms completion again.
+    for rating in deal.reviews:
+        if rating.public_consent and rating.moderation_status == "approved":
+            rating.moderation_status = "pending"
+            rating.reviewed_at = None
+            rating.reviewed_by_id = None
     deal.status = "disputed"
     opposite = deal.worker_id if owner else deal.employer.owner_user_id
     _notify(opposite, "A gig dispute is under private moderation review: " +
