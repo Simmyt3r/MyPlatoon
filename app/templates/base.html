@@ -77,9 +77,11 @@
         </div>
       </div>
 
+      {% if current_user.role != 'employer' %}
       <a href="{{ url_for('album.view') }}" class="p5-icon-btn d-none d-sm-inline-flex" aria-label="Digital Album">
         <i class="fa-solid fa-book"></i>
       </a>
+      {% endif %}
 
       <div class="dropdown">
         <button class="p5-icon-btn p5-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
@@ -255,7 +257,7 @@
     <div class="col"><a href="{{ url_for('main.services') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.services' }}"><i class="fa-solid fa-layer-group"></i>Services</a></div>
     {% if current_user.is_authenticated %}
     <div class="col"><a href="{{ url_for('main.notifications') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.notifications' }}"><i class="fa-regular fa-bell"></i>Alerts</a></div>
-    <div class="col"><a href="{{ url_for('jobs.employer_dashboard') if current_user.role == 'employer' else url_for('profile.dashboard') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-circle-user"></i>{{ 'Employer' if current_user.role == 'employer' else 'You' }}</a></div>
+    <div class="col"><a href="{{ url_for('jobs.gig_owner_dashboard') if current_user.role == 'employer' else url_for('profile.dashboard') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-circle-user"></i>{{ 'Employer' if current_user.role == 'employer' else 'You' }}</a></div>
     {% else %}
     <div class="col"><a href="{{ url_for('auth.login') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-right-to-bracket"></i>Log In</a></div>
     <div class="col"><a href="{{ url_for('auth.register') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-user-plus"></i>Join</a></div>
