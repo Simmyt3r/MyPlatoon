@@ -49,6 +49,8 @@ def _applicant_ok(job):
     if not user.is_authenticated or not user.is_active or user.role != "member":
         return False
     profile = user.profile
+    if job.employer.owner_user_id == user.id:
+        return False  # A member who owns a hiring profile cannot hire themselves.
     return bool(profile and profile.status == "approved"
                 and (not job.serving_only or profile.service_stage == "serving"))
 
