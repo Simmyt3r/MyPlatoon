@@ -334,6 +334,13 @@ def application_status(application_id):
     status = request.form.get("status", "")
     if status not in APP_STATUSES:
         abort(400)
+    if application.gig_deal is not None:
+        # Accepted terms, hiring and deal closure belong to the worker-
+        # consented gig workflow, not a unilateral application dropdown.
+        abort(409)
+    if application.listing.job_kind == "gig" and status == "hired":
+        flash("Send a formal gig offer. Only the worker can accept it.", "warning")
+        return redirect(url_for("jobs.employer_applications", job_id=application.job_id))
     application.status = status
     db.session.commit()
     log_action(current_user, "jobs.application_status", "JobApplication", application.id)
