@@ -9,7 +9,9 @@
     {% if employer.review_note %}<p class="text-danger small">{{ employer.review_note }}</p>{% endif %}
     {% if employer.status != 'approved' %}<div class="alert alert-warning small">Listings can be drafted, but none become public until both your organisation and individual job listings are approved.</div>{% endif %}
     <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('jobs.create') }}" class="btn btn-p5">Post a job or gig</a>
+      <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5">Post a gig</a>
+      <a href="{{ url_for('jobs.create') }}" class="btn btn-p5-outline">Post a full job</a>
+      <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="btn btn-p5-outline">Gig owner view</a>
       <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">Edit organisation</a>
       <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">Browse jobs</a>
     </div>
