@@ -257,3 +257,55 @@ def test_non_gig_applications_cannot_enter_gig_workflow(client, db):
     db.session.commit()
     login(client, employer.email)
     assert client.get("/jobs/deals/offer/{}".format(application.id)).status_code == 400
+
+
+
+def test_member_who_owns_an_employer_cannot_hire_self(client, db):
+    member = _create_user(db, "self-deal-member@example.com", full_name="Owner Member")
+    approve_serving(db, member)
+    employer, org = prepare_org(db, user=member)
+    job = prepare_job(db, org, job_kind="gig", pay_min=10000, pay_max=20000)
+    login(client, member.email)
+    assert client.get("/jobs/{}".format(job.id)).status_code == 200
+    assert client.post("/jobs/{}/apply".format(job.id), data={
+        "cover_note": "I want to apply to my own gig for a fraudulent reputation boost.",
+        "contact_email": member.email,
+        "consent": "y",
+    }).status_code == 302
+    assert JobApplication.query.count() == 0
+    # Even a forged legacy application cannot create a valid self-deal.
+    application = JobApplication(
+        job_id=job.id, applicant_user_id=member.id,
+        cover_note="Legacy manually inserted fraudulent self-application.",
+        contact_email=member.email)
+    db.session.add(application)
+    db.session.commit()
+    assert client.post("/jobs/deals/offer/{}".format(application.id),
+                       data=OFFER).status_code == 403
+    assert GigDeal.query.count() == 0
+
+
+def test_acceptance_rechecks_serving_only_restriction(client, db):
+    employer, _, job, worker, application = setup_gig(db)
+    job.serving_only = True
+    db.session.commit()
+    deal = send_offer(client, employer, application)
+    worker.profile.service_stage = "pcm"
+    db.session.commit()
+    switch(client, worker)
+    assert client.post("/jobs/deals/{}/respond".format(deal.id),
+                       data={"decision": "accept", "accept_terms": "yes"}).status_code == 409
+    assert deal.status == "offered"
+    assert application.status == "submitted"
+
+
+def test_member_with_hiring_profile_sees_both_worker_and_employer_deals(client, db):
+    employer, _, _, worker, application = setup_gig(db)
+    deal = send_offer(client, employer, application)
+    # Give worker an independent approved employer profile. They now
+    # have both the right to work and the right to hire other people.
+    second_owner, _org = prepare_org(db, user=worker)
+    switch(client, worker)
+    response = client.get("/jobs/deals/")
+    assert response.status_code == 200
+    assert b"Weekend mathematics tutor" in response.data
