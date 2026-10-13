@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "partials/_form_field.html" import field %}
+{% block title %}Post a Paid Gig{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-3 my-md-4" style="max-width:870px">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>Gig owner dashboard</a>
+    <span class="badge text-bg-light border">Organisation: {{ employer.status|capitalize }}</span>
+  </div>
+  <section class="p5-card p-4 p-md-5">
+    <div class="text-success fw-bold text-uppercase small mb-2">Step 2 of 2 · Submit a gig</div>
+    <h1 class="h3 fw-bold mb-2">Post a paid gig</h1>
+    <p class="text-muted">Share a clear task, where and when it happens, and the amount you will pay. This takes one submission and will enter the admin review queue.</p>
+    {% if employer.status != 'approved' %}
+    <div class="alert alert-warning small"><i class="fa-solid fa-hourglass-half me-2" aria-hidden="true"></i>Your gig owner profile is {{ employer.status }}. You can submit your first gig now, but neither the gig nor your owner profile is publicly listed until approved.</div>
+    {% endif %}
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3 mt-4">The task</h2>
+      {{ field(form.title) }}
+      {{ field(form.description, rows=5) }}
+      {{ field(form.requirements, rows=3) }}
+
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3 mt-4">Location and schedule</h2>
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.work_mode) }}</div>
+        <div class="col-md-6">{{ field(form.state) }}</div>
+        <div class="col-md-6">{{ field(form.lga) }}</div>
+        <div class="col-md-6">{{ field(form.location_description) }}</div>
+      </div>
+      {{ field(form.schedule_notes) }}
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.hours_per_week) }}</div>
+        <div class="col-md-6">{{ field(form.closing_date) }}</div>
+      </div>
+
+      <h2 class="h6 fw-bold border-bottom pb-2 mb-3 mt-4">Payment and applicants</h2>
+      <div class="row g-2">
+        <div class="col-md-6">{{ field(form.pay_amount) }}</div>
+        <div class="col-md-6">{{ field(form.pay_unit) }}</div>
+      </div>
+      {{ field(form.serving_only) }}
+      <div class="border rounded-3 p-3 mb-3">
+        {{ field(form.safety_agreement) }}
+        <p class="small text-muted mb-0">Never request application fees, advance payments from candidates, banking PINs or identity scans. NYSC commitments and safety come first.</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-p5"><i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Submit gig for publication</button>
+        <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="btn btn-p5-outline">Save for later? Return to dashboard</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
