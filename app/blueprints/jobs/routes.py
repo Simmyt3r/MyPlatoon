@@ -594,6 +594,18 @@ def preferences():
 # employer + job workflow, not a second unmoderated marketplace.
 # ---------------------------------------------------------------------------
 
+
+def _gig_owner_form_labels(form):
+    """Make the existing, validated employer fields approachable to
+    individual gig owners without weakening identity-review requirements.
+    """
+    form.kind.label.text = "Who is hiring?"
+    form.name.label.text = "Gig owner or organisation name"
+    form.address.label.text = "Operating address (for verification only)"
+    form.description.label.text = "Describe your work or organisation"
+    form.contact_email.label.text = "Recruiting contact email"
+
+
 @bp.route("/gig-owners")
 def gig_owners():
     """Public explanation and entry point for individuals and organisations."""
@@ -612,6 +624,7 @@ def gig_owner_register():
             "jobs.gig_owner_dashboard" if _employer() else "jobs.gig_owner_claim"
         ))
     form = GigOwnerRegistrationForm()
+    _gig_owner_form_labels(form)
     if form.validate_on_submit():
         owner = User(
             full_name=form.full_name.data.strip(),
@@ -645,6 +658,7 @@ def gig_owner_claim():
     if _employer() is not None:
         return redirect(url_for("jobs.gig_owner_dashboard"))
     form = GigOwnerClaimForm()
+    _gig_owner_form_labels(form)
     if request.method == "GET":
         form.contact_email.data = current_user.email
     if form.validate_on_submit():
