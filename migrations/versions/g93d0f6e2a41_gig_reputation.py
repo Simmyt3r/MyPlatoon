@@ -25,7 +25,8 @@ def upgrade():
         batch.add_column(sa.Column("moderation_note", sa.String(500)))
         batch.add_column(sa.Column(
             "reviewed_by_id", sa.Integer(),
-            sa.ForeignKey("users.id", ondelete="SET NULL")))
+            sa.ForeignKey("users.id", ondelete="SET NULL",
+                          name="fk_gig_reviews_reviewer_moderator")))
         batch.add_column(sa.Column("reviewed_at", sa.DateTime()))
     op.create_index("ix_gig_reviews_moderation_status",
                     "gig_reviews", ["moderation_status"])
