@@ -53,6 +53,19 @@ member for their **own** platoon. Low-sample groups are provisional,
 and the board is explicitly **not an official NYSC competition result**.
 See [DISCOVERY_RANKINGS.md](DISCOVERY_RANKINGS.md).
 
+## Gig hiring and completion
+
+After gig owners create reviewed listings, MyPlatoon now supports
+**formal paid-work offers, voluntary member acceptance, an active gig
+workspace, two-party completion confirmation, private disputes and
+one rating per participant after completion**. Payment is arranged
+outside MyPlatoon: reported-paid and receipt-confirmed states are
+member attestations, not bank-verified transactions or escrow.
+
+Access the private [My Gig Deals workspace](/jobs/deals/).
+See [GIG_HIRING_WORKFLOW.md](GIG_HIRING_WORKFLOW.md) for supported
+transitions, moderation and deployment requirements.
+
 ## Jobs & Gigs
 
 The nationwide [Jobs & Gigs board](/jobs/) brings paid part-time gigs,
