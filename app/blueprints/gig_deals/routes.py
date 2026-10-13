@@ -83,6 +83,8 @@ def offer(application_id):
     if not job.is_open or application.status in ("declined", "hired"):
         abort(409)
     candidate = application.applicant
+    if candidate.id == employer.owner_user_id or candidate.role != "member":
+        abort(403)  # no self-deals, fabricated reciprocal hiring or fake ratings
     if not candidate.is_active or not candidate.profile or candidate.profile.status != "approved":
         abort(409)
     if job.serving_only and candidate.profile.service_stage != "serving":
