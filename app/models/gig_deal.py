@@ -91,4 +91,4 @@ class GigReview(db.Model):
     reviewed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     deal = db.relationship("GigDeal", back_populates="reviews")
-    reviewer = db.relationship("User")
+    reviewer = db.relationship("User", foreign_keys=[reviewer_id])
