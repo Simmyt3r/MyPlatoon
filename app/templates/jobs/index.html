@@ -74,7 +74,7 @@
           <h3 class="h5 fw-bold mb-0"><a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="text-decoration-none">{{ job.title }}</a></h3>
           <span class="badge text-bg-light border">{{ job.kind_label }}</span>
         </div>
-        <p class="small text-muted mb-2"><i class="fa-solid fa-building me-1" aria-hidden="true"></i>{{ job.employer.name }}</p>
+        <p class="small text-muted mb-2"><i class="fa-solid fa-building me-1" aria-hidden="true"></i><a href="{{ url_for('jobs.employer_reputation', employer_id=job.employer_id) }}" class="text-decoration-none text-success" aria-label="View {{ job.employer.name }} hiring history">{{ job.employer.name }}</a> · <span>Hiring history</span></p>
         <p class="small text-muted mb-3"><i class="fa-solid fa-location-dot me-1" aria-hidden="true"></i>{{ job.state }}{% if job.lga %}, {{ job.lga }}{% endif %} · {{ job.work_label }}</p>
         <p class="mb-2 fw-semibold">₦{{ "{:,}".format(job.pay_min) }}{% if job.pay_max != job.pay_min %} – ₦{{ "{:,}".format(job.pay_max) }}{% endif %} <span class="small text-muted">/{{ job.pay_label|replace('Per ','')|lower }}</span></p>
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
