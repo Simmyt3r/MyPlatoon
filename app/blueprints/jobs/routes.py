@@ -586,3 +586,132 @@ def preferences():
             "on" if record.enabled else "off"), "success")
         return redirect(url_for("jobs.for_me"))
     return render_template("jobs/preferences.html", form=form, record=record)
+
+
+
+# ---------------------------------------------------------------------------
+# Gig owner onboarding: a short route through the existing reviewed
+# employer + job workflow, not a second unmoderated marketplace.
+# ---------------------------------------------------------------------------
+
+@bp.route("/gig-owners")
+def gig_owners():
+    """Public explanation and entry point for individuals and organisations."""
+    return render_template("jobs/gig_owners.html")
+
+
+@bp.route("/gig-owners/register", methods=["GET", "POST"])
+@limiter.limit("6 per hour", methods=["POST"])
+def gig_owner_register():
+    """Create a genuine employer-only account; no invented NYSC profile."""
+    from flask_login import login_user
+    from app.forms.job_forms import GigOwnerRegistrationForm
+
+    if current_user.is_authenticated:
+        return redirect(url_for(
+            "jobs.gig_owner_dashboard" if _employer() else "jobs.gig_owner_claim"
+        ))
+    form = GigOwnerRegistrationForm()
+    if form.validate_on_submit():
+        owner = User(
+            full_name=form.full_name.data.strip(),
+            email=form.email.data.strip().lower(),
+            role="employer",
+        )
+        owner.set_password(form.password.data)
+        db.session.add(owner)
+        db.session.flush()
+        employer = Employer(owner_user_id=owner.id)
+        _copy_fields(form, employer, EMPLOYER_FIELDS)
+        db.session.add(employer)
+        db.session.commit()
+        log_action(owner, "jobs.gig_owner_registered", "Employer", employer.id)
+        # The organisation is pending; logging in does not grant approval.
+        login_user(owner)
+        flash("Gig owner profile created. Add your first paid gig; your profile and gig must both be approved before publication.", "success")
+        return redirect(url_for("jobs.create_gig"))
+    return render_template(
+        "jobs/gig_owner_register.html", form=form, existing_member=False,
+    )
+
+
+@bp.route("/gig-owners/claim", methods=["GET", "POST"])
+@login_required
+@limiter.limit("6 per hour", methods=["POST"])
+def gig_owner_claim():
+    """Let existing corps members post gigs without losing their NYSC identity."""
+    from app.forms.job_forms import GigOwnerClaimForm
+
+    if _employer() is not None:
+        return redirect(url_for("jobs.gig_owner_dashboard"))
+    form = GigOwnerClaimForm()
+    if request.method == "GET":
+        form.contact_email.data = current_user.email
+    if form.validate_on_submit():
+        employer = Employer(owner_user_id=current_user.id)
+        _copy_fields(form, employer, EMPLOYER_FIELDS)
+        db.session.add(employer)
+        db.session.commit()
+        log_action(current_user, "jobs.gig_owner_registered", "Employer", employer.id)
+        flash("Gig owner profile submitted. Add your first paid gig while we review your profile.", "success")
+        return redirect(url_for("jobs.create_gig"))
+    return render_template(
+        "jobs/gig_owner_register.html", form=form, existing_member=True,
+    )
+
+
+@bp.route("/gig-owners/dashboard")
+@login_required
+def gig_owner_dashboard():
+    employer = _employer()
+    if employer is None:
+        return redirect(url_for("jobs.gig_owner_claim"))
+    listings = (JobListing.query.filter_by(employer_id=employer.id)
+                .order_by(JobListing.created_at.desc()).all())
+    return render_template("jobs/gig_owner_dashboard.html",
+                           employer=employer, listings=listings)
+
+
+@bp.route("/gigs/new", methods=["GET", "POST"])
+@login_required
+@limiter.limit("15 per hour", methods=["POST"])
+def create_gig():
+    """Publish request, not instant publication. Moderators approve each gig."""
+    from app.forms.job_forms import GigPostingForm
+
+    employer = _employer()
+    if employer is None:
+        return redirect(url_for("jobs.gig_owner_claim"))
+    if employer.status in ("rejected", "suspended"):
+        flash("Your employer profile must be reviewed before you can submit more gigs.", "warning")
+        return redirect(url_for("jobs.gig_owner_dashboard"))
+    form = GigPostingForm()
+    if request.method == "GET":
+        form.state.data = employer.state
+        form.lga.data = employer.lga
+    if form.validate_on_submit():
+        gig = JobListing(
+            employer_id=employer.id,
+            title=form.title.data.strip(),
+            job_kind="gig",  # cannot be submitted as an unrelated listing type
+            work_mode=form.work_mode.data,
+            state=form.state.data,
+            lga=(form.lga.data or "").strip() or None,
+            location_description=(form.location_description.data or "").strip() or None,
+            description=form.description.data.strip(),
+            requirements=form.requirements.data.strip(),
+            hours_per_week=form.hours_per_week.data,
+            schedule_notes=form.schedule_notes.data.strip(),
+            pay_min=form.pay_amount.data,
+            pay_max=form.pay_amount.data,
+            pay_unit=form.pay_unit.data,
+            closing_date=form.closing_date.data,
+            serving_only=bool(form.serving_only.data),
+            status="pending",
+        )
+        db.session.add(gig)
+        db.session.commit()
+        log_action(current_user, "jobs.gig_submitted", "JobListing", gig.id)
+        flash("Your gig has been submitted for publication. It will become visible only when both your profile and listing are approved.", "success")
+        return redirect(url_for("jobs.gig_owner_dashboard"))
+    return render_template("jobs/gig_post.html", form=form, employer=employer)
