@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Gig Agreement{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-3 my-md-4" style="max-width:940px">
+  <a class="small text-decoration-none" href="{{ url_for('gig_deals.index') }}">← My gig deals</a>
+  <section class="p5-card p-4 p-md-5 mt-3 mb-3">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+      <div><span class="small fw-bold text-uppercase text-success">Private work agreement #{{ deal.id }}</span>
+        <h1 class="h3 fw-bold mt-1 mb-1">{{ deal.application.listing.title }}</h1>
+        <p class="small text-muted mb-0">{{ deal.employer.name }} and {{ deal.worker.full_name }}</p>
+      </div>
+      <span class="badge {{ 'bg-success' if deal.status=='completed' else 'text-bg-warning' if deal.status in ['offered','completion_requested'] else 'text-bg-light border' }}">{{ deal.status.replace('_',' ')|title }}</span>
+    </div>
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6"><div class="bg-light rounded p-3 h-100"><div class="small text-muted">Agreed pay</div><div class="h4 fw-bold mb-0">₦{{ '{:,}'.format(deal.pay_amount) }} <span class="fs-6">{{ deal.application.listing.pay_label|lower }}</span></div></div></div>
+      <div class="col-sm-6"><div class="bg-light rounded p-3 h-100"><div class="small text-muted">Payment record (self-reported)</div><div class="fw-bold">{{ deal.payment_status.replace('_',' ')|title }}</div><div class="small text-muted">Not a bank transfer receipt or payment guarantee</div></div></div>
+    </div>
+    <h2 class="h6 fw-bold">Agreed scope and deliverables</h2>
+    <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ deal.scope }}</p>
+    <h2 class="h6 fw-bold mt-3">Work schedule</h2>
+    <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ deal.schedule }}</p>
+    <p class="small text-muted">Work location: {{ deal.application.listing.state }} · {{ deal.application.listing.work_label }}. These terms are frozen after the offer is sent. MyPlatoon does not authorize work that conflicts with NYSC/PPA/CDS commitments.</p>
+  </section>
+
+  {% if deal.status == 'offered' %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h5 fw-bold">Waiting for agreement</h2>
+    {% if worker %}
+      <p class="text-muted small">Accept only after reviewing the pay, scope, timing and employer. Declining does not create a work obligation.</p>
+      <form method="POST" action="{{ url_for('gig_deals.respond', deal_id=deal.id) }}" class="mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="decision" value="accept">
+        <label class="d-flex align-items-start gap-2 mb-3"><input type="checkbox" name="accept_terms" value="yes" required> <span>I have reviewed and voluntarily accept this gig's scope, schedule and stated payment.</span></label>
+        <button class="btn btn-p5" type="submit">Accept offer &amp; begin work</button>
+      </form>
+      <form method="POST" action="{{ url_for('gig_deals.respond', deal_id=deal.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="decision" value="decline">
+        <button class="btn btn-p5-outline" type="submit">Decline offer</button>
+      </form>
+    {% elif owner %}
+      <p class="text-muted">The member has not accepted. You cannot mark them hired or start the work for them.</p>
+      <form method="POST" action="{{ url_for('gig_deals.cancel', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Withdraw unaccepted offer</button></form>
+    {% endif %}
+  </section>
+  {% elif deal.status == 'active' %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h5 fw-bold">Work in progress</h2>
+    {% if worker %}
+      <p class="small text-muted">When you have actually finished the agreed work, send it for employer confirmation.</p>
+      <form method="POST" action="{{ url_for('gig_deals.finish', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit">I've finished the work</button></form>
+    {% else %}<p class="text-muted mb-0">Awaiting the worker to submit a completion request. You cannot confirm work completion first.</p>{% endif %}
+  </section>
+  {% elif deal.status == 'completion_requested' %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h5 fw-bold">Completion awaiting employer confirmation</h2>
+    {% if owner %}
+    <p class="text-muted small">Only confirm if the agreed work was actually delivered. For disagreements, use the private dispute option instead.</p>
+    <form method="POST" action="{{ url_for('gig_deals.confirm', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit">Confirm work completed</button></form>
+    {% else %}<p class="text-muted">The employer needs to review and confirm your completion request.</p>{% endif %}
+  </section>
+  {% elif deal.status == 'completed' %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h5 fw-bold">Work completed</h2>
+    <p class="text-muted small">Payment happens independently of MyPlatoon. Only make a payment acknowledgement when it is true; this platform cannot verify transfers.</p>
+    {% if owner and deal.payment_status == 'not_reported' %}
+    <form method="POST" action="{{ url_for('gig_deals.payment', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="report_paid"><button class="btn btn-p5-outline" type="submit">I have paid the worker</button></form>
+    {% elif worker and deal.payment_status == 'reported_paid' %}
+    <form method="POST" action="{{ url_for('gig_deals.payment', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="confirm_receipt"><button class="btn btn-p5" type="submit">I received the payment</button></form>
+    {% endif %}
+    {% if not my_rating %}
+    <hr><h3 class="h6 fw-bold">Rate your experience</h3>
+    <form method="POST" action="{{ url_for('gig_deals.review', deal_id=deal.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3"><label for="stars" class="small form-label fw-semibold">Stars</label><select id="stars" name="stars" class="form-select" required>{% for n in range(1,6) %}<option value="{{ n }}">{{ n }} / 5</option>{% endfor %}</select></div>
+        <div class="col-md-6"><label for="comment" class="small form-label fw-semibold">Private feedback (optional)</label><input id="comment" name="comment" class="form-control" maxlength="500" placeholder="Your experience"></div>
+        <div class="col-md-3"><button class="btn btn-p5 w-100" type="submit">Save rating</button></div>
+      </div>
+    </form>
+    {% else %}<div class="small text-success fw-semibold">Your rating: {{ my_rating.stars }}/5 · Recorded privately</div>{% endif %}
+  </section>
+  {% elif deal.status == 'disputed' %}
+  <div class="alert alert-warning">A private dispute is with the moderation team. Work-status and payment actions are paused until an administrator reviews the issue.</div>
+  {% else %}
+  <div class="alert alert-light border">This agreement is {{ deal.status }}. No further work is required through this workspace.</div>
+  {% endif %}
+
+  {% if deal.status in ['active','completion_requested','completed'] %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h6 fw-bold">Problem with this gig?</h2>
+    <p class="text-muted small">Both parties can confidentially report unsafe work, nonpayment, harassment or a disagreement. The other party sees only that a dispute is under review, not the private report.</p>
+    <form method="POST" action="{{ url_for('gig_deals.dispute', deal_id=deal.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="dispute-reason" class="form-label small fw-semibold">Describe the issue privately to moderators (20–1,500 characters)</label>
+      <textarea id="dispute-reason" name="reason" class="form-control mb-2" rows="3" minlength="20" maxlength="1500" required></textarea>
+      <button class="btn btn-outline-danger btn-sm" type="submit">Submit confidential dispute</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
