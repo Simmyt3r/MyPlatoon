@@ -16,17 +16,24 @@
       <span class="badge text-bg-light border">{{ a.status|capitalize }}</span>
     </div>
     <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ a.cover_note }}</p>
+    {% if a.gig_deal %}
+    <a class="btn btn-p5 btn-sm mb-2" href="{{ url_for('gig_deals.detail', deal_id=a.gig_deal.id) }}">View gig agreement · {{ a.gig_deal.status.replace('_',' ')|title }}</a>
+    {% elif job.job_kind == 'gig' and job.is_open and a.status not in ['declined','hired'] %}
+    <a class="btn btn-p5 btn-sm mb-2" href="{{ url_for('gig_deals.offer', application_id=a.id) }}">Send formal work offer</a>
+    {% endif %}
+    {% if not a.gig_deal %}
     <form method="POST" action="{{ url_for('jobs.application_status', application_id=a.id) }}" class="d-flex flex-wrap align-items-end gap-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div><label class="form-label small fw-semibold">Application status</label>
         <select name="status" class="form-select form-select-sm">
-          {% for s in ['submitted','shortlisted','declined','hired'] %}
+          {% for s in (['submitted','shortlisted','declined'] if job.job_kind == 'gig' else ['submitted','shortlisted','declined','hired']) %}
             <option value="{{ s }}" {{ 'selected' if a.status==s }}>{{ s|capitalize }}</option>
           {% endfor %}
         </select>
       </div>
       <button type="submit" class="btn btn-p5 btn-sm">Update</button>
     </form>
+    {% endif %}
   </article>
   {% else %}
   <div class="p5-card p-4 text-muted">No applications for this job yet.</div>
