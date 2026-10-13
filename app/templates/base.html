@@ -104,6 +104,7 @@
           <li><a class="dropdown-item" href="{{ url_for('ppa.mine') }}"><i class="fa-solid fa-location-dot me-2 text-success"></i>My PPA Reports</a></li>
           {% endif %}
           <li><a class="dropdown-item" href="{{ url_for('jobs.index') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>Jobs &amp; Gigs</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('gig_deals.index') }}"><i class="fa-solid fa-handshake me-2 text-success"></i>My Gig Deals</a></li>
           {% if current_user.role != 'employer' %}
           <li><a class="dropdown-item" href="{{ url_for('main.services') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Services &amp; Careers</a></li>
           {% if ENABLE_DATING %}
@@ -172,6 +173,9 @@
       </a>
       <a href="{{ url_for('main.services') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.services' }}">
         <i class="fa-solid fa-layer-group"></i>Services &amp; Careers
+      </a>
+      <a href="{{ url_for('gig_deals.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'gig_deals' }}">
+        <i class="fa-solid fa-handshake"></i>My Gig Deals
       </a>
       <a href="{{ url_for('jobs.index') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'jobs' }}">
         <i class="fa-solid fa-briefcase"></i>Jobs &amp; Gigs
