@@ -216,6 +216,10 @@ def test_member_can_dispute_and_only_admin_sees_report(client, db):
                        data={"action": "resume", "resolution": "Members were contacted and agreed to resume the work."}).status_code == 302
     assert deal.status == "active"
     assert report.status == "resolved"
+    switch(client, worker)
+    personal_workspace = client.get("/jobs/deals/{}".format(deal.id)).get_data(as_text=True)
+    assert "Members were contacted and agreed to resume the work." in personal_workspace
+    assert reason not in personal_workspace
 
 
 def test_admin_cannot_mark_dispute_as_completed_or_paid(client, db):
