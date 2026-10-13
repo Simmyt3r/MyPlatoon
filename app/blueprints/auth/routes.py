@@ -48,7 +48,7 @@ def register():
 @limiter.limit("15 per 15 minutes")
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("profile.dashboard"))
+        return redirect(url_for("jobs.employer_dashboard" if current_user.role == "employer" else "profile.dashboard"))
 
     form = LoginForm()
     if form.validate_on_submit():
