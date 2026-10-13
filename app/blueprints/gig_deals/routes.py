@@ -118,8 +118,11 @@ def detail(deal_id):
     deal = GigDeal.query.get_or_404(deal_id)
     owner, worker = _participant(deal)
     my_rating = GigReview.query.filter_by(deal_id=deal.id, reviewer_id=current_user.id).first()
+    latest_resolution = (GigDispute.query.filter_by(deal_id=deal.id, status="resolved")
+                         .order_by(GigDispute.reviewed_at.desc()).first())
     return render_template("gig_deals/detail.html", deal=deal,
-                           owner=owner, worker=worker, my_rating=my_rating)
+                           owner=owner, worker=worker, my_rating=my_rating,
+                           latest_resolution=latest_resolution)
 
 
 @bp.route("/<int:deal_id>/respond", methods=["POST"])
