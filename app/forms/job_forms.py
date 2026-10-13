@@ -150,3 +150,55 @@ class JobPreferenceForm(FlaskForm):
         "Send me in-app alerts when a newly approved job matches these preferences",
         default=False)
     submit = SubmitField("Save discovery preferences")
+
+
+
+class GigOwnerRegistrationForm(EmployerRegistrationForm):
+    """Dedicated gig-owner onboarding with explicit safety agreement."""
+    safety_agreement = BooleanField(
+        "I will post genuine paid work, disclose the working conditions, and never charge applicants fees.",
+        validators=[DataRequired(message="Accept the posting rules to continue.")])
+    submit = SubmitField("Create my gig owner account")
+
+
+class GigOwnerClaimForm(EmployerEditForm):
+    """Members may post gigs without replacing their NYSC member account."""
+    safety_agreement = BooleanField(
+        "I will post genuine paid work, disclose the working conditions, and never charge applicants fees.",
+        validators=[DataRequired(message="Accept the posting rules to continue.")])
+    submit = SubmitField("Create gig owner profile")
+
+
+class GigPostingForm(FlaskForm):
+    """Shorter one-off gig form; all critical pay and safety fields remain required."""
+    title = StringField("What work do you need done?",
+        validators=[DataRequired(), Length(min=5, max=160)])
+    work_mode = SelectField("Where will the work happen?", choices=WORK_MODES,
+        validators=[DataRequired()])
+    state = SelectField("State", choices=STATES, validators=[DataRequired()])
+    lga = StringField("LGA", validators=[Optional(), Length(max=100)])
+    location_description = StringField("General work location or landmark (optional)",
+        validators=[Optional(), Length(max=255)])
+    description = TextAreaField("Describe the tasks clearly",
+        validators=[DataRequired(), Length(min=40, max=6000)])
+    requirements = TextAreaField("Who is suitable for this gig?",
+        validators=[DataRequired(), Length(min=15, max=4000)])
+    hours_per_week = IntegerField("Estimated hours of work per week (optional)",
+        validators=[Optional(), NumberRange(min=1, max=84)])
+    schedule_notes = StringField("When will the work happen?",
+        validators=[DataRequired(), Length(min=5, max=240)])
+    pay_amount = IntegerField("Guaranteed advertised payment (₦)",
+        validators=[DataRequired(), NumberRange(min=1, max=1000000000)])
+    pay_unit = SelectField("Payment basis", choices=PAY_UNITS,
+        validators=[DataRequired()], default="project")
+    closing_date = DateField("Application deadline", format="%Y-%m-%d",
+        validators=[DataRequired()])
+    serving_only = BooleanField("Only serving NYSC members can apply")
+    safety_agreement = BooleanField(
+        "I confirm this is paid work with no application fee. The listing must pass moderation before publication.",
+        validators=[DataRequired(message="Confirm the posting rules to submit.")])
+    submit = SubmitField("Submit gig for publication")
+
+    def validate_closing_date(self, field):
+        if field.data and field.data < date.today():
+            raise ValidationError("The deadline cannot be in the past.")
