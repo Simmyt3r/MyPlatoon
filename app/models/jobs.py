@@ -11,6 +11,7 @@ from app.extensions import db
 EMPLOYER_KINDS = (
     ("school", "School or educational institution"),
     ("business", "Business or company"),
+    ("individual", "Independent gig owner"),
     ("ngo", "NGO or community organisation"),
     ("public", "Public agency"),
     ("other", "Other organisation"),
