@@ -52,13 +52,14 @@ def _success(deal, action, message):
 @bp.route("/")
 @login_required
 def index():
-    if current_user.role == "member":
-        deals = (GigDeal.query.filter_by(worker_id=current_user.id)
-                 .order_by(GigDeal.updated_at.desc()).all())
-    else:
-        employer = Employer.query.filter_by(owner_user_id=current_user.id).first()
-        deals = (GigDeal.query.filter_by(employer_id=employer.id)
-                 .order_by(GigDeal.updated_at.desc()).all()) if employer else []
+    employer = Employer.query.filter_by(owner_user_id=current_user.id).first()
+    # NYSC members can also own a registered gig business. Show both
+    # work agreements they accepted AND their own employer-side deals.
+    filters = [GigDeal.worker_id == current_user.id]
+    if employer is not None:
+        filters.append(GigDeal.employer_id == employer.id)
+    deals = GigDeal.query.filter(or_(*filters)).order_by(
+        GigDeal.updated_at.desc()).all()
     return render_template("gig_deals/index.html", deals=deals)
 
 
@@ -316,5 +317,7 @@ def resolve_dispute(dispute_id):
         deal.completion_requested_at = None
     for uid in (deal.worker_id, deal.employer.owner_user_id):
         _notify(uid, "Gig dispute reviewed. Deal now: {}. See workspace.".format(deal.status))
-    return _success(deal, "dispute_resolved",
-                    "Dispute reviewed. Both parties have been notified.")
+    db.session.commit()
+    log_action(current_user, "gig_deal.dispute_resolved", "GigDeal", deal.id)
+    flash("Dispute reviewed. Both parties have been notified.", "success")
+    return redirect(url_for("gig_deals.admin_disputes"))
