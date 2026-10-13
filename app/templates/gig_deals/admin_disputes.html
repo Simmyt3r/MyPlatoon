@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Gig Dispute Moderation{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:980px">
+  <h1 class="h3 fw-bold">Gig disputes</h1>
+  <p class="text-muted">Confidential moderation. Do not disclose reporter identities to the other party. Moderators can resume or cancel a disputed work agreement, never declare work complete or paid.</p>
+  {% for report in disputes %}
+  <article class="p5-card p-4 mb-3">
+    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+      <h2 class="h5 fw-bold">Case #{{ report.id }} · {{ report.deal.application.listing.title }}</h2>
+      <span class="badge text-bg-warning">Open</span>
+    </div>
+    <p class="small text-muted">Reported by user #{{ report.raised_by_id }} · {{ report.created_at.strftime('%d %b %Y') }} · Employer {{ report.deal.employer.name }}</p>
+    <div class="bg-light rounded p-3 mb-3" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ report.reason }}</div>
+    <form method="POST" action="{{ url_for('gig_deals.resolve_dispute', dispute_id=report.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label fw-semibold small" for="resolution-{{ report.id }}">Resolution explanation</label>
+      <textarea class="form-control mb-2" id="resolution-{{ report.id }}" name="resolution" minlength="20" maxlength="1000" rows="3" required></textarea>
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" name="action" value="resume" class="btn btn-p5 btn-sm">Resume gig</button>
+        <button type="submit" name="action" value="cancel" class="btn btn-outline-danger btn-sm">Close disputed gig</button>
+      </div>
+    </form>
+  </article>
+  {% else %}<div class="p5-card p-4 text-center text-muted">No open gig disputes.</div>{% endfor %}
+</div>
+{% endblock %}
