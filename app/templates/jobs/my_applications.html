@@ -4,7 +4,7 @@
 <div class="container my-4" style="max-width:920px">
   <header class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div><h1 class="h3 fw-bold">My applications</h1><p class="text-muted mb-0">Track the vacancies and gigs you applied for.</p></div>
-    <a class="btn btn-p5" href="{{ url_for('jobs.index') }}">Find more work</a>
+    <div class="d-flex gap-2 flex-wrap"><a class="btn btn-p5-outline" href="{{ url_for('gig_deals.index') }}">My Gig Deals</a><a class="btn btn-p5" href="{{ url_for('jobs.index') }}">Find more work</a></div>
   </header>
   {% for a in applications %}
   <article class="p5-card p-3 p-md-4 mb-3">
@@ -13,7 +13,10 @@
         <h2 class="h5 fw-bold mb-1">{{ a.listing.title }}</h2>
         <p class="text-muted small mb-0">{{ a.listing.employer.name }} · Applied {{ a.created_at.strftime('%d %b %Y') }}</p>
       </div>
-      <span class="badge text-bg-light border">Status: {{ a.status|capitalize }}</span>
+      <div class="d-flex align-items-center flex-wrap gap-2">
+        <span class="badge text-bg-light border">Status: {{ a.status|capitalize }}</span>
+        {% if a.gig_deal %}<a href="{{ url_for('gig_deals.detail', deal_id=a.gig_deal.id) }}" class="btn btn-p5 btn-sm">Review gig offer / agreement</a>{% endif %}
+      </div>
     </div>
   </article>
   {% else %}
