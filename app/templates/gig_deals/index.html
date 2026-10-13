@@ -13,7 +13,7 @@
       <div>
         <h2 class="h5 fw-bold">{{ deal.application.listing.title }}</h2>
         <p class="small text-muted mb-1">{{ deal.employer.name }} · {{ deal.worker.full_name }}</p>
-        <div class="fw-semibold">₦{{ "{:,}".format(deal.pay_amount) }} {{ deal.application.listing.pay_label|lower }}</div>
+        <div class="fw-semibold">₦{{ "{:,}".format(deal.pay_amount) }} per {{ deal.pay_unit }}</div>
       </div>
       <div class="d-flex align-items-start gap-2 flex-wrap"><span class="badge {{ 'bg-success' if deal.status == 'completed' else 'text-bg-light border' }}">{{ deal.status.replace('_',' ')|title }}</span><a href="{{ url_for('gig_deals.detail', deal_id=deal.id) }}" class="btn btn-p5 btn-sm">Open workspace</a></div>
     </div>
