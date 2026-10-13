@@ -13,7 +13,7 @@
       <span class="badge {{ 'bg-success' if deal.status=='completed' else 'text-bg-warning' if deal.status in ['offered','completion_requested'] else 'text-bg-light border' }}">{{ deal.status.replace('_',' ')|title }}</span>
     </div>
     <div class="row g-3 mb-4">
-      <div class="col-sm-6"><div class="bg-light rounded p-3 h-100"><div class="small text-muted">Agreed pay</div><div class="h4 fw-bold mb-0">₦{{ '{:,}'.format(deal.pay_amount) }} <span class="fs-6">{{ deal.application.listing.pay_label|lower }}</span></div></div></div>
+      <div class="col-sm-6"><div class="bg-light rounded p-3 h-100"><div class="small text-muted">Agreed pay</div><div class="h4 fw-bold mb-0">₦{{ '{:,}'.format(deal.pay_amount) }} <span class="fs-6">per {{ deal.pay_unit }}</span></div></div></div>
       <div class="col-sm-6"><div class="bg-light rounded p-3 h-100"><div class="small text-muted">Payment record (self-reported)</div><div class="fw-bold">{{ deal.payment_status.replace('_',' ')|title }}</div><div class="small text-muted">Not a bank transfer receipt or payment guarantee</div></div></div>
     </div>
     <h2 class="h6 fw-bold">Agreed scope and deliverables</h2>
