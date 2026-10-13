@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}My Gig Owner Dashboard{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-3 my-md-4" style="max-width:1000px">
+  <header class="p5-card p-4 p-md-5 mb-4">
+    <div class="text-success fw-bold text-uppercase small mb-2">MyPlatoon · Gig owner workspace</div>
+    <h1 class="h3 fw-bold mb-2">{{ employer.name }}</h1>
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+      {% if employer.status == 'approved' %}
+      <span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Owner approved</span>
+      {% elif employer.status == 'pending' %}
+      <span class="badge text-bg-warning">Owner review pending</span>
+      {% else %}
+      <span class="badge text-bg-danger">Owner {{ employer.status|capitalize }}</span>
+      {% endif %}
+      <span class="small text-muted">{{ employer.kind_label }} · {{ employer.state }}</span>
+    </div>
+    {% if employer.review_note %}<p class="alert alert-warning small">{{ employer.review_note }}</p>{% endif %}
+    <p class="small text-muted mb-3">Gigs are only visible to members after both your gig owner profile and each listing have passed admin review.</p>
+    <div class="d-flex flex-wrap gap-2">
+      {% if employer.status not in ['rejected','suspended'] %}
+      <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5"><i class="fa-solid fa-plus me-1"></i>Post another gig</a>
+      {% endif %}
+      <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">Edit hiring profile</a>
+      <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">View public board</a>
+      <a href="{{ url_for('jobs.employer_dashboard') }}" class="btn btn-p5-outline">Full employer dashboard</a>
+    </div>
+  </header>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="h5 fw-bold mb-0">Your gigs and opportunities</h2>
+    <span class="small text-muted">{{ listings|length }} listing{{ '' if listings|length == 1 else 's' }}</span>
+  </div>
+  {% for gig in listings %}
+  <article class="p5-card p-3 p-md-4 mb-3">
+    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+      <div>
+        <h3 class="h5 fw-bold mb-1">{{ gig.title }}</h3>
+        <p class="small text-muted mb-2">{{ gig.kind_label }} · {{ gig.state }} · {{ gig.work_label }} · Closes {{ gig.closing_date.strftime('%d %b %Y') }}</p>
+        <p class="fw-semibold mb-1">₦{{ '{:,}'.format(gig.pay_min) }} {{ gig.pay_label|lower }}</p>
+        {% if gig.review_note %}<p class="small text-danger mb-1">Review note: {{ gig.review_note }}</p>{% endif %}
+      </div>
+      <span class="badge {{ 'bg-success' if gig.is_open else ('text-bg-warning' if gig.status == 'pending' else 'text-bg-light border') }}">
+        {{ 'Live' if gig.is_open else ('Pending review' if gig.status == 'pending' else gig.status|capitalize) }}
+      </span>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a href="{{ url_for('jobs.employer_applications', job_id=gig.id) }}" class="btn btn-p5-outline btn-sm">Applicants ({{ gig.applications|length }})</a>
+      <a href="{{ url_for('jobs.detail', job_id=gig.id) }}" class="btn btn-p5-outline btn-sm">Preview</a>
+      {% if gig.status != 'closed' %}
+      <a href="{{ url_for('jobs.edit', job_id=gig.id) }}" class="btn btn-p5-outline btn-sm">Edit</a>
+      <form method="POST" action="{{ url_for('jobs.close', job_id=gig.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-danger btn-sm">Close gig</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <div class="p5-card p-5 text-center">
+    <i class="fa-solid fa-briefcase fa-2x text-success mb-3" aria-hidden="true"></i>
+    <h3 class="h5 fw-bold">Your first gig begins here</h3>
+    <p class="text-muted">Explain the paid work clearly. We'll review your listing before anyone can apply.</p>
+    <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5">Post your first gig</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
