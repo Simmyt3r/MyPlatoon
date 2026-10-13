@@ -23,6 +23,14 @@
     <p class="small text-muted">Work location: {{ deal.application.listing.state }} · {{ deal.application.listing.work_label }}. These terms are frozen after the offer is sent. MyPlatoon does not authorize work that conflicts with NYSC/PPA/CDS commitments.</p>
   </section>
 
+  {% if latest_resolution %}
+  <section class="p5-card p-3 p-md-4 mb-3" aria-label="Moderator resolution">
+    <h2 class="h6 fw-bold">Latest moderation decision</h2>
+    <p class="small text-muted mb-1">Reviewed {{ latest_resolution.reviewed_at.strftime('%d %b %Y') if latest_resolution.reviewed_at else 'recently' }} · Shared with both participants</p>
+    <p class="mb-0" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ latest_resolution.resolution }}</p>
+  </section>
+  {% endif %}
+
   {% if deal.status == 'offered' %}
   <section class="p5-card p-4 mb-3">
     <h2 class="h5 fw-bold">Waiting for agreement</h2>
