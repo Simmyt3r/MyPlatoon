@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Private Gig Case #{{ case.id }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-3 my-md-4" style="max-width:990px">
+  <a href="{{ url_for('gig_deals.admin_disputes') if case_role == 'admin' else url_for('gig_deals.detail', deal_id=case.deal_id) }}" class="small text-decoration-none">← Back to {{ 'case moderation' if case_role == 'admin' else 'gig agreement' }}</a>
+  <header class="p5-card p-4 p-md-5 mt-3 mb-3">
+    <div class="text-uppercase small fw-bold text-success mb-2">MyPlatoon · Confidential gig case</div>
+    <div class="d-flex justify-content-between gap-2 flex-wrap">
+      <h1 class="h3 fw-bold">Case #{{ case.id }} · {{ case.deal.application.listing.title }}</h1>
+      <span class="badge {{ 'text-bg-warning' if case.status == 'open' else 'text-bg-light border' }}">{{ 'Under review' if case.status == 'open' else 'Resolved' }}</span>
+    </div>
+    <p class="text-muted small">{{ case.deal.employer.name }} · Filed {{ case.created_at.strftime('%d %b %Y, %H:%M') }} UTC</p>
+    <div class="alert alert-light border small mb-3">
+      Case documents are private, not public job reviews. Your evidence is visible to <strong>you and moderators only</strong>, not the other party. Do not upload passwords, NIN documents, full bank statements or unnecessary personal records. MyPlatoon does not certify payment, act as escrow or issue binding legal judgments.
+    </div>
+    {% if case_role in ['admin','reporter'] %}
+    <h2 class="h6 fw-bold">Reported concern · {{ dict([('nonpayment','Unpaid or disputed payment'),('safety','Unsafe conditions'),('harassment','Harassment'),('scope','Changed work terms'),('other','Other concern')]).get(case.category, 'Other concern') }}</h2>
+    <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ case.reason }}</p>
+    {% else %}
+    <p class="small text-muted">A confidential concern about this gig has been submitted. You may provide your own statement or records. The reporter's private allegation and attachments are not shared with you.</p>
+    {% endif %}
+    {% if case.status == 'resolved' %}
+    <div class="border rounded-3 p-3 mt-3">
+      <h2 class="h6 fw-bold">Platform moderation outcome</h2>
+      <p class="fw-semibold mb-1">{{ 'Agreement resumed' if case.outcome_code == 'resume' else 'Agreement closed' if case.outcome_code == 'cancel' else 'Reviewed' }}</p>
+      <p class="mb-1" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ case.resolution }}</p>
+      <p class="small text-muted mb-0">This is a platform safety/workflow decision, not a determination that wages were paid, a legal arbitration award or a release of any outstanding obligations.</p>
+    </div>
+    {% endif %}
+  </header>
+
+  <section class="p5-card p-4 p-md-5 mb-3">
+    <h2 class="h5 fw-bold">Evidence records</h2>
+    <p class="small text-muted mb-4">A limited number of small supporting files may be stored privately. Each file receives a SHA-256 checksum for detecting later changes, not verifying its authenticity.</p>
+    {% for item in visible_evidence %}
+    <article class="border rounded-3 p-3 mb-3">
+      <div class="d-flex justify-content-between gap-2 flex-wrap mb-1">
+        <strong class="small">{{ item.kind.replace('_',' ')|title }} · {{ 'Submitted by you' if item.submitted_by_id == current_user.id else 'Moderator evidence record' }}</strong>
+        <span class="small text-muted">{{ item.created_at.strftime('%d %b %Y %H:%M') }} UTC</span>
+      </div>
+      <p class="small mb-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ item.description }}</p>
+      {% if item.attachment %}
+      <a class="btn btn-p5-outline btn-sm" href="{{ url_for('gig_deals.download_case_evidence', dispute_id=case.id, evidence_id=item.id) }}"><i class="fa-solid fa-file-arrow-down me-1" aria-hidden="true"></i>Download private attachment: {{ item.filename }}</a>
+      {% if item.sha256 %}<div class="small text-muted mt-2" style="overflow-wrap:anywhere">SHA-256: <code>{{ item.sha256 }}</code></div>{% endif %}
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="small text-muted">No evidence submitted by you yet. Evidence from the other party is only visible to moderators.</p>
+    {% endfor %}
+    {% if case.status == 'open' and case_role != 'admin' %}
+    <form method="POST" action="{{ url_for('gig_deals.submit_case_evidence', dispute_id=case.id) }}" enctype="multipart/form-data" class="mt-4 border-top pt-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3 class="h6 fw-bold">Add private evidence or respond</h3>
+      <div class="mb-3">
+        <label for="kind" class="form-label small fw-semibold">Evidence category</label>
+        <select name="kind" id="kind" class="form-select" required>
+          {% for value, label in evidence_kinds %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label small fw-semibold">Statement or description (20–1,800 characters)</label>
+        <textarea class="form-control" id="description" name="description" minlength="20" maxlength="1800" rows="4" required placeholder="Describe what happened, when it happened and how this supports your case."></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="attachment" class="form-label small fw-semibold">Optional supporting file</label>
+        <input type="file" id="attachment" name="attachment" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.txt">
+        <p class="small text-muted mt-1">Optional PDF, PNG, JPG or UTF-8 text · Maximum {{ max_size_mb }} MB per file · Up to {{ evidence_limit }} entries per case. Original files remain in private database storage.</p>
+      </div>
+      <button class="btn btn-p5" type="submit">Submit evidence privately</button>
+    </form>
+    {% elif case.status != 'open' %}
+    <p class="small text-muted border-top pt-3">This case is closed to new evidence. Previous records remain accessible to their owners and moderators.</p>
+    {% endif %}
+  </section>
+
+  <section class="p5-card p-4 p-md-5 mb-3">
+    <h2 class="h5 fw-bold">Case timeline</h2>
+    {% for entry in visible_history %}
+    <div class="border-start ps-3 py-2 mb-2">
+      <div class="fw-semibold small">{{ entry.kind.replace('_',' ')|title }}</div>
+      <p class="small mb-1" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ entry.description }}</p>
+      <div class="text-muted small">{{ entry.created_at.strftime('%d %b %Y %H:%M') }} UTC</div>
+    </div>
+    {% else %}
+    <p class="small text-muted">No case events recorded.</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

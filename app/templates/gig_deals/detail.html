@@ -129,7 +129,10 @@
     {% endif %}
   </section>
   {% elif deal.status == 'disputed' %}
-  <div class="alert alert-warning">A private dispute is with the moderation team. Work-status and payment actions are paused until an administrator reviews the issue.</div>
+  <div class="alert alert-warning">A private dispute is with the moderation team. Work-status and payment actions are paused until an administrator reviews the issue.
+    {% set open_case = deal.disputes|selectattr('status','equalto','open')|first %}
+    {% if open_case %}<div class="mt-2"><a href="{{ url_for('gig_deals.case_detail', dispute_id=open_case.id) }}" class="btn btn-p5-outline btn-sm">Open private case and submit evidence</a></div>{% endif %}
+  </div>
   {% else %}
   <div class="alert alert-light border">This agreement is {{ deal.status }}. No further work is required through this workspace.</div>
   {% endif %}
@@ -215,12 +218,32 @@
   </section>
   {% endif %}
 
+  {% if deal.disputes %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h6 fw-bold">Private case history</h2>
+    {% for dispute in deal.disputes %}
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 border-top py-2">
+      <div><strong class="small">Case #{{ dispute.id }}</strong> · <span class="small text-muted">{{ 'Under review' if dispute.status == 'open' else 'Resolved' }} · {{ dispute.created_at.strftime('%d %b %Y') }}</span></div>
+      <a href="{{ url_for('gig_deals.case_detail', dispute_id=dispute.id) }}" class="btn btn-p5-outline btn-sm">Open case</a>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   {% if deal.status in ['active','completion_requested','completed'] %}
   <section class="p5-card p-4 mb-3">
     <h2 class="h6 fw-bold">Problem with this gig?</h2>
     <p class="text-muted small">Both parties can confidentially report unsafe work, nonpayment, harassment or a disagreement. The other party sees only that a dispute is under review, not the private report.</p>
     <form method="POST" action="{{ url_for('gig_deals.dispute', deal_id=deal.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="dispute-category" class="form-label small fw-semibold">What type of concern are you reporting?</label>
+      <select id="dispute-category" name="category" class="form-select mb-3" required>
+        <option value="nonpayment">Unpaid or disputed payment</option>
+        <option value="safety">Unsafe working conditions</option>
+        <option value="harassment">Harassment or threats</option>
+        <option value="scope">Changed work or agreed terms</option>
+        <option value="other">Other issue</option>
+      </select>
       <label for="dispute-reason" class="form-label small fw-semibold">Describe the issue privately to moderators (20–1,500 characters)</label>
       <textarea id="dispute-reason" name="reason" class="form-control mb-2" rows="3" minlength="20" maxlength="1500" required></textarea>
       <button class="btn btn-outline-danger btn-sm" type="submit">Submit confidential dispute</button>

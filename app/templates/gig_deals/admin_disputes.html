@@ -10,7 +10,8 @@
       <h2 class="h5 fw-bold">Case #{{ report.id }} · {{ report.deal.application.listing.title }}</h2>
       <span class="badge text-bg-warning">Open</span>
     </div>
-    <p class="small text-muted">Reported by user #{{ report.raised_by_id }} · {{ report.created_at.strftime('%d %b %Y') }} · Employer {{ report.deal.employer.name }} · Worker {{ report.deal.worker.full_name }}</p>
+    <p class="small text-muted">Reported by user #{{ report.raised_by_id }} · {{ report.created_at.strftime('%d %b %Y') }} · Employer {{ report.deal.employer.name }} · Worker {{ report.deal.worker.full_name }} · Category {{ report.category.replace('_',' ')|title }}</p>
+    <a href="{{ url_for('gig_deals.case_detail', dispute_id=report.id) }}" class="btn btn-p5-outline btn-sm mb-3">Review confidential evidence and case timeline ({{ report.evidence|length }} entries)</a>
     <div class="border rounded p-3 small mb-3">
       <strong>Agreed pay:</strong> ₦{{ '{:,}'.format(report.deal.pay_amount) }} per {{ report.deal.pay_unit }}
       · <strong>Payment record:</strong> {{ report.deal.payment_status.replace('_',' ')|title }}
@@ -30,7 +31,8 @@
     </details>
     <form method="POST" action="{{ url_for('gig_deals.resolve_dispute', dispute_id=report.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="form-label fw-semibold small" for="resolution-{{ report.id }}">Resolution explanation</label>
+      <p class="small text-muted">Available platform outcomes: <strong>Resume</strong> the original gig or <strong>Close</strong> the agreement. No outcome implies wages were paid or a legally binding judgment was made.</p>
+      <label class="form-label fw-semibold small" for="resolution-{{ report.id }}">Resolution explanation shared with both participants</label>
       <textarea class="form-control mb-2" id="resolution-{{ report.id }}" name="resolution" minlength="20" maxlength="1000" rows="3" required></textarea>
       <p class="small text-muted">This explanation is shown to both participants. Do not include confidential reporter identities or private investigation details.</p>
       <div class="d-flex gap-2 flex-wrap">
