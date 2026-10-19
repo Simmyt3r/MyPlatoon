@@ -13,7 +13,7 @@ from sqlalchemy import or_
 from app.extensions import db, limiter
 from app.models import (
     Employer, JobApplication, GigDeal, GigDispute, GigReview, User,
-    Notification,
+    Notification, GigWorkUpdate, GigTerminationRequest,
 )
 from app.services.audit_service import log_action
 
@@ -35,6 +35,19 @@ def _participant(deal):
     if not (owner or worker):
         abort(403)
     return owner, worker
+
+
+def _pending_termination(deal_id):
+    return GigTerminationRequest.query.filter_by(
+        deal_id=deal_id, status="pending").first()
+
+
+def _cancel_pending_termination(deal):
+    pending = _pending_termination(deal.id)
+    if pending:
+        pending.status = "superseded"
+        pending.responded_at = datetime.utcnow()
+    return pending
 
 
 def _notify(user_id, message, category="info"):
@@ -120,9 +133,17 @@ def detail(deal_id):
     my_rating = GigReview.query.filter_by(deal_id=deal.id, reviewer_id=current_user.id).first()
     latest_resolution = (GigDispute.query.filter_by(deal_id=deal.id, status="resolved")
                          .order_by(GigDispute.reviewed_at.desc()).first())
+    notes = (GigWorkUpdate.query.filter_by(deal_id=deal.id)
+             .order_by(GigWorkUpdate.created_at.desc(), GigWorkUpdate.id.desc())
+             .limit(40).all())
+    terminations = (GigTerminationRequest.query.filter_by(deal_id=deal.id)
+                    .order_by(GigTerminationRequest.created_at.desc(),
+                              GigTerminationRequest.id.desc()).limit(10).all())
+    pending_termination = next((t for t in terminations if t.status == "pending"), None)
     return render_template("gig_deals/detail.html", deal=deal,
                            owner=owner, worker=worker, my_rating=my_rating,
-                           latest_resolution=latest_resolution)
+                           latest_resolution=latest_resolution, notes=list(reversed(notes)),
+                           terminations=terminations, pending_termination=pending_termination)
 
 
 @bp.route("/<int:deal_id>/respond", methods=["POST"])
@@ -184,7 +205,7 @@ def finish(deal_id):
     _owner, worker = _participant(deal)
     if not worker:
         abort(403)
-    if deal.status != "active":
+    if deal.status != "active" or _pending_termination(deal.id):
         abort(409)
     deal.status = "completion_requested"
     deal.completion_requested_at = datetime.utcnow()
@@ -201,7 +222,7 @@ def confirm(deal_id):
     owner, _worker = _participant(deal)
     if not owner:
         abort(403)
-    if deal.status != "completion_requested":
+    if deal.status != "completion_requested" or _pending_termination(deal.id):
         abort(409)
     deal.status = "completed"
     deal.completed_at = datetime.utcnow()
@@ -250,6 +271,7 @@ def dispute(deal_id):
         abort(409)
     db.session.add(GigDispute(deal_id=deal.id, raised_by_id=current_user.id,
                               reason=reason))
+    _cancel_pending_termination(deal)
     # Re-review ratings following disputes. Previously approved ratings
     # are hidden, even if the employer later confirms completion again.
     for rating in deal.reviews:
@@ -267,6 +289,121 @@ def dispute(deal_id):
                 category="warning")
     return _success(deal, "disputed",
                     "Your private dispute was submitted to moderators. Work status is paused.")
+
+
+@bp.route("/<int:deal_id>/updates", methods=["POST"])
+@login_required
+@limiter.limit("15 per hour")
+def add_work_update(deal_id):
+    """Short append-only updates, visible only to the two deal participants."""
+    deal = _deal_locked(deal_id)
+    owner, _worker = _participant(deal)
+    if deal.status not in ("active", "completion_requested", "completed"):
+        abort(409)
+    body = (request.form.get("body") or "").strip()
+    if not (5 <= len(body) <= 1200):
+        abort(400)
+    db.session.add(GigWorkUpdate(
+        deal_id=deal.id, author_id=current_user.id, kind="message", body=body))
+    target_id = deal.worker_id if owner else deal.employer.owner_user_id
+    _notify(target_id, "A new private work update was posted for: " +
+            deal.application.listing.title)
+    return _success(deal, "work_update", "Work update shared with your gig partner.")
+
+
+@bp.route("/<int:deal_id>/revision", methods=["POST"])
+@login_required
+@limiter.limit("8 per hour")
+def request_revision(deal_id):
+    """Clarify unfinished original scope; no unilateral new contract terms."""
+    deal = _deal_locked(deal_id)
+    owner, _worker = _participant(deal)
+    if not owner:
+        abort(403)
+    if deal.status != "completion_requested" or _pending_termination(deal.id):
+        abort(409)
+    reason = (request.form.get("reason") or "").strip()
+    if not (20 <= len(reason) <= 1200):
+        abort(400)
+    db.session.add(GigWorkUpdate(
+        deal_id=deal.id, author_id=current_user.id,
+        kind="revision_requested", body=reason))
+    deal.status = "active"
+    deal.completion_requested_at = None
+    _notify(deal.worker_id, "Your employer requested clarification before confirming: " +
+            deal.application.listing.title, category="warning")
+    return _success(deal, "revision_requested",
+                    "The worker has been notified. The original agreed scope and pay remain unchanged.")
+
+
+@bp.route("/<int:deal_id>/termination", methods=["POST"])
+@login_required
+@limiter.limit("6 per hour")
+def propose_termination(deal_id):
+    """Offer a mutual end to an accepted gig, never a one-sided cancellation."""
+    deal = _deal_locked(deal_id)
+    owner, _worker = _participant(deal)
+    if deal.status not in ("active", "completion_requested") or _pending_termination(deal.id):
+        abort(409)
+    reason = (request.form.get("reason") or "").strip()
+    if not (20 <= len(reason) <= 1000):
+        abort(400)
+    record = GigTerminationRequest(deal_id=deal.id, proposer_id=current_user.id,
+                                   reason=reason)
+    db.session.add(record)
+    target_id = deal.worker_id if owner else deal.employer.owner_user_id
+    _notify(target_id, "A mutual cancellation proposal needs your response: " +
+            deal.application.listing.title, category="warning")
+    return _success(deal, "termination_proposed",
+                    "Cancellation requested. The gig is NOT cancelled until the other party accepts.")
+
+
+@bp.route("/<int:deal_id>/termination/<int:request_id>/respond", methods=["POST"])
+@login_required
+@limiter.limit("8 per hour")
+def respond_termination(deal_id, request_id):
+    deal = _deal_locked(deal_id)
+    _participant(deal)
+    item = GigTerminationRequest.query.filter_by(id=request_id, deal_id=deal.id).first_or_404()
+    if current_user.id == item.proposer_id:
+        abort(403)
+    if item.status != "pending" or deal.status not in ("active", "completion_requested"):
+        abort(409)
+    decision = request.form.get("decision")
+    if decision not in ("accept", "decline"):
+        abort(400)
+    item.status = "accepted" if decision == "accept" else "declined"
+    item.respondent_id = current_user.id
+    item.responded_at = datetime.utcnow()
+    if decision == "accept":
+        deal.status = "cancelled"
+        deal.closed_at = datetime.utcnow()
+    _notify(item.proposer_id,
+            "Mutual cancellation was {}: {}".format(
+                item.status, deal.application.listing.title))
+    return _success(deal, "termination_" + item.status,
+                    "Cancellation {}.".format("accepted: gig closed" if decision == "accept"
+                                             else "declined: original gig stays active"))
+
+
+@bp.route("/<int:deal_id>/termination/<int:request_id>/withdraw", methods=["POST"])
+@login_required
+@limiter.limit("8 per hour")
+def withdraw_termination(deal_id, request_id):
+    deal = _deal_locked(deal_id)
+    _participant(deal)
+    item = GigTerminationRequest.query.filter_by(id=request_id, deal_id=deal.id).first_or_404()
+    if item.proposer_id != current_user.id:
+        abort(403)
+    if item.status != "pending" or deal.status not in ("active", "completion_requested"):
+        abort(409)
+    item.status = "withdrawn"
+    item.responded_at = datetime.utcnow()
+    other_id = deal.worker_id if deal.employer.owner_user_id == current_user.id else deal.employer.owner_user_id
+    _notify(other_id, "A previous cancellation proposal was withdrawn: " +
+            deal.application.listing.title)
+    return _success(deal, "termination_withdrawn",
+                    "Cancellation proposal withdrawn. The gig remains in progress.")
 
 
 @bp.route("/<int:deal_id>/review", methods=["POST"])
@@ -438,6 +575,7 @@ def resolve_dispute(dispute_id):
     report.reviewed_at = datetime.utcnow()
     deal = report.deal
     # Moderators cannot falsely attest that work is completed or paid.
+    _cancel_pending_termination(deal)
     deal.status = "active" if action == "resume" else "cancelled"
     if action == "cancel":
         deal.closed_at = datetime.utcnow()
