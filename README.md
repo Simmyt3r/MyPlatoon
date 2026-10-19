@@ -68,6 +68,18 @@ Payment-acknowledgment signals are **not verified bank transfers**.
 Moderators review opt-in feedback at `/jobs/deals/admin/reviews`.
 Read [GIG_REPUTATION.md](GIG_REPUTATION.md).
 
+## Gig safety cases and private evidence
+
+A confidential dispute case can contain separately stored evidence
+statements or small safe-format attachments, a timestamped moderation
+history, and a clear, non-financial platform outcome. The respondent
+can submit their own evidence but cannot read the reporter's confidential
+files. Only case participants and platform moderators can access the
+case workspace; each uploaded file is downloadable only by its
+uploader or a moderator. No public claims of verified payments or
+adjudicated labour disputes are made.
+See [GIG_SAFETY_PHASE3.md](GIG_SAFETY_PHASE3.md).
+
 ## Private gig workspaces
 
 After accepted gig offers, employer and worker can exchange short

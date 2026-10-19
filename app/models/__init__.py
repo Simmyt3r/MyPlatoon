@@ -10,6 +10,7 @@ from app.models.job_discovery import SavedJob, JobAlertPreference, JobAlertDeliv
 from app.models.platoon_rating import PlatoonRating
 from app.models.gig_deal import GigDeal, GigDispute, GigReview, DEAL_STATUSES, PAYMENT_STATUSES
 from app.models.gig_work import GigWorkUpdate, GigTerminationRequest
+from app.models.gig_safety import GigDisputeEvidence, GigDisputeEvent, GIG_DISPUTE_CATEGORIES, GIG_DISPUTE_EVIDENCE_KINDS
 from app.models.jobs import Employer, JobListing, JobApplication, JobReport, EMPLOYER_KINDS, JOB_KINDS, WORK_MODES, PAY_UNITS, APP_STATUSES
 from app.models.dating import DatingPersona, DatingMatch, DatingBlock, DatingInterest, DatingMessage, DatingMessageReport, GENDER_CHOICES, PERSONA_STATUSES, MATCH_STATUSES, score_label
 
@@ -22,6 +23,7 @@ __all__ = [
     "PlatoonRating", "SavedJob", "JobAlertPreference", "JobAlertDelivery",
     "GigDeal", "GigDispute", "GigReview", "DEAL_STATUSES", "PAYMENT_STATUSES",
     "GigWorkUpdate", "GigTerminationRequest",
+    "GigDisputeEvidence", "GigDisputeEvent", "GIG_DISPUTE_CATEGORIES", "GIG_DISPUTE_EVIDENCE_KINDS",
     "Employer", "JobListing", "JobApplication", "JobReport", "EMPLOYER_KINDS", "JOB_KINDS", "WORK_MODES", "PAY_UNITS", "APP_STATUSES",
     "AlbumVersion", "Announcement", "AuditLog", "Notification",
     "AnnouncementReaction", "AnnouncementComment", "REACTION_TYPES",

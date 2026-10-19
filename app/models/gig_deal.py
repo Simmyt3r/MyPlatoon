@@ -58,6 +58,8 @@ class GigDispute(db.Model):
     raised_by_id = db.Column(db.Integer, db.ForeignKey(
         "users.id", ondelete="CASCADE"), nullable=False, index=True)
     reason = db.Column(db.String(1500), nullable=False)
+    category = db.Column(db.String(32), default="other", nullable=False)
+    outcome_code = db.Column(db.String(32))
     status = db.Column(db.String(16), default="open", nullable=False, index=True)
     resolution = db.Column(db.String(1000))
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey(
@@ -66,6 +68,10 @@ class GigDispute(db.Model):
     reviewed_at = db.Column(db.DateTime)
     deal = db.relationship("GigDeal", back_populates="disputes")
     reporter = db.relationship("User", foreign_keys=[raised_by_id])
+    evidence = db.relationship("GigDisputeEvidence", back_populates="dispute",
+                               cascade="all, delete-orphan")
+    events = db.relationship("GigDisputeEvent", back_populates="dispute",
+                             cascade="all, delete-orphan")
 
 
 class GigReview(db.Model):
