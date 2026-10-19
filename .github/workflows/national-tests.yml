@@ -64,3 +64,4 @@ jobs:
               names = {col["name"] for col in inspector.get_columns("gig_disputes")}
               assert {"category", "outcome_code"}.issubset(names)
           PY
+          python scripts/check_release_schema.py
