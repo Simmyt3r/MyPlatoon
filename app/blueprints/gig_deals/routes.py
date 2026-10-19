@@ -11,7 +11,7 @@ from pathlib import Path
 
 from werkzeug.utils import secure_filename
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for, send_file
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for, send_file, make_response
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
@@ -62,6 +62,10 @@ def _safe_attachment(filename, payload):
 
 
 def _case_access(dispute):
+    # An already-authenticated session must not preserve access after
+    # the member or moderator account is suspended.
+    if not current_user.is_active:
+        abort(403)
     if current_user.is_admin:
         return "admin"
     if current_user.id == dispute.raised_by_id:
@@ -499,8 +503,12 @@ def case_detail(dispute_id):
         "gig_deals/case.html", case=dispute, case_role=case_role,
         visible_evidence=visible_evidence, visible_history=visible_history,
         evidence_kinds=GIG_DISPUTE_EVIDENCE_KINDS,
-        evidence_limit=MAX_EVIDENCE_COUNT, max_size_mb=1)
-    return response
+        evidence_limit=MAX_CASE_EVIDENCE_COUNT, max_size_mb=1)
+    page = make_response(response)
+    page.headers["Cache-Control"] = "private, no-store, max-age=0"
+    page.headers["Pragma"] = "no-cache"
+    page.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return page
 
 
 @bp.route("/case/<int:dispute_id>/evidence", methods=["POST"])
@@ -566,14 +574,24 @@ def download_case_evidence(dispute_id, evidence_id):
         abort(403)
     if not record.attachment or not record.filename:
         abort(404)
+    # Detect storage corruption/tampering before releasing evidence.
+    # The hash never authenticates the truth of submitted material.
+    if (record.file_size != len(record.attachment)
+            or record.sha256 != sha256(record.attachment).hexdigest()):
+        abort(409, description="The evidence integrity check failed.")
     response = send_file(
         BytesIO(record.attachment),
-        mimetype=record.content_type or "application/octet-stream",
+        mimetype="application/octet-stream",
         as_attachment=True, download_name=record.filename)
     response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    # Security audit records the access, never the private content.
+    log_action(current_user, "gig_dispute.evidence_download", "GigDisputeEvidence",
+               record.id)
     return response
 
 
@@ -730,7 +748,12 @@ def admin_disputes():
         report.deal_work_notes = (GigWorkUpdate.query.filter_by(deal_id=report.deal_id)
                                  .order_by(GigWorkUpdate.created_at.desc())
                                  .limit(30).all())
-    return render_template("gig_deals/admin_disputes.html", disputes=rows)
+    page = make_response(render_template("gig_deals/admin_disputes.html",
+                                         disputes=rows))
+    page.headers["Cache-Control"] = "private, no-store, max-age=0"
+    page.headers["Pragma"] = "no-cache"
+    page.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return page
 
 
 @bp.route("/admin/disputes/<int:dispute_id>", methods=["POST"])

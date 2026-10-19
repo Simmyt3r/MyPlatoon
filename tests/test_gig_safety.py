@@ -81,6 +81,8 @@ def test_evidence_text_and_file_are_append_only_with_sha256_and_private_download
     assert response.status_code == 200 and response.data == data
     assert response.headers["Cache-Control"] == "no-store, private"
     assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Content-Type"].startswith("application/octet-stream")
+    assert response.headers["X-Robots-Tag"] == "noindex, nofollow, noarchive"
     assert response.headers["Content-Disposition"].startswith("attachment;")
     assert client.post(url, data={}).status_code == 405
     assert evidence(client, case,
@@ -209,3 +211,45 @@ def test_public_jobs_and_reputation_never_expose_dispute_evidence(client, db):
         assert response.status_code == 200
         assert b"CONFIDENTIAL PAYMENT INFORMATION" not in response.data
     assert b"CONFIDENTIAL PAYMENT INFORMATION" not in client.get("/jobs/").data
+
+
+def test_case_pages_and_admin_evidence_queue_are_never_cacheable(client, db):
+    owner, org, job, worker, application, deal = start(client, db)
+    report(client, deal)
+    case = GigDispute.query.one()
+    response = client.get(f"/jobs/deals/case/{case.id}")
+    assert response.status_code == 200
+    assert "no-store" in response.headers["Cache-Control"]
+    assert response.headers["X-Robots-Tag"] == "noindex, nofollow, noarchive"
+    switch(client, owner)
+    assert "no-store" in client.get(f"/jobs/deals/case/{case.id}").headers["Cache-Control"]
+    admin = _create_user(db, "safety-queue-admin@example.com", role="admin")
+    switch(client, admin)
+    response = client.get("/jobs/deals/admin/disputes")
+    assert response.status_code == 200
+    assert "no-store" in response.headers["Cache-Control"]
+
+
+def test_corrupted_evidence_is_not_served_even_to_authorized_user(client, db):
+    owner, org, job, worker, application, deal = start(client, db)
+    report(client, deal)
+    case = GigDispute.query.one()
+    evidence(client, case, filename="evidence.txt",
+             data=b"The work was delivered in full.")
+    record = GigDisputeEvidence.query.one()
+    assert client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}").status_code == 200
+    record.attachment = b"Tampered evidence file contents"
+    db.session.commit()
+    assert client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}").status_code == 409
+
+
+def test_suspended_existing_session_is_denied_case_and_attachment(client, db):
+    owner, org, job, worker, application, deal = start(client, db)
+    report(client, deal)
+    case = GigDispute.query.one()
+    evidence(client, case, filename="record.txt", data=b"Private evidence.")
+    record = GigDisputeEvidence.query.one()
+    worker.is_suspended = True
+    db.session.commit()
+    assert client.get(f"/jobs/deals/case/{case.id}").status_code == 403
+    assert client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}").status_code == 403

@@ -38,12 +38,17 @@ identifiers confidential**.
 - Only the uploader and an administrator can download an attachment.
   The case route is visible only to its participants and administrators.
   Headers force downloads instead of inline browser rendering and
-  disable caching.
+  disable caching. Case pages and moderator queues use no-store headers
+  and request that search engines not index their contents.
 - Maximum **1 MiB per file**, **4 MiB total binary payload per case**,
   and **8 evidence records per case**.
 - File types are restricted by extension and checked against PDF,
   PNG and JPEG signatures or valid UTF-8 text. SVG, scripts, ZIP and
   Office documents are rejected.
+- A matching SHA-256 checksum and file length are rechecked before
+  download; mismatches fail closed. Downloads use generic binary MIME
+  and forced attachment disposition, rather than inline document previews.
+  Evidence downloads are logged without copying the contents into audits.
 - A safe file signature is not a malware scan. Platform admins should
   handle downloads cautiously; a dedicated private object store and
   antivirus scanner are prerequisites before allowing larger files.
