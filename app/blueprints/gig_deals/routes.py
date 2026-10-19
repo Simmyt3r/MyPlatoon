@@ -553,6 +553,12 @@ def admin_disputes():
         abort(403)
     rows = (GigDispute.query.filter_by(status="open")
             .order_by(GigDispute.created_at.asc()).limit(100).all())
+    # Load a bounded history only for disputes moderators explicitly open.
+    # These notes are never exposed on public job or reputation pages.
+    for report in rows:
+        report.deal_work_notes = (GigWorkUpdate.query.filter_by(deal_id=report.deal_id)
+                                 .order_by(GigWorkUpdate.created_at.desc())
+                                 .limit(30).all())
     return render_template("gig_deals/admin_disputes.html", disputes=rows)
 
 

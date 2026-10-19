@@ -68,6 +68,15 @@ Payment-acknowledgment signals are **not verified bank transfers**.
 Moderators review opt-in feedback at `/jobs/deals/admin/reviews`.
 Read [GIG_REPUTATION.md](GIG_REPUTATION.md).
 
+## Private gig workspaces
+
+After accepted gig offers, employer and worker can exchange short
+append-only delivery updates, request corrections to agreed work, and
+propose **mutual cancellation**. An active agreement remains active until
+the other party accepts cancellation. Private work updates can support
+confidential dispute review. No new payment handling is introduced.
+Read [GIG_WORKSPACE.md](GIG_WORKSPACE.md).
+
 ## Gig hiring and completion
 
 After gig owners create reviewed listings, MyPlatoon now supports

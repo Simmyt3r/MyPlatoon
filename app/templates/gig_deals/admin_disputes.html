@@ -20,6 +20,14 @@
       <div style="white-space:pre-wrap;overflow-wrap:anywhere">{{ report.deal.schedule }}</div>
     </div>
     <div class="bg-light rounded p-3 mb-3" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ report.reason }}</div>
+    <details class="mb-3 small">
+      <summary class="fw-semibold">Private work updates (moderator review only)</summary>
+      {% for note in report.deal_work_notes %}
+      <div class="border rounded p-2 mt-2"><strong>{{ note.author.full_name }}:</strong> {{ note.body }} <span class="text-muted">({{ note.created_at.strftime('%d %b %Y') }})</span></div>
+      {% else %}
+      <p class="text-muted mt-2">No recorded work updates.</p>
+      {% endfor %}
+    </details>
     <form method="POST" action="{{ url_for('gig_deals.resolve_dispute', dispute_id=report.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form-label fw-semibold small" for="resolution-{{ report.id }}">Resolution explanation</label>

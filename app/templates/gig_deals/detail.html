@@ -56,7 +56,7 @@
     <h2 class="h5 fw-bold">Work in progress</h2>
     {% if worker %}
       <p class="small text-muted">When you have actually finished the agreed work, send it for employer confirmation.</p>
-      <form method="POST" action="{{ url_for('gig_deals.finish', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit">I've finished the work</button></form>
+      <form method="POST" action="{{ url_for('gig_deals.finish', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit" {{ 'disabled' if pending_termination }}>I've finished the work</button></form>
     {% else %}<p class="text-muted mb-0">Awaiting the worker to submit a completion request. You cannot confirm work completion first.</p>{% endif %}
   </section>
   {% elif deal.status == 'completion_requested' %}
@@ -64,7 +64,17 @@
     <h2 class="h5 fw-bold">Completion awaiting employer confirmation</h2>
     {% if owner %}
     <p class="text-muted small">Only confirm if the agreed work was actually delivered. For disagreements, use the private dispute option instead.</p>
-    <form method="POST" action="{{ url_for('gig_deals.confirm', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit">Confirm work completed</button></form>
+    <form method="POST" action="{{ url_for('gig_deals.confirm', deal_id=deal.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-p5" type="submit" {{ 'disabled' if pending_termination }}>Confirm work completed</button></form>
+    <div class="border-top pt-3 mt-3">
+      <h3 class="h6 fw-bold">Need clarification on the original agreed work?</h3>
+      <p class="small text-muted">Explain what is incomplete within the already-agreed scope. This cannot add unpaid tasks, change the payment or alter the contract.</p>
+      <form method="POST" action="{{ url_for('gig_deals.request_revision', deal_id=deal.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label small fw-semibold" for="revision-reason">Requested correction or clarification</label>
+        <textarea id="revision-reason" name="reason" minlength="20" maxlength="1200" class="form-control mb-2" rows="3" required></textarea>
+        <button class="btn btn-p5-outline btn-sm" type="submit" {{ 'disabled' if pending_termination }}>Request correction, keep original terms</button>
+      </form>
+    </div>
     {% else %}<p class="text-muted">The employer needs to review and confirm your completion request.</p>{% endif %}
   </section>
   {% elif deal.status == 'completed' %}
@@ -122,6 +132,87 @@
   <div class="alert alert-warning">A private dispute is with the moderation team. Work-status and payment actions are paused until an administrator reviews the issue.</div>
   {% else %}
   <div class="alert alert-light border">This agreement is {{ deal.status }}. No further work is required through this workspace.</div>
+  {% endif %}
+
+  {% if deal.status in ['active','completion_requested'] %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h5 fw-bold">End the gig by mutual agreement</h2>
+    <p class="small text-muted">An accepted gig cannot be cancelled by one person. A proposal must be approved by the other party. This does not decide outstanding payment or waive an existing complaint.</p>
+    {% if pending_termination %}
+      <div class="alert alert-warning">
+        <strong>Cancellation proposed by {{ pending_termination.proposer.full_name }}</strong>
+        <p class="mb-1 mt-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ pending_termination.reason }}</p>
+        <div class="small">Sent {{ pending_termination.created_at.strftime('%d %b %Y %H:%M') }} UTC · The gig is still {{ deal.status.replace('_',' ') }}.</div>
+      </div>
+      {% if pending_termination.proposer_id == current_user.id %}
+      <form method="POST" action="{{ url_for('gig_deals.withdraw_termination', deal_id=deal.id, request_id=pending_termination.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-p5-outline btn-sm">Withdraw my cancellation proposal</button>
+      </form>
+      {% else %}
+      <div class="d-flex flex-wrap gap-2">
+        <form method="POST" action="{{ url_for('gig_deals.respond_termination', deal_id=deal.id, request_id=pending_termination.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" name="decision" value="accept" class="btn btn-outline-danger btn-sm">Agree and close this gig</button>
+        </form>
+        <form method="POST" action="{{ url_for('gig_deals.respond_termination', deal_id=deal.id, request_id=pending_termination.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" name="decision" value="decline" class="btn btn-p5-outline btn-sm">Decline, keep the gig active</button>
+        </form>
+      </div>
+      {% endif %}
+    {% else %}
+      <form method="POST" action="{{ url_for('gig_deals.propose_termination', deal_id=deal.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="termination-reason" class="form-label small fw-semibold">Why would you like to end this agreement? (20–1,000 characters)</label>
+        <textarea id="termination-reason" name="reason" class="form-control mb-2" rows="3" minlength="20" maxlength="1000" required></textarea>
+        <button class="btn btn-p5-outline btn-sm" type="submit">Propose mutual cancellation</button>
+      </form>
+    {% endif %}
+    {% if terminations|length > 1 or (terminations|length == 1 and not pending_termination) %}
+    <details class="small mt-3">
+      <summary class="fw-semibold">Previous cancellation decisions</summary>
+      <ul class="mt-2 ps-3">
+        {% for item in terminations %}
+        <li>{{ item.created_at.strftime('%d %b %Y') }} · {{ item.status|capitalize }} · {{ item.reason }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </section>
+  {% elif terminations %}
+  <section class="p5-card p-4 mb-3">
+    <h2 class="h6 fw-bold">Cancellation history</h2>
+    {% for item in terminations %}<p class="small mb-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ item.status|capitalize }} · {{ item.reason }}</p>{% endfor %}
+  </section>
+  {% endif %}
+
+  {% if deal.status in ['active','completion_requested','completed','disputed','cancelled'] %}
+  <section class="p5-card p-4 mb-3" aria-label="Private work updates">
+    <h2 class="h5 fw-bold">Private work updates</h2>
+    <p class="small text-muted">Visible only to you and your gig partner. Updates are retained as an activity record and cannot change the accepted payment or scope. Never post NIN, banking PINs, passwords or other sensitive records. Moderators may review these notes if a dispute is filed.</p>
+    {% for note in notes %}
+      <article class="border rounded-3 p-3 mb-2">
+        <div class="d-flex gap-2 justify-content-between align-items-start flex-wrap">
+          <strong class="small">{{ note.author.full_name }}{% if note.kind == 'revision_requested' %} · Correction requested{% endif %}</strong>
+          <span class="small text-muted">{{ note.created_at.strftime('%d %b %Y %H:%M') }} UTC</span>
+        </div>
+        <p class="mb-0 mt-2 small" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ note.body }}</p>
+      </article>
+    {% else %}
+      <p class="text-muted small">No updates yet. Use this space for progress or delivery confirmations.</p>
+    {% endfor %}
+    {% if deal.status in ['active','completion_requested','completed'] %}
+    <form method="POST" action="{{ url_for('gig_deals.add_work_update', deal_id=deal.id) }}" class="mt-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="work-update" class="form-label small fw-semibold">Write a progress update or delivery note</label>
+      <textarea id="work-update" name="body" class="form-control mb-2" minlength="5" maxlength="1200" rows="3" required></textarea>
+      <button type="submit" class="btn btn-p5 btn-sm">Share update privately</button>
+    </form>
+    {% else %}
+    <p class="small text-muted mb-0">This conversation is read-only while the agreement is disputed or closed.</p>
+    {% endif %}
+  </section>
   {% endif %}
 
   {% if deal.status in ['active','completion_requested','completed'] %}
