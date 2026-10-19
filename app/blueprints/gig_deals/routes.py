@@ -5,8 +5,13 @@ completion and payment acknowledgement require explicit independent actions.
 No money flows through MyPlatoon.
 """
 from datetime import datetime
+from hashlib import sha256
+from io import BytesIO
+from pathlib import Path
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
+
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for, send_file
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
@@ -14,10 +19,64 @@ from app.extensions import db, limiter
 from app.models import (
     Employer, JobApplication, GigDeal, GigDispute, GigReview, User,
     Notification, GigWorkUpdate, GigTerminationRequest,
+    GigDisputeEvidence, GigDisputeEvent, GIG_DISPUTE_CATEGORIES,
+    GIG_DISPUTE_EVIDENCE_KINDS,
 )
 from app.services.audit_service import log_action
 
 bp = Blueprint("gig_deals", __name__)
+
+MAX_EVIDENCE_BYTES = 1024 * 1024  # 1 MiB/file: safe for low-volume Aiven.
+MAX_CASE_EVIDENCE_BYTES = 4 * 1024 * 1024
+MAX_CASE_EVIDENCE_COUNT = 8
+SAFE_MEDIA = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".txt": "text/plain",
+}
+
+
+def _safe_attachment(filename, payload):
+    """Validate data signature, not an untrusted MIME header or extension alone."""
+    ext = Path(filename).suffix.lower()
+    mimetype = SAFE_MEDIA.get(ext)
+    if not mimetype:
+        abort(400, description="Allowed formats: PDF, PNG, JPG and TXT.")
+    if ext == ".pdf" and not payload.startswith(b"%PDF-"):
+        abort(400)
+    if ext == ".png" and not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        abort(400)
+    if ext in (".jpg", ".jpeg") and not (
+        payload.startswith(b"\xff\xd8\xff") and payload.endswith(b"\xff\xd9")):
+        abort(400)
+    if ext == ".txt":
+        try:
+            txt = payload.decode("utf-8")
+        except UnicodeDecodeError:
+            abort(400)
+        if "\x00" in txt:
+            abort(400)
+    return mimetype
+
+
+def _case_access(dispute):
+    if current_user.is_admin:
+        return "admin"
+    if current_user.id == dispute.raised_by_id:
+        return "reporter"
+    if current_user.id in (dispute.deal.worker_id,
+                           dispute.deal.employer.owner_user_id):
+        return "respondent"
+    abort(403)
+
+
+def _case_event(dispute_id, kind, message, visibility="participants"):
+    db.session.add(GigDisputeEvent(
+        dispute_id=dispute_id, actor_id=current_user.id,
+        kind=kind, description=message[:750], visibility=visibility))
+
 
 
 def _deal_locked(deal_id):
@@ -269,8 +328,14 @@ def dispute(deal_id):
         return redirect(url_for("gig_deals.detail", deal_id=deal.id))
     if GigDispute.query.filter_by(deal_id=deal.id, status="open").first():
         abort(409)
-    db.session.add(GigDispute(deal_id=deal.id, raised_by_id=current_user.id,
-                              reason=reason))
+    category = (request.form.get("category") or "other").strip()
+    if category not in dict(GIG_DISPUTE_CATEGORIES):
+        abort(400)
+    report = GigDispute(deal_id=deal.id, raised_by_id=current_user.id,
+                        reason=reason, category=category)
+    db.session.add(report)
+    db.session.flush()
+    _case_event(report.id, "case_opened", "A private dispute was opened for review.")
     _cancel_pending_termination(deal)
     # Re-review ratings following disputes. Previously approved ratings
     # are hidden, even if the employer later confirms completion again.
@@ -287,8 +352,10 @@ def dispute(deal_id):
     for admin in admins:
         _notify(admin.id, "Gig dispute needs admin review (#{}).".format(deal.id),
                 category="warning")
-    return _success(deal, "disputed",
-                    "Your private dispute was submitted to moderators. Work status is paused.")
+    db.session.commit()
+    log_action(current_user, "gig_deal.disputed", "GigDispute", report.id)
+    flash("Your confidential dispute was opened. You can add evidence in its private case workspace.", "success")
+    return redirect(url_for("gig_deals.case_detail", dispute_id=report.id))
 
 
 @bp.route("/<int:deal_id>/updates", methods=["POST"])
@@ -404,6 +471,110 @@ def withdraw_termination(deal_id, request_id):
             deal.application.listing.title)
     return _success(deal, "termination_withdrawn",
                     "Cancellation proposal withdrawn. The gig remains in progress.")
+
+
+@bp.route("/case/<int:dispute_id>")
+@login_required
+def case_detail(dispute_id):
+    dispute = GigDispute.query.get_or_404(dispute_id)
+    case_role = _case_access(dispute)
+    # The reporter's allegation, submission text and attachments are not
+    # disclosed to the opposing participant. Every submission stays private
+    # to its contributor and the moderation team.
+    rows = (GigDisputeEvidence.query.filter_by(dispute_id=dispute.id)
+            .order_by(GigDisputeEvidence.created_at.desc(),
+                      GigDisputeEvidence.id.desc()).all())
+    visible_evidence = [
+        item for item in rows
+        if case_role == "admin" or item.submitted_by_id == current_user.id
+    ]
+    history = (GigDisputeEvent.query.filter_by(dispute_id=dispute.id)
+               .order_by(GigDisputeEvent.created_at.asc(),
+                         GigDisputeEvent.id.asc()).all())
+    visible_history = [
+        item for item in history
+        if case_role == "admin" or item.visibility == "participants"
+    ]
+    response = render_template(
+        "gig_deals/case.html", case=dispute, case_role=case_role,
+        visible_evidence=visible_evidence, visible_history=visible_history,
+        evidence_kinds=GIG_DISPUTE_EVIDENCE_KINDS,
+        evidence_limit=MAX_EVIDENCE_COUNT, max_size_mb=1)
+    return response
+
+
+@bp.route("/case/<int:dispute_id>/evidence", methods=["POST"])
+@login_required
+@limiter.limit("8 per day")
+def submit_case_evidence(dispute_id):
+    dispute = GigDispute.query.filter_by(id=dispute_id).with_for_update().first_or_404()
+    role = _case_access(dispute)
+    if role == "admin":
+        abort(403)  # moderators review, but cannot impersonate participants
+    if dispute.status != "open" or dispute.deal.status != "disputed":
+        abort(409)
+    kind = (request.form.get("kind") or "").strip()
+    description = (request.form.get("description") or "").strip()
+    if kind not in dict(GIG_DISPUTE_EVIDENCE_KINDS) or not (20 <= len(description) <= 1800):
+        abort(400)
+    # Multipart content_length includes boundaries and form values.
+    if request.content_length and request.content_length > MAX_EVIDENCE_BYTES + 8192:
+        abort(413)
+    uploaded = request.files.get("attachment")
+    data, filename, mime = None, None, None
+    if uploaded and uploaded.filename:
+        filename = secure_filename(uploaded.filename)[:180]
+        if not filename:
+            abort(400)
+        data = uploaded.read(MAX_EVIDENCE_BYTES + 1)
+        if not data or len(data) > MAX_EVIDENCE_BYTES:
+            abort(413)
+        mime = _safe_attachment(filename, data)
+    # Locking dispute ensures the count and cumulative file limit cannot be
+    # exceeded by simultaneous writers on PostgreSQL.
+    all_items = GigDisputeEvidence.query.filter_by(dispute_id=dispute.id).all()
+    if len(all_items) >= MAX_CASE_EVIDENCE_COUNT:
+        abort(409)
+    if sum(row.file_size or 0 for row in all_items) + len(data or b"") > MAX_CASE_EVIDENCE_BYTES:
+        abort(413)
+    db.session.add(GigDisputeEvidence(
+        dispute_id=dispute.id, submitted_by_id=current_user.id,
+        kind=kind, description=description, attachment=data,
+        filename=filename, content_type=mime,
+        file_size=len(data) if data else None,
+        sha256=sha256(data).hexdigest() if data else None))
+    _case_event(dispute.id, "evidence_added",
+                "New private supporting information was submitted for moderator review.")
+    for admin in User.query.filter_by(role="admin").all():
+        if admin.is_active:
+            _notify(admin.id, "New confidential evidence for gig case #{}.".format(dispute.id),
+                    category="warning")
+    db.session.commit()
+    log_action(current_user, "gig_dispute.evidence_added", "GigDispute", dispute.id)
+    flash("Your evidence was stored privately for moderation review.", "success")
+    return redirect(url_for("gig_deals.case_detail", dispute_id=dispute.id))
+
+
+@bp.route("/case/<int:dispute_id>/attachment/<int:evidence_id>")
+@login_required
+def download_case_evidence(dispute_id, evidence_id):
+    dispute = GigDispute.query.get_or_404(dispute_id)
+    role = _case_access(dispute)
+    record = GigDisputeEvidence.query.filter_by(
+        id=evidence_id, dispute_id=dispute.id).first_or_404()
+    if role != "admin" and current_user.id != record.submitted_by_id:
+        abort(403)
+    if not record.attachment or not record.filename:
+        abort(404)
+    response = send_file(
+        BytesIO(record.attachment),
+        mimetype=record.content_type or "application/octet-stream",
+        as_attachment=True, download_name=record.filename)
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    return response
 
 
 @bp.route("/<int:deal_id>/review", methods=["POST"])
@@ -576,7 +747,12 @@ def resolve_dispute(dispute_id):
     if action not in ("resume", "cancel") or not (20 <= len(note) <= 1000):
         abort(400)
     report.status = "resolved"
+    report.outcome_code = action
     report.resolution = note
+    _case_event(report.id, "case_resolved",
+                "Moderation decision: {}. {}".format(
+                    "Gig resumed" if action == "resume" else "Gig closed",
+                    note))
     report.reviewed_by_id = current_user.id
     report.reviewed_at = datetime.utcnow()
     deal = report.deal
