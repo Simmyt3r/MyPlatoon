@@ -15,6 +15,12 @@ on:
       - "requirements.txt"
       - ".github/workflows/nerd-tests.yml"
 
+# Run only the most recent push/PR on a branch; old queued runs cannot
+# certify the latest tree and can exhaust the available runner quota.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   nerd:
     runs-on: ubuntu-latest

@@ -11,6 +11,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Run only the most recent push/PR on a branch; old queued runs cannot
+# certify the latest tree and can exhaust the available runner quota.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -41,6 +47,7 @@ jobs:
           python -m flask db upgrade
           python - <<'PY'
           from app import create_app
+          from sqlalchemy import inspect
           from app.models import Platoon, Profile, AlbumVersion
           from app.extensions import db
           app = create_app("development")
@@ -48,4 +55,12 @@ jobs:
               assert db.session.query(Platoon).count() == 0
               assert db.session.query(Profile).count() == 0
               assert db.session.query(AlbumVersion).count() == 0
+              inspector = inspect(db.engine)
+              assert inspector.has_table("gig_disputes")
+              assert inspector.has_table("gig_dispute_evidence")
+              assert inspector.has_table("gig_dispute_events")
+              assert inspector.has_table("gig_work_updates")
+              assert inspector.has_table("gig_termination_requests")
+              names = {col["name"] for col in inspector.get_columns("gig_disputes")}
+              assert {"category", "outcome_code"}.issubset(names)
           PY
