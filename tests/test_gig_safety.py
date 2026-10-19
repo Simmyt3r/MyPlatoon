@@ -251,8 +251,16 @@ def test_suspended_existing_session_is_denied_case_and_attachment(client, db):
     record = GigDisputeEvidence.query.one()
     worker.is_suspended = True
     db.session.commit()
-    assert client.get(f"/jobs/deals/case/{case.id}").status_code == 403
-    assert client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}").status_code == 403
+    # Flask-Login treats suspended accounts as inactive, redirecting them
+    # to sign-in (302) rather than returning a route-level 403.
+    page = client.get(f"/jobs/deals/case/{case.id}")
+    attachment = client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}")
+    for response in (page, attachment):
+        assert response.status_code in (302, 403)
+        if response.status_code == 302:
+            assert "/auth/login" in response.headers["Location"]
+        assert b"Private evidence." not in response.data
+    assert attachment.data != b"Private evidence."
 
 
 def test_evidence_page_only_queries_visible_submitter_files(client, db):
