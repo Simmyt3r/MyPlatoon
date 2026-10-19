@@ -253,3 +253,23 @@ def test_suspended_existing_session_is_denied_case_and_attachment(client, db):
     db.session.commit()
     assert client.get(f"/jobs/deals/case/{case.id}").status_code == 403
     assert client.get(f"/jobs/deals/case/{case.id}/attachment/{record.id}").status_code == 403
+
+
+def test_evidence_page_only_queries_visible_submitter_files(client, db):
+    owner, org, job, worker, application, deal = start(client, db)
+    report(client, deal)
+    case = GigDispute.query.one()
+    evidence(client, case, filename="worker-proof.txt",
+             data=b"Private evidence for worker")
+    switch(client, owner)
+    evidence(client, case, filename="owner-proof.txt",
+             data=b"Employer's separate evidence")
+    response = client.get(f"/jobs/deals/case/{case.id}")
+    assert response.status_code == 200
+    text = response.get_data(as_text=True)
+    assert "owner-proof.txt" in text
+    assert "worker-proof.txt" not in text
+    switch(client, worker)
+    text = client.get(f"/jobs/deals/case/{case.id}").get_data(as_text=True)
+    assert "worker-proof.txt" in text
+    assert "owner-proof.txt" not in text

@@ -40,7 +40,7 @@
         <span class="small text-muted">{{ item.created_at.strftime('%d %b %Y %H:%M') }} UTC</span>
       </div>
       <p class="small mb-2" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ item.description }}</p>
-      {% if item.attachment %}
+      {% if item.filename %}
       <a class="btn btn-p5-outline btn-sm" href="{{ url_for('gig_deals.download_case_evidence', dispute_id=case.id, evidence_id=item.id) }}"><i class="fa-solid fa-file-arrow-down me-1" aria-hidden="true"></i>Download private attachment: {{ item.filename }}</a>
       {% if item.sha256 %}<div class="small text-muted mt-2" style="overflow-wrap:anywhere">SHA-256: <code>{{ item.sha256 }}</code></div>{% endif %}
       {% endif %}

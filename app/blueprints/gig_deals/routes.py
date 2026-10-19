@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for, send_file, make_response
 from flask_login import login_required, current_user
 from sqlalchemy import or_
+from sqlalchemy.orm import defer
 
 from app.extensions import db, limiter
 from app.models import (
@@ -485,13 +486,14 @@ def case_detail(dispute_id):
     # The reporter's allegation, submission text and attachments are not
     # disclosed to the opposing participant. Every submission stays private
     # to its contributor and the moderation team.
-    rows = (GigDisputeEvidence.query.filter_by(dispute_id=dispute.id)
-            .order_by(GigDisputeEvidence.created_at.desc(),
-                      GigDisputeEvidence.id.desc()).all())
-    visible_evidence = [
-        item for item in rows
-        if case_role == "admin" or item.submitted_by_id == current_user.id
-    ]
+    evidence_query = GigDisputeEvidence.query.filter_by(dispute_id=dispute.id)
+    if case_role != "admin":
+        # Restrict rows in SQL, not merely in a later template filter.
+        evidence_query = evidence_query.filter_by(submitted_by_id=current_user.id)
+    visible_evidence = (evidence_query.options(defer(GigDisputeEvidence.attachment))
+                        .order_by(GigDisputeEvidence.created_at.desc(),
+                                  GigDisputeEvidence.id.desc()).limit(
+                                      MAX_CASE_EVIDENCE_COUNT).all())
     history = (GigDisputeEvent.query.filter_by(dispute_id=dispute.id)
                .order_by(GigDisputeEvent.created_at.asc(),
                          GigDisputeEvent.id.asc()).all())
@@ -521,13 +523,14 @@ def submit_case_evidence(dispute_id):
         abort(403)  # moderators review, but cannot impersonate participants
     if dispute.status != "open" or dispute.deal.status != "disputed":
         abort(409)
+    # Reject oversized multipart requests BEFORE form parsing buffers files.
+    # The extra 8 KiB covers the small text fields and form boundaries.
+    if request.content_length and request.content_length > MAX_EVIDENCE_BYTES + 8192:
+        abort(413)
     kind = (request.form.get("kind") or "").strip()
     description = (request.form.get("description") or "").strip()
     if kind not in dict(GIG_DISPUTE_EVIDENCE_KINDS) or not (20 <= len(description) <= 1800):
         abort(400)
-    # Multipart content_length includes boundaries and form values.
-    if request.content_length and request.content_length > MAX_EVIDENCE_BYTES + 8192:
-        abort(413)
     uploaded = request.files.get("attachment")
     data, filename, mime = None, None, None
     if uploaded and uploaded.filename:
@@ -565,6 +568,7 @@ def submit_case_evidence(dispute_id):
 
 @bp.route("/case/<int:dispute_id>/attachment/<int:evidence_id>")
 @login_required
+@limiter.limit("40 per hour")
 def download_case_evidence(dispute_id, evidence_id):
     dispute = GigDispute.query.get_or_404(dispute_id)
     role = _case_access(dispute)

@@ -35,6 +35,8 @@ identifiers confidential**.
 
 - Evidence is stored in the application database using binary fields.
   The files are **not** uploaded to public Cloudinary URLs.
+- The evidence list is filtered in SQL so non-admins do not load the
+  other participant's evidence records. Case lists defer binary blobs.
 - Only the uploader and an administrator can download an attachment.
   The case route is visible only to its participants and administrators.
   Headers force downloads instead of inline browser rendering and
