@@ -89,6 +89,12 @@ def _register_blueprints(app):
 
 def _register_error_handlers(app):
     def _render(code):
+        # /setup deliberately bypasses the DB-backed application shell before
+        # first migration. Its error responses must be standalone too.
+        if request.endpoint == "setup.setup":
+            return render_template("setup/index.html", mode="error",
+                                   error_code=code, revision=None,
+                                   configured_keys=set()), code
         return render_template(f"errors/{code}.html"), code
 
     @app.errorhandler(400)
