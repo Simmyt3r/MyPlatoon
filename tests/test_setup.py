@@ -149,3 +149,69 @@ def test_aiven_setup_sanitizes_invalid_url(client, app, monkeypatch):
     assert response.status_code == 503
     assert b"cannot be parsed" in response.data
     assert b"secret-should-never-appear" not in response.data
+
+
+def test_aiven_failure_categories_never_expose_connection_details():
+    from types import SimpleNamespace
+    from app.services.aiven_diagnostics import diagnose_database_error
+
+    secret = "PASSWORD-NEVER-ECHO-THIS"
+    cases = (
+        (SimpleNamespace(pgcode="28P01"), "DB_AUTH"),
+        (SimpleNamespace(pgcode="3D000"), "DB_MISSING"),
+        (SimpleNamespace(pgcode="42501"), "DB_PERMISSIONS"),
+        (SimpleNamespace(pgcode="53300"), "DB_LIMIT"),
+        (Exception(f"password authentication failed for user secretuser {secret}"), "DB_AUTH"),
+        (Exception(f"could not translate host name secret-host {secret}"), "DB_DNS"),
+        (Exception(f"connection timed out on host secret-host {secret}"), "DB_TIMEOUT"),
+        (Exception(f"connection refused on host secret-host {secret}"), "DB_REFUSED"),
+        (Exception(f"SSL error: certificate verify failed {secret}"), "DB_TLS"),
+        (Exception(f"no pg_hba.conf entry for host secret-host {secret}"), "DB_ACCESS"),
+        (Exception(f"unknown private error {secret}"), "DB_OTHER"),
+    )
+    for exc, expected_code in cases:
+        code, summary, guidance = diagnose_database_error(exc)
+        assert code == expected_code
+        assert summary and guidance
+        assert secret not in (code + summary + guidance)
+        assert "secret-host" not in (code + summary + guidance)
+        assert "secretuser" not in (code + summary + guidance)
+
+
+def test_setup_connection_error_explains_cause_without_secret(client, app, monkeypatch):
+    from app.blueprints.setup import routes
+
+    secret = "NOT-IN-RESPONSE-OR-LOGS"
+    app.config.update(TESTING=False, DEBUG=False)
+    monkeypatch.setenv(
+        "AIVEN_DATABASE_URL",
+        "postgresql://user:placeholder@host.example:5432/myplatoon?sslmode=require",
+    )
+
+    def fail_connection():
+        raise RuntimeError(f"could not translate host name {secret}")
+
+    monkeypatch.setattr(routes, "_has_admin", fail_connection)
+    result = client.get("/setup")
+    assert result.status_code == 503
+    assert b"DB_DNS" in result.data
+    assert b"Connection diagnostics v3" in result.data
+    assert secret.encode() not in result.data
+    assert b"FIRST-TIME ONLY" not in result.data
+
+
+def test_setup_connection_error_handles_unknown_errors(client, app, monkeypatch):
+    from app.blueprints.setup import routes
+    app.config.update(TESTING=False, DEBUG=False)
+    monkeypatch.setenv(
+        "AIVEN_DATABASE_URL",
+        "postgresql://user:placeholder@host.example:5432/myplatoon?sslmode=require",
+    )
+    monkeypatch.setattr(
+        routes, "_has_admin",
+        lambda: (_ for _ in ()).throw(Exception("sensitive internal details")),
+    )
+    result = client.get("/setup")
+    assert result.status_code == 503
+    assert b"DB_OTHER" in result.data
+    assert b"sensitive internal details" not in result.data
