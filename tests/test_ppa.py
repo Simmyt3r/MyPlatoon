@@ -59,7 +59,7 @@ def test_public_cannot_view_unreviewed_ppa(client, member_user, db):
     login(client, member_user.email)
     client.post("/ppas/new", data=_data())
     id_ = PPA.query.one().id
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     assert client.get("/ppas/" + str(id_)).status_code == 404
 
 
@@ -90,7 +90,7 @@ def test_admin_review_exposes_pins_and_nearby_filters(
     login(client, member_user.email)
     client.post("/ppas/new", data=_data())
     entry_id = PPA.query.one().id
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, admin_user.email)
     review = client.post("/ppas/" + str(entry_id) + "/review",
                          data={"decision": "verified"}, follow_redirects=True)
@@ -159,14 +159,14 @@ def test_other_corps_member_can_add_moderated_experience(
     page = client.get("/ppas/" + str(ppa.id))
     assert b"Accommodation was available" not in page.data
 
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, admin_user.email)
     assert client.get("/ppas/review/experiences").status_code == 200
     approved = client.post("/ppas/experience/" + str(report.id) + "/review",
                            data={"decision": "verified"})
     assert approved.status_code == 302
     assert report.status == "verified"
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     public = client.get("/ppas/" + str(ppa.id))
     assert b"Accommodation was available" in public.data
     assert member_user.email.encode() not in public.data
@@ -196,7 +196,7 @@ def test_experience_edit_requires_ownership_and_resets_review(
         "allowance": "unknown", "notes": "Different year."
     })
     assert PPAExperience.query.filter_by(ppa_id=ppa.id).count() == 2
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, member_user.email)
     client.post("/ppas/" + str(ppa.id) + "/experience", data={
         "service_year": "2025", "accommodation": "yes", "allowance": "no",
