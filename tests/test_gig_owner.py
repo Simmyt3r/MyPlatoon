@@ -93,7 +93,7 @@ def test_register_requires_safety_agreement_and_prevents_duplicate_email(client)
     assert client.post("/jobs/gig-owners/register",
                        data=gig_owner_data()).status_code == 302
     # Signed in after registration; log out before testing a second signup.
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     result = client.post("/jobs/gig-owners/register", data=gig_owner_data())
     assert result.status_code == 200
     assert Employer.query.count() == 1
@@ -126,7 +126,7 @@ def test_new_gig_is_saved_pending_not_in_public_board(client):
     assert gig.pay_min == 12000 and gig.pay_max == 12000
     assert gig.serving_only is True
     assert b"Pending review" in client.get("/jobs/gig-owners/dashboard").data
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     assert "Saturday mathematics tutor" not in client.get("/jobs/").get_data(as_text=True)
     assert client.get("/jobs/{}".format(gig.id)).status_code == 404
 
@@ -136,7 +136,7 @@ def test_approval_is_required_for_both_employer_and_gig(client):
     client.post("/jobs/gigs/new", data=gig_data())
     gig = JobListing.query.one()
     owner_record = Employer.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     admin = _create_user(db, "gig-admin@example.com", role="admin")
     login(client, admin.email)
     # A listing cannot be forced live while the gig owner is still pending.
@@ -149,7 +149,7 @@ def test_approval_is_required_for_both_employer_and_gig(client):
     assert client.post("/jobs/admin/listings/{}/review".format(gig.id),
                        data={"decision": "published"}).status_code == 302
     assert gig.status == "published"
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     assert b"Saturday mathematics tutor" in client.get("/jobs/").data
     assert client.get("/jobs/{}".format(gig.id)).status_code == 200
 
@@ -169,7 +169,7 @@ def test_gig_owner_does_not_have_cross_owner_access_to_applicants_or_edits(clien
     client.post("/jobs/gig-owners/register", data=gig_owner_data())
     client.post("/jobs/gigs/new", data=gig_data())
     gig = JobListing.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     second = _create_user(db, "another-employer@example.com", role="employer")
     db.session.add(Employer(
         owner_user_id=second.id, name="Another School", kind="school",
