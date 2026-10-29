@@ -14,6 +14,17 @@ def create_app(config_name: str = None):
     config_name = config_name or os.environ.get("FLASK_ENV", "development")
     app.config.from_object(CONFIG_MAP.get(config_name, CONFIG_MAP["default"]))
 
+    # Never run a public deployment with the predictable development secret:
+    # it protects signed session and CSRF tokens. Fail before serving requests.
+    if config_name == "production":
+        secret = app.config.get("SECRET_KEY")
+        if (not isinstance(secret, (str, bytes)) or len(secret) < 32
+                or secret == "dev-key-not-secure-change-me"):
+            raise RuntimeError(
+                "Production requires a unique SECRET_KEY of at least 32 characters. "
+                "Set it in the deployment environment before starting MyPlatoon."
+            )
+
     _init_extensions(app)
     _register_blueprints(app)
     _register_error_handlers(app)
