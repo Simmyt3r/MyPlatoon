@@ -31,7 +31,7 @@ real Aiven service**.
    Do not print or commit database URLs or credentials.
 5. Only during the agreed final database configuration, trigger the
    protected **Apply MyPlatoon production migrations** GitHub workflow.
-   It must finish at Alembic revision `b73d61c28a50`.
+   It must finish at Alembic revision `c4c0e21ac7b8`.
 6. Run `python scripts/check_release_schema.py` with a read-only database
    account where possible. It checks revision, required tables, columns and
    security indexes; **it never applies migrations or stamps revisions**.
@@ -53,6 +53,8 @@ real Aiven service**.
 
 - **Aiven production migration is deferred** at the user's request.
   Do not assume new routes function on an older production database.
+- Admin-initiated `/setup` upgrades and integration settings require a strong
+  production signing key, a dedicated Aiven URL, and an explicit restorable backup.
 - Evidence files are database BLOBs limited to 1 MiB each and 4 MiB per
   case. These limits reduce storage risk but do not provide malware scanning.
 - File signatures and checksums verify format hints and stored byte

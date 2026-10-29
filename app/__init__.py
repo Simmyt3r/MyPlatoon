@@ -70,6 +70,7 @@ def _register_blueprints(app):
     from app.blueprints.jobs.routes import bp as jobs_bp
     from app.blueprints.gig_deals.routes import bp as gig_deals_bp
     from app.blueprints.platoons.routes import bp as platoons_bp
+    from app.blueprints.setup.routes import bp as setup_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -83,10 +84,17 @@ def _register_blueprints(app):
     app.register_blueprint(jobs_bp, url_prefix="/jobs")
     app.register_blueprint(gig_deals_bp, url_prefix="/jobs/deals")
     app.register_blueprint(platoons_bp, url_prefix="/platoons")
+    app.register_blueprint(setup_bp)
 
 
 def _register_error_handlers(app):
     def _render(code):
+        # /setup deliberately bypasses the DB-backed application shell before
+        # first migration. Its error responses must be standalone too.
+        if request.endpoint == "setup.setup":
+            return render_template("setup/index.html", mode="error",
+                                   error_code=code, revision=None,
+                                   configured_keys=set()), code
         return render_template(f"errors/{code}.html"), code
 
     @app.errorhandler(400)
@@ -126,7 +134,7 @@ def _register_context_processors(app):
         # The marketing landing is deliberately standalone: this template
         # needs no app-shell variables, login-manager user lookup, database
         # or deployment-specific branding. Keep "/" usable before setup.
-        if request.endpoint == "main.index":
+        if request.endpoint in ("main.index", "setup.setup"):
             return {}
         from flask_login import current_user
         from app.services.notification_service import unread_count
