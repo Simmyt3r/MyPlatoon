@@ -44,7 +44,12 @@
     <div class="alert {% if category == 'danger' %}danger{% endif %}" role="alert">{{ message }}</div>
   {% endfor %}
 
-  {% if mode == "unconfigured" %}
+  {% if mode == "error" %}
+    <section class="card"><h2>Setup request denied ({{ error_code }})</h2>
+      <p>This operation is not permitted. Return to the <a href="{{ url_for('main.index') }}">homepage</a>
+        or sign in with your administrator account.</p>
+    </section>
+  {% elif mode == "unconfigured" %}
     <section class="card">
       <h2>Aiven connection required</h2>
       <p>Before continuing, set <code>FLASK_ENV=production</code>, <code>SECRET_KEY</code>,
