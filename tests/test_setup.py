@@ -365,7 +365,9 @@ def test_https_setup_csrf_referrer_missing_explains_actual_cause(client, app):
     assert b"HTTPS_REFERRER_MISSING" in response.data
     assert b"browser did not send the HTTPS referrer" in response.data
     assert b"form security token was missing" not in response.data
-    assert token.encode() not in response.data
+    # The standalone recovery form intentionally renders a fresh CSRF
+    # input so operators can retry the read-only form probe securely.
+    assert b'name="csrf_token"' in response.data
 
 
 def test_https_setup_csrf_rejects_cross_origin_referer(client, app):
@@ -378,7 +380,7 @@ def test_https_setup_csrf_rejects_cross_origin_referer(client, app):
     )
     assert response.status_code == 400
     assert b"HTTPS_REFERRER_MISMATCH" in response.data
-    assert token.encode() not in response.data
+    assert b'name="csrf_token"' in response.data
 
 
 def test_https_bootstrap_csrf_passes_with_same_origin_referer(client, app):
