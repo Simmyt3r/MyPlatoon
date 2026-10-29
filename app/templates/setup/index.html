@@ -52,12 +52,16 @@
   {% elif mode == "unconfigured" %}
     <section class="card">
       <h2>Aiven connection required</h2>
-      <p>Before continuing, set <code>FLASK_ENV=production</code>, <code>SECRET_KEY</code>,
-        <code>AIVEN_DATABASE_URL</code>, and a one-time <code>SETUP_TOKEN</code> in your
-        Vercel project's Production environment and redeploy.</p>
-      <p>The Aiven connection must point to the <code>myplatoon</code> database and use
-        <code>sslmode=require</code> (or a stronger verification mode). Credentials are
-        never accepted via a public request or stored in the Vercel filesystem.</p>
+      <div class="notice" role="alert"><strong>Configuration diagnosis:</strong>
+        {{ config_issue or "The database URL is not configured correctly." }}</div>
+      <p>Expected URL structure (example only, never paste your real credentials into support chats):</p>
+      <p><code>postgresql://USER:PASSWORD@HOST:PORT/myplatoon?sslmode=require</code></p>
+      <p>Set <code>AIVEN_DATABASE_URL</code> in <strong>Vercel → Settings →
+        Environment Variables → Production</strong>, save it, and <strong>redeploy</strong>
+        the production deployment. The actual database must be named
+        <code>myplatoon</code>.</p>
+      <p class="muted">Setup connection diagnostics v2. This page shows validation
+        status only; it never reveals database credentials or server addresses.</p>
     </section>
   {% elif mode == "unavailable" %}
     <section class="card">
