@@ -21,6 +21,19 @@
   `scripts/seed.py` demo script is separate and uses an obviously-fake, publicly-documented
   demo password (`ChangeMe123!`) — never point that script at a real production database.
 
+## Secure Setup & Integration Keys
+- `/setup` accepts a 32+ character one-time `SETUP_TOKEN` only while no admin
+  exists; after that, all setup operations require an active administrator and
+  password re-confirmation. POSTs are CSRF-protected and rate-limited.
+- Runtime signing secret and Aiven DB URL must be bootstrapped in Vercel;
+  entering them via a public web form would not persist across serverless workers.
+- The admin may update only allowlisted Cloudinary credentials. They are
+  encrypted in Aiven using a key derived from the stable production `SECRET_KEY`.
+  Rotate that secret only after planning to re-enter Cloudinary settings.
+- Admin migration is forward-only and executes only committed Alembic revisions;
+  backup acknowledgement and a deliberate confirmation phrase are required.
+  No arbitrary SQL execution or database URL editor is exposed.
+
 ## Authorization
 - `@login_required` (Flask-Login) gates every member-only route.
 - A dedicated `admin_required` decorator gates every admin route and returns **403**, not
