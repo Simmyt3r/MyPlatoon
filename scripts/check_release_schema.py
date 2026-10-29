@@ -13,8 +13,9 @@ from sqlalchemy import inspect, text
 from app import create_app
 from app.extensions import db
 
-EXPECTED_REVISION = "b73d61c28a50"
+EXPECTED_REVISION = "c4c0e21ac7b8"
 REQUIRED_COLUMNS = {
+    "site_secrets": {"key", "ciphertext", "updated_at", "updated_by_id"},
     "users": {"id", "email", "role", "is_suspended"},
     "job_employers": {"id", "owner_user_id", "status"},
     "job_listings": {"id", "employer_id", "job_kind", "status"},
