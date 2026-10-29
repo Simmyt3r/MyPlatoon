@@ -69,11 +69,20 @@ def test_login_nonexistent_user(client):
     assert b"Invalid email or password" in resp.data
 
 
-def test_logout_requires_login_redirect(client):
-    resp = client.get("/auth/logout", follow_redirects=True)
-    # Should redirect to login (Flask-Login login_required)
+def test_logout_requires_post_and_login(client, member_user):
+    # A cross-site GET or a clicked link must never terminate a session.
+    assert client.get("/auth/logout").status_code == 405
+    resp = client.post("/auth/logout", follow_redirects=True)
+    assert resp.request.path == "/auth/login"
+
+    login(client, "member@example.com")
+    dashboard = client.get("/profile/dashboard")
+    assert b'action="/auth/logout"' in dashboard.data
+    assert b'name="csrf_token"' in dashboard.data
+
+    resp = client.post("/auth/logout", follow_redirects=True)
     assert resp.status_code == 200
-    assert b"log in" in resp.data.lower() or resp.request.path == "/auth/login"
+    assert client.get("/profile/dashboard").status_code == 302
 
 
 def test_suspended_account_cannot_login(client, member_user, db):

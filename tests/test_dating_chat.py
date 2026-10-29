@@ -61,7 +61,7 @@ def test_mutual_interest_enables_private_two_way_text(client):
     assert Notification.query.count() == 1
     assert "Hello, Ada" not in Notification.query.one().message
     assert "Hello, Ada." in r.get_data(as_text=True)
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     assert "Hello, Ada." in client.get(
         "/dating/messages/{}".format(pa.id)).get_data(as_text=True)
@@ -75,7 +75,7 @@ def test_stranger_cannot_read_guessable_conversation_or_report(client):
     login(client, a.email)
     _send(client, pb.id, "Our message must remain private.")
     message = DatingMessage.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     c, pc = _adult("chat-c@example.com", "male", "female", "Visitor Three")
     login(client, c.email)
     assert client.get("/dating/messages/{}".format(pa.id)).status_code == 404
@@ -93,7 +93,7 @@ def test_withdrawal_revokes_chat_both_ways_but_retains_history(client):
     assert DatingMessage.query.count() == 1
     client.post("/dating/interest/{}/withdraw".format(pb.id))
     assert client.get("/dating/messages/{}".format(pb.id)).status_code == 404
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     assert client.get("/dating/messages/{}".format(pa.id)).status_code == 404
     assert DatingMessage.query.count() == 1
@@ -106,7 +106,7 @@ def test_block_revokes_chat_both_ways_even_if_link_known(client):
     client.post("/dating/block/{}".format(pb.id))
     assert DatingBlock.query.count() == 1
     assert client.get("/dating/messages/{}".format(pb.id)).status_code == 404
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     assert client.get("/dating/messages/{}".format(pa.id)).status_code == 404
     assert client.post("/dating/messages/{}".format(pa.id),
@@ -136,7 +136,7 @@ def test_only_recipient_can_report_and_only_once(client):
     _send(client, pb.id, "Inappropriate message")
     msg = DatingMessage.query.one()
     assert client.get("/dating/messages/report/{}".format(msg.id)).status_code == 404
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     assert client.get("/dating/messages/report/{}".format(msg.id)).status_code == 200
     assert client.post("/dating/messages/report/{}".format(msg.id),
@@ -155,7 +155,7 @@ def test_recipient_may_report_after_connection_is_withdrawn_or_blocked(client):
     login(client, a.email)
     _send(client, pb.id, "Evidence")
     msg = DatingMessage.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     client.post("/dating/block/{}".format(pa.id))
     assert client.get("/dating/messages/{}".format(pa.id)).status_code == 404
@@ -170,12 +170,12 @@ def test_admin_can_moderate_report_without_exposing_thread(client):
     login(client, a.email)
     _send(client, pb.id, "Unwelcome conversation")
     msg = DatingMessage.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     client.post("/dating/messages/report/{}".format(msg.id),
                 data={"reason": "Please remove this inappropriate message."})
     assert client.get("/dating/moderation/messages").status_code == 403
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, admin.email)
     page = client.get("/dating/moderation/messages")
     assert page.status_code == 200
@@ -184,7 +184,7 @@ def test_admin_can_moderate_report_without_exposing_thread(client):
         DatingMessageReport.query.one().id), data={"decision": "removed"}).status_code == 302
     assert DatingMessage.query.one().is_removed is True
     assert DatingMessageReport.query.one().status == "removed"
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     html = client.get("/dating/messages/{}".format(pa.id)).get_data(as_text=True)
     assert "This message was removed by a moderator" in html
@@ -196,12 +196,12 @@ def test_delete_persona_removes_messages_and_reports(client):
     login(client, a.email)
     _send(client, pb.id, "Delete me with Dating")
     msg = DatingMessage.query.one()
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     client.post("/dating/messages/report/{}".format(msg.id),
                 data={"reason": "Message should be deleted later."})
     assert DatingMessageReport.query.count() == 1
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, a.email)
     assert client.post("/dating/delete").status_code == 302
     assert DatingMessage.query.count() == 0

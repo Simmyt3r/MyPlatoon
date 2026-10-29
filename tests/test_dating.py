@@ -73,7 +73,7 @@ def test_mutual_ranking_does_not_notify_without_mutual_consent(client, db):
         "display_name": "Amaka", "gender": "female", "interested_in": "male",
         "interests": "hiking, music, football",
     })
-    client.get("/auth/logout")
+    client.post("/auth/logout")
 
     login(client, "tunde@example.com")
     client.post("/dating/persona", data={

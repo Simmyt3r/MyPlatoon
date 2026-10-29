@@ -35,7 +35,7 @@ def send_offer(client, employer, application):
 
 
 def switch(client, account):
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, account.email)
 
 

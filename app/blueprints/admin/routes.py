@@ -12,6 +12,14 @@ from app.services.notification_service import notify
 bp = Blueprint("admin", __name__)
 
 
+def _csv_safe(value):
+    """Force untrusted spreadsheet cells to be plain text, not formulas."""
+    text = "" if value is None else str(value)
+    if text.lstrip().startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
+
 def admin_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -31,7 +39,9 @@ def dashboard():
         "pending_approval": Profile.query.filter_by(status="pending").count(),
         "incomplete_profiles": Profile.query.filter_by(status="draft").count(),
         "registered_businesses": Business.query.count(),
-        "album_downloads": sum(v.download_count for v in AlbumVersion.query.all()),
+        "album_downloads": db.session.query(
+            db.func.coalesce(db.func.sum(AlbumVersion.download_count), 0)
+        ).scalar(),
     }
     recent_registrations = User.query.filter_by(role="member").order_by(
         User.created_at.desc()).limit(5).all()
@@ -258,13 +268,13 @@ def export_members_csv():
     writer = csv.writer(output)
     writer.writerow(["Full Name", "Email", "Status", "State", "LGA", "Profession",
                       "Phone", "WhatsApp", "Registered"])
-    for profile in Profile.query.join(Profile.user).all():
-        writer.writerow([
+    for profile in Profile.query.join(Profile.user).yield_per(100):
+        writer.writerow([_csv_safe(value) for value in [
             profile.user.full_name, profile.user.email, profile.status,
             profile.state_of_origin or "", profile.lga or "", profile.profession or "",
             profile.phone_number or "", profile.whatsapp_number or "",
             profile.user.created_at.strftime("%Y-%m-%d"),
-        ])
+        ]])
     log_action(current_user, "data.export", "Profile", None, detail="members.csv")
     return Response(output.getvalue(), mimetype="text/csv",
                      headers={"Content-Disposition": "attachment; filename=myplatoon_members.csv"})

@@ -189,7 +189,7 @@ def test_mutual_interest_notifies_both_and_shows_consented_connections(client, d
     client.post(f"/dating/interest/{pb.id}")
     assert DatingInterest.query.count() == 1
     assert Notification.query.count() == 0
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     response = client.post(f"/dating/interest/{pa.id}", follow_redirects=True)
     assert response.status_code == 200
@@ -214,7 +214,7 @@ def test_withdraw_breaks_mutual_connection_without_notifying(client, db):
     pb = _persona(db, b, gender="female", looking_for="male")
     login(client, a.email)
     client.post(f"/dating/interest/{pb.id}")
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     client.post(f"/dating/interest/{pa.id}")
     assert Notification.query.count() == 2
@@ -235,11 +235,11 @@ def test_block_removes_prior_mutual_interests(client, db):
     pb = _persona(db, b, gender="female", looking_for="male")
     login(client, a.email)
     client.post(f"/dating/interest/{pb.id}")
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, b.email)
     client.post(f"/dating/interest/{pa.id}")
     assert DatingInterest.query.count() == 2
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, a.email)
     client.post(f"/dating/block/{pb.id}")
     assert DatingInterest.query.count() == 0
