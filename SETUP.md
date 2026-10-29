@@ -110,3 +110,26 @@ Production deployment. The old deployment may still be using earlier values.
 **Security:** Never paste the complete Aiven URI, `SECRET_KEY`, or
 `SETUP_TOKEN` into GitHub issues or chats. When you can open the first-admin
 wizard, take an Aiven backup before applying a migration.
+
+
+## Troubleshoot "Setup request denied (400)"
+
+A 400 on submitting `/setup` is usually an HTTP/form security problem,
+not proof of an Aiven connectivity failure.
+
+- If the page says **Setup form security check failed**, it will explain
+  whether the CSRF token was missing, expired, or did not match the browser
+  session. Do not disable Flask-WTF CSRF protection.
+- Reopen `https://myplatoon.vercel.app/setup` in a fresh tab, keep cookies
+  enabled and submit the newly loaded form. Do not reuse a form loaded before
+  the latest Vercel deployment or before a production `SECRET_KEY` change.
+- Keep the same production `SECRET_KEY` consistently across deployments.
+  Changing it invalidates existing signed browser sessions and CSRF tokens.
+- If the page says **The setup action was not recognized**, use the buttons
+  on the current `/setup` page rather than posting a custom request.
+- A GET navigation to `/setup` should not require CSRF verification. If
+  a simple GET results in 400 even in a fresh tab, inspect Vercel runtime
+  logs for the request method, status and endpoint (never paste cookies
+  or secrets into support tickets).
+
+A rejected CSRF request cannot start migrations or create administrators.

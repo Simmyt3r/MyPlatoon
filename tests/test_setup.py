@@ -215,3 +215,64 @@ def test_setup_connection_error_handles_unknown_errors(client, app, monkeypatch)
     assert result.status_code == 503
     assert b"DB_OTHER" in result.data
     assert b"sensitive internal details" not in result.data
+
+
+def test_setup_missing_csrf_explains_rejection_without_exposing_secrets(client, app, db):
+    """A missing form token must be rejected, not treated as DB failure."""
+    app.config["WTF_CSRF_ENABLED"] = True
+    app.config["SETUP_TOKEN"] = "secret-token-" + "a" * 40
+    response = client.post("/setup", data={
+        "setup_token": app.config["SETUP_TOKEN"],
+        "name": "Demo Admin",
+        "email": "demo@example.com",
+        "password": "secure-test-password-1234",
+        "backup_confirm": "yes",
+    })
+    assert response.status_code == 400
+    assert b"Setup form security check failed" in response.data
+    assert b"token was missing" in response.data
+    assert b"Setup form diagnostics v4" in response.data
+    assert app.config["SETUP_TOKEN"].encode() not in response.data
+    from app.models import User
+    assert User.query.filter_by(email="demo@example.com").first() is None
+
+
+def test_setup_invalid_csrf_renders_safe_recovery(client, app):
+    app.config["WTF_CSRF_ENABLED"] = True
+    response = client.post("/setup", data={"csrf_token": "not-a-valid-csrf-token"})
+    assert response.status_code == 400
+    assert b"Setup form security check failed" in response.data
+    assert b"fresh setup page" in response.data
+    assert b"not-a-valid-csrf-token" not in response.data
+
+
+def test_setup_valid_csrf_still_requires_one_time_token(client, app):
+    import re
+    app.config["WTF_CSRF_ENABLED"] = True
+    app.config["SETUP_TOKEN"] = "secret-token-" + "b" * 40
+    page = client.get("/setup")
+    assert page.status_code == 200
+    csrf_value = re.search(
+        rb'name="csrf_token" value="([^"]+)"', page.data,
+    )
+    assert csrf_value is not None
+    response = client.post("/setup", data={
+        "csrf_token": csrf_value.group(1).decode("ascii"),
+        "setup_token": "invalid-setup-token",
+        "name": "Demo Admin",
+        "email": "demo@example.com",
+        "password": "secure-test-password-1234",
+        "backup_confirm": "yes",
+    })
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/setup")
+
+
+def test_admin_invalid_setup_operation_reports_action_error(client, admin_user):
+    login(client, "admin@example.com")
+    response = client.post("/setup", data={
+        "action": "unsupported-action",
+        "admin_password": "Password123",
+    })
+    assert response.status_code == 400
+    assert b"setup action was not recognized" in response.data

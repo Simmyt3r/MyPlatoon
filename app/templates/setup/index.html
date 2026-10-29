@@ -44,10 +44,34 @@
     <div class="alert {% if category == 'danger' %}danger{% endif %}" role="alert">{{ message }}</div>
   {% endfor %}
 
-  {% if mode == "error" %}
-    <section class="card"><h2>Setup request denied ({{ error_code }})</h2>
-      <p>This operation is not permitted. Return to the <a href="{{ url_for('main.index') }}">homepage</a>
-        or sign in with your administrator account.</p>
+  {% if mode == "csrf_error" %}
+    <section class="card">
+      <h2>Setup form security check failed (400)</h2>
+      <div class="notice" role="alert"><strong>Reason:</strong>
+        {{ csrf_reason or "The form security token could not be validated." }}</div>
+      <p>No setup operation was performed by this request.</p>
+      <p>Open a <a href="{{ url_for('setup.setup') }}">fresh setup page</a>
+        on <strong>myplatoon.vercel.app</strong>, then fill out and submit the
+        form again without reusing an old tab or saved form. Make sure
+        browser cookies are enabled for this site.</p>
+      <p>If this repeats, ensure the Vercel Production
+        <code>SECRET_KEY</code> is stable and identical across deployments,
+        then redeploy without rotating that key. Do not disable CSRF protection.</p>
+      <p class="muted">Setup form diagnostics v4. Never share a signing key,
+        administrator password, session cookie, or setup token.</p>
+    </section>
+  {% elif mode == "error" %}
+    <section class="card">
+      <h2>Setup request denied ({{ error_code }})</h2>
+      {% if error_code == 400 %}
+        <p>The setup action was not recognized or the submitted request was
+          invalid. Open a <a href="{{ url_for('setup.setup') }}">fresh setup page</a>
+          and use one of the provided forms.</p>
+      {% else %}
+        <p>This operation is not permitted. Return to the <a href="{{ url_for('main.index') }}">homepage</a>
+          or sign in with your administrator account.</p>
+      {% endif %}
+      <p class="muted">Setup form diagnostics v4.</p>
     </section>
   {% elif mode == "unconfigured" %}
     <section class="card">
