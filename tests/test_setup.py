@@ -231,7 +231,7 @@ def test_setup_missing_csrf_explains_rejection_without_exposing_secrets(client, 
     assert response.status_code == 400
     assert b"Setup form security check failed" in response.data
     assert b"token was missing" in response.data
-    assert b"Setup form diagnostics v4" in response.data
+    assert b"Setup form diagnostics v5" in response.data
     assert app.config["SETUP_TOKEN"].encode() not in response.data
     from app.models import User
     assert User.query.filter_by(email="demo@example.com").first() is None
