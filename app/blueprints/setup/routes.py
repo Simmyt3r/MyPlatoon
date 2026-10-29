@@ -223,3 +223,17 @@ def setup():
         keys = set()
     return render_template("setup/index.html", mode="admin",
                            revision=revision, configured_keys=keys)
+
+
+@bp.route("/setup/form-check", methods=["POST"])
+@limiter.limit("12 per hour")
+def form_check():
+    """Read-only same-origin CSRF round-trip probe, with no DB access.
+
+    Flask-WTF global CSRFProtect rejects this request before the view
+    unless its csrf_token matches the browser's signed session.
+    """
+    return render_template(
+        "setup/index.html", mode="form_check_success",
+        revision=None, configured_keys=set(),
+    )
