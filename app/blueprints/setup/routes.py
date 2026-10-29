@@ -26,25 +26,51 @@ def secure_setup_response(response):
     return response
 
 
-def _is_aiven_configured():
-    """Refuse writing to implicit SQLite, another provider or defaultdb."""
+def _aiven_configuration_issue():
+    """Describe the exact non-secret URL validation problem.
+
+    This function must never return the DSN, hostname, username, password,
+    port, or raw SQLAlchemy exception to an unauthenticated visitor.
+    """
     if current_app.testing or current_app.debug:
-        return True
+        return None
+
     import os
-    configured = os.environ.get("AIVEN_DATABASE_URL")
+    configured = (os.environ.get("AIVEN_DATABASE_URL") or "").strip()
     if not configured:
-        return False
-    # Aiven may provide postgres://, which the main application normalizes.
+        return ("AIVEN_DATABASE_URL is missing from this running deployment. "
+                "Add it to the Vercel Production environment and redeploy "
+                "the production deployment.")
     if configured.startswith("postgres://"):
         configured = "postgresql://" + configured[len("postgres://"):]
     try:
         url = make_url(configured)
-        return (url.get_backend_name() == "postgresql"
-                and url.database == "myplatoon"
-                and url.query.get("sslmode") in
-                {"require", "verify-ca", "verify-full"})
-    except (ValueError, TypeError):
-        return False
+    except Exception:
+        # Intentionally don't include the exception, which can contain the DSN.
+        return ("AIVEN_DATABASE_URL cannot be parsed. Copy the PostgreSQL "
+                "Service URI from Aiven, use URL-encoded credentials, and "
+                "remove surrounding quotes.")
+
+    if url.get_backend_name() != "postgresql":
+        return ("AIVEN_DATABASE_URL is not a PostgreSQL connection URL. "
+                "Use an Aiven PostgreSQL service URI starting with postgresql://.")
+    if not url.host or not url.username:
+        return ("AIVEN_DATABASE_URL is missing a database host or username. "
+                "Use the complete Aiven PostgreSQL service URI.")
+    if url.database != "myplatoon":
+        return ("The Aiven connection URL is not targeting database 'myplatoon'. "
+                "If Aiven supplied /defaultdb, replace that path with "
+                "/myplatoon after creating the database in Aiven.")
+    if url.query.get("sslmode") not in ("require", "verify-ca", "verify-full"):
+        return ("The Aiven connection URL is missing a supported sslmode. "
+                "Append ?sslmode=require (or &sslmode=require when the "
+                "URL already has query parameters).")
+    return None
+
+
+def _is_aiven_configured():
+    """Backward-compatible boolean check used by the setup view."""
+    return _aiven_configuration_issue() is None
 
 
 def _has_admin():
@@ -98,8 +124,10 @@ def _bootstrap(data):
 @bp.route("/setup", methods=["GET", "POST"])
 @limiter.limit("8 per hour", methods=["POST"])
 def setup():
-    if not _is_aiven_configured():
+    issue = _aiven_configuration_issue()
+    if issue:
         return render_template("setup/index.html", mode="unconfigured",
+                               config_issue=issue,
                                revision=None, configured_keys=set()), 503
     try:
         admin_exists = _has_admin()
