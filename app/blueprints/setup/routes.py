@@ -132,10 +132,22 @@ def setup():
     try:
         admin_exists = _has_admin()
         revision = current_revision()
-    except Exception:
-        current_app.logger.warning("Setup cannot connect to the configured database.")
-        return render_template("setup/index.html", mode="unavailable",
-                               revision=None, configured_keys=set()), 503
+    except Exception as exc:
+        from app.services.aiven_diagnostics import diagnose_database_error
+
+        category, summary, guidance = diagnose_database_error(exc)
+        # Only log the sanitized category and exception class, never
+        # str(exc), which may include a DSN or server-side details.
+        current_app.logger.warning(
+            "Aiven setup database check failed [%s] (%s)",
+            category, type(exc).__name__,
+        )
+        return render_template(
+            "setup/index.html", mode="unavailable",
+            db_error_code=category, db_error_summary=summary,
+            db_error_guidance=guidance,
+            revision=None, configured_keys=set(),
+        ), 503
 
     if not admin_exists:
         if request.method == "POST":

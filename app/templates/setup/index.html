@@ -66,8 +66,14 @@
   {% elif mode == "unavailable" %}
     <section class="card">
       <h2>Could not reach the database</h2>
-      <p>Check that your Aiven PostgreSQL service is running, the credentials are correct,
-        network access is permitted and TLS is configured. No database changes were attempted.</p>
+      <div class="notice" role="alert">
+        <strong>Connection diagnosis ({{ db_error_code or "DB_OTHER" }}):</strong>
+        {{ db_error_summary or "The PostgreSQL connection could not be verified." }}
+      </div>
+      <p>{{ db_error_guidance or "Check Aiven service health and the connection settings in Vercel." }}</p>
+      <p>No schema migrations or database writes were attempted.</p>
+      <p class="muted">Connection diagnostics v3. Never share Aiven credentials or
+        full connection URLs. This page does not display them.</p>
     </section>
   {% elif mode == "bootstrap" %}
     <section class="card">
