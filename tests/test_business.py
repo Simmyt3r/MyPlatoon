@@ -57,7 +57,7 @@ def test_cannot_edit_others_business(client, member_user, admin_user, db):
         "address": "", "phone": "", "whatsapp": "", "email": "",
         "website": "", "facebook": "", "instagram": "", "tiktok": "", "twitter_x": "",
     }, follow_redirects=True)
-    client.get("/auth/logout")
+    client.post("/auth/logout")
 
     from app.models import Business
     biz = Business.query.filter_by(name="Owned By Member").first()
