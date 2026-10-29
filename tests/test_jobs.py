@@ -148,7 +148,7 @@ def test_employer_can_submit_pending_listing_and_admin_publishes(client, db):
     job = JobListing.query.one()
     assert job.status == "pending"
     assert client.get("/jobs/{}".format(job.id)).status_code == 200  # owner preview
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     admin = _create_user(db, "jobs-admin@example.com", role="admin")
     login(client, admin.email)
     r = client.post("/jobs/admin/listings/{}/review".format(job.id),
@@ -188,7 +188,7 @@ def test_edit_requires_review_again(client, db):
                     data=job_data(title="New weekend teaching role"))
     assert r.status_code == 302
     assert job.status == "pending"
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     assert client.get("/jobs/{}".format(job.id)).status_code == 404
 
 
@@ -214,7 +214,7 @@ def test_approved_serving_member_applies_once_and_shares_only_opted_contact(clie
     assert JobApplication.query.count() == 1
     client.post("/jobs/{}/apply".format(job.id), data=data)
     assert JobApplication.query.count() == 1
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, owner.email)
     html = client.get("/jobs/{}/applications".format(job.id)).get_data(as_text=True)
     assert "myjobs@example.com" in html
@@ -279,7 +279,7 @@ def test_reviewer_permissions_and_rejection_notes(client, db):
     assert client.get("/jobs/admin/employers").status_code == 403
     assert client.post("/jobs/admin/employers/{}/review".format(org.id),
                        data={"decision": "approved"}).status_code == 403
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     admin = _create_user(db, "jobs-admin@example.com", role="admin")
     login(client, admin.email)
     assert client.post("/jobs/admin/employers/{}/review".format(org.id),
@@ -366,7 +366,7 @@ def test_admin_closes_reported_listing_and_preserves_report(client, db):
     assert job.status == "closed"
     assert report.status == "actioned"
     assert client.get("/jobs/{}".format(job.id)).status_code == 200  # admin preview
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     assert client.get("/jobs/{}".format(job.id)).status_code == 404
 
 
@@ -380,6 +380,6 @@ def test_report_requires_legitimate_member_and_uses_validation(client, db):
                     data={"reason": "bad"})
     assert r.status_code == 200
     assert JobReport.query.count() == 0
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, owner.email)
     assert client.get("/jobs/{}/report".format(job.id)).status_code == 403
