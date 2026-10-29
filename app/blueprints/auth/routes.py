@@ -24,6 +24,8 @@ def _safe_next_path(target):
     decoded = unquote(target)
     if decoded.startswith("//") or "\\" in decoded:
         return False
+    if any(ord(char) < 32 or ord(char) == 127 for char in decoded):
+        return False
     parts = urlsplit(target)
     return not parts.scheme and not parts.netloc
 
