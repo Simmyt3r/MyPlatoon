@@ -118,7 +118,7 @@ class ProductionConfig(BaseConfig):
     # Bound failed TCP connection attempts so /setup can report a useful
     # diagnostic before a Vercel function reaches its execution timeout.
     # connect_timeout is a libpq/psycopg2 option, not valid for SQLite.
-    if SQLALCHEMY_DATABASE_URI.startswith("postgresql"):
+    if BaseConfig.SQLALCHEMY_DATABASE_URI.startswith("postgresql"):
         SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {"connect_timeout": 8}
     # Production schema changes are always managed with Alembic, not cold-start DDL.
     AUTO_CREATE_TABLES = os.environ.get("AUTO_CREATE_TABLES", "false").lower() == "true"
