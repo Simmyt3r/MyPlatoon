@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>MyPlatoon | Secure Setup</title>
+  <style>
+    :root{color-scheme:light;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+    *{box-sizing:border-box}body{background:#f3f7f3;color:#132b20;margin:0;min-height:100vh}
+    main{max-width:840px;margin:48px auto;padding:0 20px 60px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+    .logo{height:48px;width:48px;background:#0b7a3b;color:#fff;border-radius:15px;display:grid;place-items:center;font-size:18px;font-weight:800}
+    h1{font-size:28px;letter-spacing:-.03em;margin:0}h2{font-size:19px;margin:0 0 10px}p{line-height:1.55;color:#496156}
+    .card{background:#fff;border:1px solid #dde8e0;border-radius:18px;padding:26px;margin:18px 0;box-shadow:0 8px 24px #10351a08}
+    .muted{font-size:13px;color:#577064}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:640px){.grid{grid-template-columns:1fr}main{margin:24px auto}}
+    label{font-weight:650;display:block;font-size:14px;margin:14px 0 7px}
+    input:not([type=checkbox]){display:block;width:100%;border:1px solid #bdd0c2;border-radius:10px;padding:12px 13px;font:inherit;min-width:0}
+    input:focus{outline:2px solid #0b7a3b;outline-offset:1px}
+    button{border:0;border-radius:11px;background:#0b7a3b;color:#fff;font:inherit;font-weight:700;padding:13px 18px;margin-top:18px;cursor:pointer}
+    button:focus{outline:3px solid #c79a2e}button:hover{background:#07582b}
+    .notice{border-left:4px solid #c79a2e;background:#fcf8e9;padding:13px 17px;border-radius:8px;margin:16px 0}
+    .alert{border:1px solid #cbd8ca;background:#eaf6e9;padding:12px 15px;border-radius:10px;margin:12px 0}
+    .danger{border-color:#f1cac7;background:#fff3f1}
+    .checkbox{display:flex;align-items:start;gap:9px;font-size:14px;margin-top:18px}
+    .checkbox input{margin-top:3px}.checkbox label{margin:0;font-weight:500}
+    .pill{display:inline-block;background:#e4f2e8;border-radius:24px;padding:5px 10px;font-size:12px;font-weight:700}
+    code{overflow-wrap:anywhere;background:#edf2ed;padding:2px 5px;border-radius:4px}
+    a{color:#075e32}footer{font-size:13px;color:#536b5f;margin-top:18px}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo">MP</div>
+    <div>
+      <h1>MyPlatoon setup</h1>
+      <div class="muted">Private database & integration administration</div>
+    </div>
+  </header>
+
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert {% if category == 'danger' %}danger{% endif %}" role="alert">{{ message }}</div>
+  {% endfor %}
+
+  {% if mode == "unconfigured" %}
+    <section class="card">
+      <h2>Aiven connection required</h2>
+      <p>Before continuing, set <code>FLASK_ENV=production</code>, <code>SECRET_KEY</code>,
+        <code>AIVEN_DATABASE_URL</code>, and a one-time <code>SETUP_TOKEN</code> in your
+        Vercel project's Production environment and redeploy.</p>
+      <p>The Aiven connection must point to the <code>myplatoon</code> database and use
+        <code>sslmode=require</code> (or a stronger verification mode). Credentials are
+        never accepted via a public request or stored in the Vercel filesystem.</p>
+    </section>
+  {% elif mode == "unavailable" %}
+    <section class="card">
+      <h2>Could not reach the database</h2>
+      <p>Check that your Aiven PostgreSQL service is running, the credentials are correct,
+        network access is permitted and TLS is configured. No database changes were attempted.</p>
+    </section>
+  {% elif mode == "bootstrap" %}
+    <section class="card">
+      <span class="pill">FIRST-TIME ONLY</span>
+      <h2 style="margin-top:12px">Initialize Aiven & create the administrator</h2>
+      <p>The current schema revision is <strong>{{ revision or "not initialized" }}</strong>.
+         This will apply reviewed Alembic upgrades, validate the schema and create the first admin.
+         Once an admin exists, this form is permanently disabled.</p>
+      <div class="notice">Use the one-time setup token configured privately in Vercel. For an existing
+        Aiven database, take a restorable backup before continuing. No tables or accounts are wiped.</div>
+      <form method="post" action="{{ url_for('setup.setup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="setup_token">One-time setup token</label>
+        <input id="setup_token" name="setup_token" type="password" autocomplete="off" required minlength="32">
+        <div class="grid">
+          <div><label for="name">Administrator's name</label>
+            <input id="name" name="name" type="text" required minlength="2" maxlength="120"></div>
+          <div><label for="email">Administrator email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required></div>
+        </div>
+        <label for="password">Administrator password (16+ characters)</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="16">
+        <div class="checkbox"><input type="checkbox" id="backup" name="backup_confirm" value="yes" required>
+          <label for="backup">I have confirmed the correct database and backed up existing data (if any).</label></div>
+        <button type="submit">Initialize database & administrator</button>
+      </form>
+    </section>
+  {% elif mode == "admin" %}
+    <section class="card">
+      <span class="pill">ADMINISTRATOR ONLY</span>
+      <h2 style="margin-top:12px">Aiven database migration control</h2>
+      <p>Current installed revision: <strong><code>{{ revision or "not initialized" }}</code></strong>.
+         Updates run <em>forward only</em> through committed, reviewed Alembic migrations.
+         There is no SQL console or downgrade button.</p>
+      <div class="notice">Take a restorable Aiven backup before applying any migration. Avoid
+        concurrent releases and confirm new application code is compatible with the schema.</div>
+      <form method="post" action="{{ url_for('setup.setup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="upgrade">
+        <div class="checkbox"><input type="checkbox" id="admin_backup" name="backup_confirm" value="yes" required>
+          <label for="admin_backup">I verified the Aiven backup and reviewed the pending release.</label></div>
+        <label for="confirmation">Type MIGRATE MYPLATOON to confirm</label>
+        <input id="confirmation" name="confirmation" type="text" required autocomplete="off">
+        <label for="migration_password">Confirm administrator password</label>
+        <input id="migration_password" name="admin_password" type="password" required autocomplete="current-password">
+        <button type="submit">Apply reviewed migrations</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Cloudinary API keys</h2>
+      <p>Optional integration keys are encrypted before they are stored in Aiven.
+        Saved values are never shown here. Leave a field blank to preserve its existing value.</p>
+      <form method="post" action="{{ url_for('setup.setup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="cloudinary">
+        {% for key, label in [
+            ("CLOUDINARY_CLOUD_NAME", "Cloud name"),
+            ("CLOUDINARY_API_KEY", "API key"),
+            ("CLOUDINARY_API_SECRET", "API secret")] %}
+          <label for="{{ key }}">{{ label }}
+            {% if key in configured_keys %}<span class="pill">Saved</span>{% endif %}</label>
+          <input id="{{ key }}" name="{{ key }}" type="password" autocomplete="off" maxlength="1024" placeholder="Leave blank to keep current value">
+        {% endfor %}
+        <label for="keys_password">Confirm administrator password</label>
+        <input id="keys_password" name="admin_password" type="password" required autocomplete="current-password">
+        <button type="submit">Save encrypted API keys</button>
+      </form>
+    </section>
+    <footer><a href="{{ url_for('admin.dashboard') }}">Back to admin dashboard</a></footer>
+  {% endif %}
+  <footer>Secrets are never included in page responses or application audit logs.</footer>
+</main>
+</body>
+</html>
