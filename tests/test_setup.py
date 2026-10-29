@@ -231,7 +231,7 @@ def test_setup_missing_csrf_explains_rejection_without_exposing_secrets(client, 
     assert response.status_code == 400
     assert b"Setup form security check failed" in response.data
     assert b"token was missing" in response.data
-    assert b"Setup form diagnostics v5" in response.data
+    assert b"Setup form diagnostics v6" in response.data
     assert app.config["SETUP_TOKEN"].encode() not in response.data
     from app.models import User
     assert User.query.filter_by(email="demo@example.com").first() is None
@@ -306,7 +306,7 @@ def test_setup_form_probe_missing_csrf_rejected_with_transport_diagnosis(client,
     })
     assert response.status_code == 400
     assert b"CSRF_FIELD_OMITTED" in response.data
-    assert b"Setup form diagnostics v5" in response.data
+    assert b"Setup form diagnostics v6" in response.data
     assert b"sensitive-value-that-must-not-be-reflected" not in response.data
 
 
@@ -322,3 +322,83 @@ def test_setup_form_probe_rejects_json_without_csrf_header(client, app):
     response = client.post("/setup/form-check", json={"marker": "not-an-html-form"})
     assert response.status_code == 400
     assert b"UNSUPPORTED_CONTENT_TYPE" in response.data
+
+
+def _https_setup_csrf(client, app):
+    """Fetch a fresh CSRF token through an HTTPS setup response."""
+    import re
+    app.config["WTF_CSRF_ENABLED"] = True
+    response = client.get(
+        "/setup", base_url="https://myplatoon.vercel.app",
+    )
+    assert response.status_code == 200
+    assert response.headers["Referrer-Policy"] == "same-origin"
+    token_match = re.search(
+        rb'name="csrf_token" value="([^"]+)"', response.data
+    )
+    assert token_match is not None
+    return token_match.group(1).decode("ascii")
+
+
+def test_https_setup_csrf_probe_passes_with_same_origin_referer(client, app):
+    """A valid token and HTTPS Referer must pass strict Flask-WTF CSRF."""
+    token = _https_setup_csrf(client, app)
+    response = client.post(
+        "/setup/form-check",
+        base_url="https://myplatoon.vercel.app",
+        headers={"Referer": "https://myplatoon.vercel.app/setup"},
+        data={"csrf_token": token},
+    )
+    assert response.status_code == 200
+    assert b"Form security check passed" in response.data
+    assert response.headers["Referrer-Policy"] == "same-origin"
+
+
+def test_https_setup_csrf_referrer_missing_explains_actual_cause(client, app):
+    token = _https_setup_csrf(client, app)
+    response = client.post(
+        "/setup/form-check",
+        base_url="https://myplatoon.vercel.app",
+        data={"csrf_token": token},
+    )
+    assert response.status_code == 400
+    assert b"HTTPS_REFERRER_MISSING" in response.data
+    assert b"browser did not send the HTTPS referrer" in response.data
+    assert b"form security token was missing" not in response.data
+    # The standalone recovery form intentionally renders a fresh CSRF
+    # input so operators can retry the read-only form probe securely.
+    assert b'name="csrf_token"' in response.data
+
+
+def test_https_setup_csrf_rejects_cross_origin_referer(client, app):
+    token = _https_setup_csrf(client, app)
+    response = client.post(
+        "/setup/form-check",
+        base_url="https://myplatoon.vercel.app",
+        headers={"Referer": "https://example.net/other"},
+        data={"csrf_token": token},
+    )
+    assert response.status_code == 400
+    assert b"HTTPS_REFERRER_MISMATCH" in response.data
+    assert b'name="csrf_token"' in response.data
+
+
+def test_https_bootstrap_csrf_passes_with_same_origin_referer(client, app):
+    """After HTTPS CSRF passes, the separate setup token is still required."""
+    token = _https_setup_csrf(client, app)
+    app.config["SETUP_TOKEN"] = "valid-only-for-this-test-" + "z" * 35
+    response = client.post(
+        "/setup",
+        base_url="https://myplatoon.vercel.app",
+        headers={"Referer": "https://myplatoon.vercel.app/setup"},
+        data={
+            "csrf_token": token,
+            "setup_token": "incorrect-setup-token",
+            "name": "Test Admin",
+            "email": "admin-https@example.com",
+            "password": "correct-but-unused-admin-password",
+            "backup_confirm": "yes",
+        },
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/setup")

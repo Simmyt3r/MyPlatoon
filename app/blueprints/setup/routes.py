@@ -20,7 +20,9 @@ bp = Blueprint("setup", __name__)
 @bp.after_request
 def secure_setup_response(response):
     response.headers["Cache-Control"] = "no-store, private"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # HTTPS CSRF checks need a same-origin Referer. Do not suppress it on setup.
+    # No referrer is sent to external sites with this privacy-preserving policy.
+    response.headers["Referrer-Policy"] = "same-origin"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response

@@ -78,10 +78,19 @@
         on <strong>myplatoon.vercel.app</strong>, then fill out and submit the
         form again without reusing an old tab or saved form. Make sure
         browser cookies are enabled for this site.</p>
-      <p>If this repeats, ensure the Vercel Production
-        <code>SECRET_KEY</code> is stable and identical across deployments,
-        then redeploy without rotating that key. Do not disable CSRF protection.</p>
-      <p class="muted">Setup form diagnostics v5. Never share a signing key,
+      {% if csrf_transport_code in ("HTTPS_REFERRER_MISSING", "HTTPS_REFERRER_MISMATCH") %}
+        <p>The browser's HTTPS referrer is missing or does not match this site.
+          Reopen setup in a normal browser tab on
+          <strong>https://myplatoon.vercel.app</strong>. Avoid private browser
+          settings or embedded views that suppress same-origin referrers.
+          The setup page now uses <code>Referrer-Policy: same-origin</code>
+          to allow secure form verification.</p>
+      {% else %}
+        <p>If this repeats, ensure the Vercel Production
+          <code>SECRET_KEY</code> is stable across deployments. Do not
+          rotate it or disable CSRF protection.</p>
+      {% endif %}
+      <p class="muted">Setup form diagnostics v6. Never share a signing key,
         administrator password, session cookie, or setup token.</p>
       <form method="post" action="{{ url_for('setup.form_check') }}" enctype="application/x-www-form-urlencoded">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

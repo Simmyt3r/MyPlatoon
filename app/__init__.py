@@ -107,7 +107,12 @@ def _register_error_handlers(app):
         # Only expose curated messages. Never show raw exception detail or
         # any cookie, session, signing-key value, or posted form data.
         description = str(getattr(e, "description", "")).lower()
-        if "missing" in description and "session" in description:
+        if "referrer header is missing" in description:
+            reason = ("The browser did not send the HTTPS referrer required "
+                      "by the same-origin CSRF check.")
+        elif "referrer" in description:
+            reason = "The HTTPS referrer does not match the application's origin."
+        elif "missing" in description and "session" in description:
             reason = "The original form session is no longer available."
         elif "missing" in description:
             reason = "The form security token was missing."
@@ -139,6 +144,14 @@ def _register_error_handlers(app):
         elif not form:
             transport = "No HTML form fields reached Flask in the request."
             transport_code = "NO_PARSED_FIELDS"
+        elif "referrer header is missing" in description:
+            transport = ("The form fields arrived, but the browser omitted "
+                         "the HTTPS Referer header required by Flask-WTF.")
+            transport_code = "HTTPS_REFERRER_MISSING"
+        elif "referrer" in description:
+            transport = ("The form fields arrived, but the HTTPS Referer "
+                         "header did not match this site.")
+            transport_code = "HTTPS_REFERRER_MISMATCH"
         else:
             transport = "A CSRF field was submitted but validation failed."
             transport_code = "CSRF_VALIDATION"

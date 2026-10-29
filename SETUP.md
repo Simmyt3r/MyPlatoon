@@ -168,3 +168,34 @@ missing token means the submitted request was not carrying that field. It is
 
 CSRF protection remains enforced. The probe cannot grant admin access or
 execute a migration.
+
+
+## Fix for secure HTTPS form submissions with a missing Referer
+
+In deployments before this fix, the standalone `/setup` blueprint set
+`Referrer-Policy: no-referrer` on its GET form response, while the global
+Flask-WTF `CSRFProtect` extension (with `WTF_CSRF_SSL_STRICT=True` by default)
+required a same-origin `Referer` header for all HTTPS POSTs. This
+contradictory configuration caused otherwise valid setup and form-check
+submissions to return HTTP 400.
+
+The error handler also mapped **any** error containing "missing" to
+"form security token was missing", including the **separate** Flask-WTF
+"referrer header is missing" error. The symptom was a nonempty posted
+`csrf_token`, an existing session cookie, and the misleading
+`CSRF_VALIDATION` diagnostic.
+
+**Fix:** The setup blueprint now sends `Referrer-Policy: same-origin`.
+Browsers send the referrer for same-origin setup form posts while suppressing
+it to external sites. Global CSRF validation, HTTPS strict referrer checking,
+and signed session requirements all remain **enabled**. Missing and
+cross-origin referrers are still rejected with explicit, safe
+`HTTPS_REFERRER_MISSING` / `HTTPS_REFERRER_MISMATCH` diagnostics.
+
+After redeploying, open a fresh `https://myplatoon.vercel.app/setup`
+page and use **Test form submission**. Its POST should succeed on a normal
+browser that sends a same-origin referrer. If the browser still strips
+the referrer (for example, a privacy extension or an embedded browser),
+open the site in a normal first-party browser tab, inspect only request
+header **names**, and keep CSRF protection enabled. No production
+database write is performed by the test route.
