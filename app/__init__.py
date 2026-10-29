@@ -92,7 +92,7 @@ def _register_error_handlers(app):
 
     def _render(code, *, setup_mode="error", **kwargs):
         # /setup must remain standalone before the database has any tables.
-        if request.endpoint == "setup.setup":
+        if request.endpoint in ("setup.setup", "setup.form_check"):
             return render_template(
                 "setup/index.html", mode=setup_mode,
                 error_code=code, revision=None, configured_keys=set(),
@@ -102,10 +102,10 @@ def _register_error_handlers(app):
 
     @app.errorhandler(CSRFError)
     def csrf_error(e):
-        if request.endpoint != "setup.setup":
+        if request.endpoint not in ("setup.setup", "setup.form_check"):
             return _render(400)
         # Only expose curated messages. Never show raw exception detail or
-        # any cookie, session, or signing-key value to the browser.
+        # any cookie, session, signing-key value, or posted form data.
         description = str(getattr(e, "description", "")).lower()
         if "missing" in description and "session" in description:
             reason = "The original form session is no longer available."
@@ -117,8 +117,35 @@ def _register_error_handlers(app):
             reason = "The form security token no longer matches your session."
         else:
             reason = "The form security token could not be validated."
-        app.logger.info("Setup CSRF rejected [%s]", reason)
-        return _render(400, setup_mode="csrf_error", csrf_reason=reason)
+        # Classify only safe characteristics of the request; never render
+        # field names/values, raw body, headers, or DB connection details.
+        media = request.mimetype or ""
+        form = request.form
+        if not form and not media and request.content_length in (None, 0):
+            transport = "The browser submitted an empty request body."
+            transport_code = "EMPTY_BODY"
+        elif media not in ("application/x-www-form-urlencoded", "multipart/form-data"):
+            transport = "The request was not submitted as an HTML form."
+            transport_code = "UNSUPPORTED_CONTENT_TYPE"
+        elif form.get("csrf_token") == "" and "csrf_token" in form:
+            transport = "The csrf_token field reached the server but was empty."
+            transport_code = "EMPTY_CSRF_FIELD"
+        elif form and "csrf_token" not in form:
+            transport = "Other form fields arrived, but the csrf_token field did not."
+            transport_code = "CSRF_FIELD_OMITTED"
+        elif not form and request.content_length == 0:
+            transport = "The browser submitted an empty request body."
+            transport_code = "EMPTY_BODY"
+        elif not form:
+            transport = "No HTML form fields reached Flask in the request."
+            transport_code = "NO_PARSED_FIELDS"
+        else:
+            transport = "A CSRF field was submitted but validation failed."
+            transport_code = "CSRF_VALIDATION"
+        app.logger.info("Setup CSRF rejected [%s, %s]", reason, transport_code)
+        return _render(400, setup_mode="csrf_error",
+                       csrf_reason=reason, csrf_transport=transport,
+                       csrf_transport_code=transport_code)
 
     @app.errorhandler(400)
     def bad_request(e):
