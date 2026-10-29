@@ -115,6 +115,11 @@ class ProductionConfig(BaseConfig):
     # Aiven's free plan has a limited connection count.
     from sqlalchemy.pool import NullPool
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "poolclass": NullPool}
+    # Bound failed TCP connection attempts so /setup can report a useful
+    # diagnostic before a Vercel function reaches its execution timeout.
+    # connect_timeout is a libpq/psycopg2 option, not valid for SQLite.
+    if SQLALCHEMY_DATABASE_URI.startswith("postgresql"):
+        SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {"connect_timeout": 8}
     # Production schema changes are always managed with Alembic, not cold-start DDL.
     AUTO_CREATE_TABLES = os.environ.get("AUTO_CREATE_TABLES", "false").lower() == "true"
 
