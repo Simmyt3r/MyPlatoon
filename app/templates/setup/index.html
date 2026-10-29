@@ -44,11 +44,35 @@
     <div class="alert {% if category == 'danger' %}danger{% endif %}" role="alert">{{ message }}</div>
   {% endfor %}
 
-  {% if mode == "csrf_error" %}
+  {% if mode in ("bootstrap", "admin") %}
+    <section class="card">
+      <h2>Browser form security check</h2>
+      <p>Before initializing the database, you can verify that this browser
+        sends form fields and security tokens correctly. This does not
+        connect to or change Aiven.</p>
+      <form method="post" action="{{ url_for('setup.form_check') }}" enctype="application/x-www-form-urlencoded">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Test form submission</button>
+      </form>
+    </section>
+  {% endif %}
+
+  {% if mode == "form_check_success" %}
+    <section class="card">
+      <span class="pill">FORM TRANSPORT VERIFIED</span>
+      <h2 style="margin-top:12px">Form security check passed</h2>
+      <p>The browser sent a valid CSRF token and Flask accepted it.
+        No database connection or migration was attempted by this test.</p>
+      <p><a href="{{ url_for('setup.setup') }}">Return to MyPlatoon setup</a>
+        and submit the current form from a fresh page.</p>
+    </section>
+  {% elif mode == "csrf_error" %}
     <section class="card">
       <h2>Setup form security check failed (400)</h2>
       <div class="notice" role="alert"><strong>Reason:</strong>
         {{ csrf_reason or "The form security token could not be validated." }}</div>
+      <p><strong>Form transport ({{ csrf_transport_code or "UNKNOWN" }}):</strong>
+        {{ csrf_transport or "The form submission could not be inspected." }}</p>
       <p>No setup operation was performed by this request.</p>
       <p>Open a <a href="{{ url_for('setup.setup') }}">fresh setup page</a>
         on <strong>myplatoon.vercel.app</strong>, then fill out and submit the
@@ -57,8 +81,12 @@
       <p>If this repeats, ensure the Vercel Production
         <code>SECRET_KEY</code> is stable and identical across deployments,
         then redeploy without rotating that key. Do not disable CSRF protection.</p>
-      <p class="muted">Setup form diagnostics v4. Never share a signing key,
+      <p class="muted">Setup form diagnostics v5. Never share a signing key,
         administrator password, session cookie, or setup token.</p>
+      <form method="post" action="{{ url_for('setup.form_check') }}" enctype="application/x-www-form-urlencoded">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Test form security (no database changes)</button>
+      </form>
     </section>
   {% elif mode == "error" %}
     <section class="card">
@@ -108,7 +136,7 @@
          Once an admin exists, this form is permanently disabled.</p>
       <div class="notice">Use the one-time setup token configured privately in Vercel. For an existing
         Aiven database, take a restorable backup before continuing. No tables or accounts are wiped.</div>
-      <form method="post" action="{{ url_for('setup.setup') }}">
+      <form method="post" action="{{ url_for('setup.setup') }}" enctype="application/x-www-form-urlencoded">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="setup_token">One-time setup token</label>
         <input id="setup_token" name="setup_token" type="password" autocomplete="off" required minlength="32">
@@ -134,7 +162,7 @@
          There is no SQL console or downgrade button.</p>
       <div class="notice">Take a restorable Aiven backup before applying any migration. Avoid
         concurrent releases and confirm new application code is compatible with the schema.</div>
-      <form method="post" action="{{ url_for('setup.setup') }}">
+      <form method="post" action="{{ url_for('setup.setup') }}" enctype="application/x-www-form-urlencoded">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="upgrade">
         <div class="checkbox"><input type="checkbox" id="admin_backup" name="backup_confirm" value="yes" required>
@@ -150,7 +178,7 @@
       <h2>Cloudinary API keys</h2>
       <p>Optional integration keys are encrypted before they are stored in Aiven.
         Saved values are never shown here. Leave a field blank to preserve its existing value.</p>
-      <form method="post" action="{{ url_for('setup.setup') }}">
+      <form method="post" action="{{ url_for('setup.setup') }}" enctype="application/x-www-form-urlencoded">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="cloudinary">
         {% for key, label in [
