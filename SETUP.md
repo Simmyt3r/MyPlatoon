@@ -73,3 +73,40 @@ No connection credentials are committed to GitHub. No live Aiven database
 is migrated by code review, GitHub merge, or SQLite CI alone; migration
 occurs only after a properly authorized operator submits `/setup`
 (or the separate protected GitHub Actions workflow).
+
+
+## Troubleshoot "Could not reach the database"
+
+The connection URL has passed the initial syntax/database/SSL checks, but
+PostgreSQL has not accepted the actual connection. The setup page now displays
+a sanitized `DB_*` error category and a corresponding next step, without
+showing any credential, host, or database connection string.
+
+- `DB_AUTH`: The Aiven login was rejected. In the Aiven Console open
+  PostgreSQL → Overview → Connection information, and copy the **current**
+  Service URI. If building the URL by hand, percent-encode special characters
+  in the password. Never send the URI to a support conversation.
+- `DB_MISSING`: Create the `myplatoon` database in the chosen service.
+- `DB_DNS`: Verify the hostname copied from the current Aiven service.
+  Private-only hostnames will not work from ordinary public Vercel functions.
+- `DB_REFUSED`: Verify the Aiven service is RUNNING and use the
+  **service-specific port** from the Aiven Console, not an assumed 5432.
+- `DB_TIMEOUT`: Review Aiven inbound IP allowlists, public access and VPC
+  settings. Vercel functions do not have fixed outbound IPs unless a static
+  egress option is configured. Do not permanently widen a production
+  firewall merely to make a connection test pass.
+- `DB_TLS` / `DB_ACCESS`: Verify `sslmode=require`, TLS credentials,
+  database role permissions and Aiven network policy.
+- `DB_LIMIT`: Check the Aiven service's connection count and health.
+- `DB_PERMISSIONS`: The database role must be able to inspect schema and
+  apply the migration DDL. Use a restricted dedicated migration role if
+  appropriate.
+- `DB_OTHER`: Review Vercel's Production **Runtime Logs** for the sanitized
+  error category, then inspect the Aiven service's connection logs privately.
+
+For all changes to Vercel environment variables, explicitly redeploy the
+Production deployment. The old deployment may still be using earlier values.
+
+**Security:** Never paste the complete Aiven URI, `SECRET_KEY`, or
+`SETUP_TOKEN` into GitHub issues or chats. When you can open the first-admin
+wizard, take an Aiven backup before applying a migration.
