@@ -121,7 +121,10 @@ def _register_error_handlers(app):
         # field names/values, raw body, headers, or DB connection details.
         media = request.mimetype or ""
         form = request.form
-        if media not in ("application/x-www-form-urlencoded", "multipart/form-data"):
+        if not form and not media and request.content_length in (None, 0):
+            transport = "The browser submitted an empty request body."
+            transport_code = "EMPTY_BODY"
+        elif media not in ("application/x-www-form-urlencoded", "multipart/form-data"):
             transport = "The request was not submitted as an HTML form."
             transport_code = "UNSUPPORTED_CONTENT_TYPE"
         elif form.get("csrf_token") == "" and "csrf_token" in form:
