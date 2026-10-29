@@ -64,8 +64,11 @@ def cloudinary_credentials():
     values = {k: current_app.config.get(k) for k in ALLOWED_KEYS}
     if not _available():
         return values
+    rows = SiteSecret.query.filter(SiteSecret.key.in_(ALLOWED_KEYS)).all()
+    if not rows:
+        return values
     cipher = _cipher()
-    for row in SiteSecret.query.filter(SiteSecret.key.in_(ALLOWED_KEYS)).all():
+    for row in rows:
         try:
             values[row.key] = cipher.decrypt(row.ciphertext.encode("ascii")).decode("utf-8")
         except InvalidToken:
