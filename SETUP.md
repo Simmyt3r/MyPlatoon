@@ -133,3 +133,38 @@ not proof of an Aiven connectivity failure.
   or secrets into support tickets).
 
 A rejected CSRF request cannot start migrations or create administrators.
+
+## Troubleshoot repeated "The form security token was missing" after fresh reload
+
+The first-run and admin setup forms already include a hidden CSRF field. A
+missing token means the submitted request was not carrying that field. It is
+**not** fixed by removing CSRF or changing the Aiven connection string.
+
+1. Open a fresh `/setup` page on the canonical
+   `https://myplatoon.vercel.app` hostname. Do not submit from a cached page
+   or a different deployment preview.
+2. Press **Test form submission** on that page (or **Test form security**
+   on the CSRF error page). This read-only request uses the exact same CSRF
+   and browser session protections, but does not inspect, migrate, or write
+   to the database.
+3. If the test **passes**, return to `/setup`, enter the initial admin
+   fields, and submit the current form. Never send setup tokens in chat.
+4. If it **fails**, the error screen now shows a safe transport code:
+   - `EMPTY_BODY`: no body was sent;
+   - `NO_PARSED_FIELDS`: Flask could not see any HTML form fields;
+   - `CSRF_FIELD_OMITTED`: form fields arrived, but the CSRF input was missing;
+   - `EMPTY_CSRF_FIELD`: the CSRF input arrived with no value;
+   - `UNSUPPORTED_CONTENT_TYPE`: this was not a browser-encoded form;
+   - `CSRF_VALIDATION`: a token was posted but verification failed.
+5. For persistent transport errors, open browser DevTools → Network and
+   inspect the failed **POST** request to `/setup` or
+   `/setup/form-check`. Look only at the request method, request
+   `Content-Type`, and whether the **name** `csrf_token` appears among
+   the form field names. Do **not** copy the token, cookie or other values.
+   This helps distinguish missing form submission data from a stale session.
+6. If the browser sends the field but Vercel does not receive it, inspect
+   the Vercel Deployment → Runtime Logs and check routing/middleware, and
+   confirm that the production deployment matches the latest Git commit.
+
+CSRF protection remains enforced. The probe cannot grant admin access or
+execute a migration.
