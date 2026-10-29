@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib.parse import unquote, urlsplit
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, current_app
 from flask_login import login_user, logout_user, login_required, current_user
@@ -11,6 +12,20 @@ from app.services.audit_service import log_action
 from app.services.notification_service import notify
 
 bp = Blueprint("auth", __name__)
+
+
+def _safe_next_path(target):
+    """Permit only local absolute paths after login (never network-path URLs)."""
+    if not target or not target.startswith("/"):
+        return False
+    if any(ord(char) < 32 or ord(char) == 127 for char in target):
+        return False
+    # Browsers normalize backslashes and some encoded slashes as separators.
+    decoded = unquote(target)
+    if decoded.startswith("//") or "\\" in decoded:
+        return False
+    parts = urlsplit(target)
+    return not parts.scheme and not parts.netloc
 
 
 @bp.route("/register", methods=["GET", "POST"])
@@ -75,14 +90,14 @@ def login():
         log_action(user, "auth.login", "User", user.id)
 
         next_page = request.args.get("next")
-        if next_page and not next_page.startswith("/"):
+        if not _safe_next_path(next_page):
             next_page = None
         return redirect(next_page or url_for("jobs.employer_dashboard" if user.role == "employer" else "profile.dashboard"))
 
     return render_template("auth/login.html", form=form)
 
 
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     log_action(current_user, "auth.logout", "User", current_user.id)
