@@ -66,6 +66,7 @@ class BaseConfig:
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_DEFAULT = "200 per hour"
 
+    SETUP_TOKEN = os.environ.get("SETUP_TOKEN")
     ADMIN_INIT_EMAIL = os.environ.get("ADMIN_INIT_EMAIL")
     ADMIN_INIT_PASSWORD = os.environ.get("ADMIN_INIT_PASSWORD")
 
