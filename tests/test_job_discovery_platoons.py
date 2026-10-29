@@ -74,12 +74,12 @@ def test_bookmarks_are_user_private_idempotent_and_removable(client, db):
     assert client.post(f"/jobs/{job.id}/save").status_code == 302
     assert SavedJob.query.count() == 1
     assert b"Weekend mathematics tutor" in client.get("/jobs/saved").data
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, other.email)
     assert b"Weekend mathematics tutor" not in client.get("/jobs/saved").data
     client.post(f"/jobs/{job.id}/unsave")
     assert SavedJob.query.count() == 1
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     login(client, member.email)
     assert client.post(f"/jobs/{job.id}/unsave").status_code == 302
     assert SavedJob.query.count() == 0
@@ -171,7 +171,7 @@ def test_pcm_unapproved_and_employer_are_unable_to_vote(client, db):
     db.session.commit()
     login(client, member.email)
     assert client.post(f"/platoons/{p.id}/rate", data={"stars": "5"}).status_code == 403
-    client.get("/auth/logout")
+    client.post("/auth/logout")
     employer = _create_user(db, "employer-rater@example.com", role="employer")
     login(client, employer.email)
     assert client.post(f"/platoons/{p.id}/rate", data={"stars": "5"}).status_code == 403
