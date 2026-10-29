@@ -1,6 +1,10 @@
 # Security
 
 ## Authentication
+- Production startup refuses missing, predictable or shorter-than-32-character
+  `SECRET_KEY` values; configure a unique secret before deploying this change.
+- Post-login redirects accept only safe internal paths, including after URL decoding.
+- Logout requires an authenticated POST with a CSRF token (GET cannot log users out).
 - Passwords hashed with Werkzeug's `generate_password_hash` (scrypt/pbkdf2), never stored
   or logged in plaintext.
 - Session cookies are `HttpOnly`, `SameSite=Lax`, and `Secure` in production.
@@ -68,6 +72,10 @@
   queries) — no raw string-interpolated SQL anywhere in the codebase.
 - Jinja2 auto-escapes all template output by default; user-supplied text (biography,
   business description, etc.) is never marked `|safe`.
+
+## CSV Exports
+- Exported member data is escaped when it could be interpreted as a spreadsheet
+  formula, including values beginning with `=`, `+`, `-` or `@` after whitespace.
 
 ## Audit Logging
 Every security-relevant action is recorded in `audit_logs`: logins (success and failure),
