@@ -14,24 +14,23 @@ import cloudinary.uploader
 from flask import current_app
 from PIL import Image
 
-_configured = False
-
-
 class ImageUploadError(Exception):
     pass
 
 
 def _ensure_configured():
-    global _configured
-    if _configured:
-        return
+    # Resolve encrypted settings at call time so changes made on /setup work
+    # across independent Vercel serverless workers, without local files.
+    from app.services.site_secrets import cloudinary_credentials
+    credentials = cloudinary_credentials()
+    if not all(credentials.values()):
+        raise ImageUploadError("Image storage is not configured. Contact the site administrator.")
     cloudinary.config(
-        cloud_name=current_app.config.get("CLOUDINARY_CLOUD_NAME"),
-        api_key=current_app.config.get("CLOUDINARY_API_KEY"),
-        api_secret=current_app.config.get("CLOUDINARY_API_SECRET"),
+        cloud_name=credentials["CLOUDINARY_CLOUD_NAME"],
+        api_key=credentials["CLOUDINARY_API_KEY"],
+        api_secret=credentials["CLOUDINARY_API_SECRET"],
         secure=True,
     )
-    _configured = True
 
 
 def _validate(file_storage):
@@ -95,16 +94,6 @@ def upload_image(file_storage, folder: str) -> dict:
     """
     _validate(file_storage)
     buffer, fmt = _reencode(file_storage)
-
-    if not current_app.config.get("CLOUDINARY_CLOUD_NAME"):
-        current_app.logger.warning(
-            "CLOUDINARY_CLOUD_NAME not set -- image upload rejected. "
-            "Configure CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET to enable photo uploads."
-        )
-        raise ImageUploadError(
-            "Image uploads aren't configured yet on this site. Your other changes were "
-            "saved, but the photo wasn't. Contact the site administrator."
-        )
 
     _ensure_configured()
     safe_public_id = f"{folder}/{uuid.uuid4().hex}"
