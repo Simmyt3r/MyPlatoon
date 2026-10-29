@@ -88,14 +88,37 @@ def _register_blueprints(app):
 
 
 def _register_error_handlers(app):
-    def _render(code):
-        # /setup deliberately bypasses the DB-backed application shell before
-        # first migration. Its error responses must be standalone too.
+    from flask_wtf.csrf import CSRFError
+
+    def _render(code, *, setup_mode="error", **kwargs):
+        # /setup must remain standalone before the database has any tables.
         if request.endpoint == "setup.setup":
-            return render_template("setup/index.html", mode="error",
-                                   error_code=code, revision=None,
-                                   configured_keys=set()), code
+            return render_template(
+                "setup/index.html", mode=setup_mode,
+                error_code=code, revision=None, configured_keys=set(),
+                **kwargs,
+            ), code
         return render_template(f"errors/{code}.html"), code
+
+    @app.errorhandler(CSRFError)
+    def csrf_error(e):
+        if request.endpoint != "setup.setup":
+            return _render(400)
+        # Only expose curated messages. Never show raw exception detail or
+        # any cookie, session, or signing-key value to the browser.
+        description = str(getattr(e, "description", "")).lower()
+        if "missing" in description and "session" in description:
+            reason = "The original form session is no longer available."
+        elif "missing" in description:
+            reason = "The form security token was missing."
+        elif "expired" in description:
+            reason = "The form security token has expired."
+        elif "match" in description:
+            reason = "The form security token no longer matches your session."
+        else:
+            reason = "The form security token could not be validated."
+        app.logger.info("Setup CSRF rejected [%s]", reason)
+        return _render(400, setup_mode="csrf_error", csrf_reason=reason)
 
     @app.errorhandler(400)
     def bad_request(e):
