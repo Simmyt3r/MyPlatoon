@@ -107,3 +107,45 @@ def test_migration_runs_on_fresh_database(monkeypatch):
         finally:
             shared_db.session.remove()
             shared_db.drop_all()
+
+
+def test_aiven_setup_reports_missing_env_without_secrets(client, app, monkeypatch):
+    """The production-only setup guard explains what is wrong, not the DSN."""
+    monkeypatch.delenv("AIVEN_DATABASE_URL", raising=False)
+    app.config.update(TESTING=False, DEBUG=False)
+    response = client.get("/setup")
+    assert response.status_code == 503
+    assert b"AIVEN_DATABASE_URL is missing" in response.data
+    assert b"connection diagnostics v2" in response.data
+
+
+def test_aiven_setup_validates_database_and_tls(client, app, monkeypatch):
+    """Wrong database and missing SSL fail with actionable, sanitized errors."""
+    app.config.update(TESTING=False, DEBUG=False)
+    cases = (
+        ("postgresql://user:do-not-print@host.example:5432/defaultdb?sslmode=require",
+         b"not targeting database", 503),
+        ("postgresql://user:do-not-print@host.example:5432/myplatoon",
+         b"missing a supported sslmode", 503),
+        ("mysql://user:do-not-print@host.example:5432/myplatoon?sslmode=require",
+         b"not a PostgreSQL connection", 503),
+        ("postgresql://user:do-not-print@host.example:5432/myplatoon?sslmode=require",
+         b"FIRST-TIME ONLY", 200),
+        ("postgres://user:do-not-print@host.example:5432/myplatoon?sslmode=require",
+         b"FIRST-TIME ONLY", 200),
+    )
+    for url, expected, status in cases:
+        monkeypatch.setenv("AIVEN_DATABASE_URL", url)
+        response = client.get("/setup")
+        assert response.status_code == status
+        assert expected in response.data
+        assert b"do-not-print" not in response.data
+
+
+def test_aiven_setup_sanitizes_invalid_url(client, app, monkeypatch):
+    app.config.update(TESTING=False, DEBUG=False)
+    monkeypatch.setenv("AIVEN_DATABASE_URL", "secret-should-never-appear")
+    response = client.get("/setup")
+    assert response.status_code == 503
+    assert b"cannot be parsed" in response.data
+    assert b"secret-should-never-appear" not in response.data
