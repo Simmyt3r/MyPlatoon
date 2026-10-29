@@ -34,6 +34,9 @@ def _is_aiven_configured():
     configured = os.environ.get("AIVEN_DATABASE_URL")
     if not configured:
         return False
+    # Aiven may provide postgres://, which the main application normalizes.
+    if configured.startswith("postgres://"):
+        configured = "postgresql://" + configured[len("postgres://"):]
     try:
         url = make_url(configured)
         return (url.get_backend_name() == "postgresql"
