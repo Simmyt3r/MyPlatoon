@@ -14,7 +14,10 @@
           <img src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
                class="rounded-circle" width="80" height="80" style="object-fit:cover;" alt="Current photo">
         </div>
-        <div class="col">{{ field(form.photo) }}</div>
+        <div class="col">
+          {{ field(form.photo) }}
+          <p class="small text-muted mb-0">JPG, PNG or WebP, up to 6 MB. Photos are resized and stored securely in Cloudinary.</p>
+        </div>
       </div>
     </div>
 
@@ -29,7 +32,7 @@
         <div class="col-md-6">{{ field(form.nysc_batch) }}</div>
         <div class="col-md-6">{{ field(form.nysc_stream) }}</div>
       </div>
-      <p class="small text-muted mb-0">Your platoon is unique to your orientation camp's state, year, batch and stream. Changing an approved member's platoon triggers another review.</p>
+      <p class="small text-muted mb-0">Your platoon is unique to your orientation camp's state, year, batch and stream. Updating your platoon takes effect when you save; no administrator approval is needed.</p>
     </div>
 
     <div class="p5-card p5-card-body mb-4">

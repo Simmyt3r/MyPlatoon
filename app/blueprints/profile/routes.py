@@ -67,14 +67,13 @@ def edit():
         # Editing alone is never a way to undo moderation.
 
         photo_error = None
+        old_photo_to_delete = None
         if form.photo.data:
             try:
                 result = upload_image(form.photo.data, folder="myplatoon/profiles")
-                old_public_id = profile.photo_public_id
+                old_photo_to_delete = profile.photo_public_id
                 profile.photo_url = result["url"]
                 profile.photo_public_id = result["public_id"]
-                if old_public_id:
-                    delete_image(old_public_id)
             except ImageUploadError as exc:
                 photo_error = str(exc)
 
@@ -85,6 +84,11 @@ def edit():
         log_action(current_user, "profile.update", "Profile", profile.id)
         if platoon_changed:
             log_action(current_user, "profile.platoon_change", "Profile", profile.id)
+
+        # Delete only after the new URL is persisted. Cloudinary cleanup is
+        # best-effort and cannot undo an otherwise successful upload.
+        if old_photo_to_delete and old_photo_to_delete != profile.photo_public_id:
+            delete_image(old_photo_to_delete)
 
         if photo_error:
             flash(photo_error, "warning")

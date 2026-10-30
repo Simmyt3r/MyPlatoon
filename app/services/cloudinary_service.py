@@ -22,7 +22,18 @@ def _ensure_configured():
     # Resolve encrypted settings at call time so changes made on /setup work
     # across independent Vercel serverless workers, without local files.
     from app.services.site_secrets import cloudinary_credentials
-    credentials = cloudinary_credentials()
+    try:
+        credentials = cloudinary_credentials()
+    except Exception as exc:
+        # A stale encryption key or missing database table must be explained
+        # as a storage configuration failure, not an HTTP 500 during editing.
+        current_app.logger.warning(
+            "Cannot load Cloudinary credentials (%s)", type(exc).__name__
+        )
+        raise ImageUploadError(
+            "Cloudinary configuration could not be read. Please ask an "
+            "administrator to check the saved integration settings."
+        ) from None
     if not all(credentials.values()):
         raise ImageUploadError("Image storage is not configured. Contact the site administrator.")
     cloudinary.config(
@@ -76,7 +87,11 @@ def _reencode(file_storage, max_dimension=1600):
     save_format = "JPEG" if img.mode == "RGB" else "PNG"
     img.save(buffer, format=save_format, quality=85, optimize=True)
     buffer.seek(0)
-    return buffer, save_format.lower()
+    # Cloudinary's Python SDK needs a filename on an in-memory stream to
+    # construct its multipart upload; bare BytesIO can raise "Invalid URL".
+    output_format = "jpg" if save_format == "JPEG" else "png"
+    buffer.name = "profile-upload." + output_format
+    return buffer, output_format
 
 
 def upload_image(file_storage, folder: str) -> dict:
@@ -107,21 +122,40 @@ def upload_image(file_storage, folder: str) -> dict:
             resource_type="image",
         )
     except Exception as exc:
-        current_app.logger.error("Cloudinary upload failed: %s", exc)
+        # Cloudinary SDK errors may include request details. Log only the
+        # exception class; never output credentials or the raw response.
+        current_app.logger.warning(
+            "Cloudinary image upload failed (%s)", type(exc).__name__
+        )
         raise ImageUploadError(
-            "The image upload failed (a network or storage-service issue on our end, "
-            "not something wrong with your file). Your other changes were saved -- "
-            "please try uploading the photo again."
+            "Cloudinary could not upload this photo. Your other profile "
+            "changes were saved. Please retry; if it continues, ask an "
+            "administrator to verify the Cloudinary integration."
+        ) from None
+
+    # Never persist a broken profile image URL or an unusable deletion id.
+    secure_url = result.get("secure_url") if isinstance(result, dict) else None
+    public_id = result.get("public_id") if isinstance(result, dict) else None
+    if (not isinstance(secure_url, str)
+            or not secure_url.startswith("https://")
+            or not isinstance(public_id, str) or not public_id):
+        current_app.logger.warning("Cloudinary upload response missing secure image metadata.")
+        raise ImageUploadError(
+            "Cloudinary did not return a usable photo URL. Your other profile "
+            "changes were saved. Please retry the upload."
         )
 
-    return {"url": result.get("secure_url"), "public_id": result.get("public_id")}
+    return {"url": secure_url, "public_id": public_id}
 
 
 def delete_image(public_id: str) -> None:
     if not public_id:
         return
-    _ensure_configured()
     try:
+        _ensure_configured()
         cloudinary.uploader.destroy(public_id)
     except Exception as exc:  # pragma: no cover - network dependent
-        current_app.logger.warning("Cloudinary delete failed for %s: %s", public_id, exc)
+        # Cleanup is best-effort. Failure must not undo a saved profile photo.
+        current_app.logger.warning(
+            "Cloudinary old image cleanup failed (%s)", type(exc).__name__
+        )
