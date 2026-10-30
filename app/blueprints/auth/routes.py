@@ -47,7 +47,9 @@ def register():
         db.session.add(user)
         db.session.flush()  # get user.id before creating the profile
 
-        profile = Profile(user_id=user.id)
+        # Membership is active immediately; profile completeness is optional.
+        # Moderation can still reject or suspend an account after signup.
+        profile = Profile(user_id=user.id, status="approved")
         assign_platoon(profile, form)
         db.session.add(profile)
         db.session.commit()
@@ -55,7 +57,7 @@ def register():
         log_action(user, "user.register", "User", user.id)
         notify(user, f"Welcome to {current_app.config['APP_SHORT_NAME']}! "
                      "Complete your profile to get started.")
-        flash("Account created successfully. Please log in.", "success")
+        flash("Your account is ready! Please log in.", "success")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html", form=form)
