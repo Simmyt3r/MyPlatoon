@@ -43,7 +43,7 @@
 
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-      <span class="badge w-100 py-2 badge-status-{{ profile.status }}">{{ profile.status.upper() }}</span>
+      <span class="badge w-100 py-2 badge-status-{{ profile.status }}">{{ 'ACTIVE' if profile.status == 'approved' else profile.status.upper() }}</span>
     </div>
   </div>
 
