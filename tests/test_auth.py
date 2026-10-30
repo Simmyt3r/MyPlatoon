@@ -16,6 +16,14 @@ def test_register_creates_user_and_profile(client, db):
     assert user.profile is not None
     assert user.check_password("StrongPass1")
     assert user.password_hash != "StrongPass1"  # never stored in plaintext
+    assert user.is_active is True
+    assert user.profile.status == "approved"
+    assert user.profile.reviewed_by_id is None  # no administrator required
+
+    # A new member can sign in and see their dashboard immediately.
+    login_response = login(client, "newcorper@example.com", password="StrongPass1")
+    assert login_response.status_code == 200
+    assert login_response.request.path == "/profile/dashboard"
 
 
 def test_register_duplicate_email_rejected(client, member_user):
@@ -90,3 +98,40 @@ def test_suspended_account_cannot_login(client, member_user, db):
     db.session.commit()
     resp = login(client, "member@example.com")
     assert b"suspended" in resp.data.lower()
+
+
+def test_legacy_pending_and_draft_members_activate_on_login(client, db):
+    from tests.conftest import _create_user
+    for email, initial_status in (
+        ("waiting@example.com", "pending"),
+        ("unfinished@example.com", "draft"),
+    ):
+        user = _create_user(db, email)
+        user.profile.status = initial_status
+        db.session.commit()
+        response = login(client, email)
+        assert response.status_code == 200
+        db.session.refresh(user.profile)
+        assert user.profile.status == "approved"
+        client.post("/auth/logout")
+
+
+def test_login_does_not_reverse_rejection_or_suspension(client, db):
+    from tests.conftest import _create_user
+    rejected = _create_user(db, "rejected@example.com")
+    rejected.profile.status = "rejected"
+    rejected.profile.rejection_reason = "Moderation decision"
+    suspended = _create_user(db, "suspended@example.com")
+    suspended.profile.status = "suspended"
+    suspended.is_suspended = True
+    db.session.commit()
+
+    result = login(client, rejected.email)
+    assert result.status_code == 200
+    assert rejected.profile.status == "rejected"
+    client.post("/auth/logout")
+
+    response = login(client, suspended.email)
+    assert b"suspended" in response.data.lower()
+    assert suspended.profile.status == "suspended"
+    assert suspended.is_suspended is True
