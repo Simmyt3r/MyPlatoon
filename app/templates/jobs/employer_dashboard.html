@@ -1,46 +1,98 @@
 {% extends "base.html" %}
-{% block title %}Employer Dashboard{% endblock %}
+{% block title %}Recruitment dashboard{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
 {% block content %}
 <div class="container my-4" style="max-width:1100px">
   <header class="p5-card p-4 mb-4">
-    <div class="text-success text-uppercase fw-bold small">Recruitment workspace</div>
-    <h1 class="h3 fw-bold">{{ employer.name }}</h1>
-    <p class="mb-2">Organisation review: <strong>{{ employer.status|capitalize }}</strong></p>
+    <div class="text-success text-uppercase fw-bold small">{{ 'School recruitment' if employer.kind == 'school' else 'Recruitment workspace' }}</div>
+    <h1 class="h3 fw-bold mb-1">{{ employer.name }}</h1>
+    <p class="small text-muted mb-3">Organisation verification: <strong>{{ employer.status|capitalize }}</strong></p>
     {% if employer.review_note %}<p class="text-danger small">{{ employer.review_note }}</p>{% endif %}
-    {% if employer.status != 'approved' %}<div class="alert alert-warning small">Listings can be drafted, but none become public until both your organisation and individual job listings are approved.</div>{% endif %}
+    {% if employer.status != 'approved' %}
+    <div class="alert alert-warning small">You can prepare vacancies, but recruitment listings only become public after your organisation and each listing are reviewed.</div>
+    {% endif %}
     <div class="d-flex flex-wrap gap-2">
-      <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5">Post a gig</a>
-      <a href="{{ url_for('jobs.create') }}" class="btn btn-p5-outline">Post a full job</a>
-      <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="btn btn-p5-outline">Gig owner view</a>
-      <a href="{{ url_for('gig_deals.index') }}" class="btn btn-p5-outline">Manage work agreements</a>
-      <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">Edit organisation</a>
-      {% if employer.status == 'approved' %}<a href="{{ url_for('jobs.employer_reputation', employer_id=employer.id) }}" class="btn btn-p5-outline">My public reputation</a>{% endif %}
-      <a href="{{ url_for('jobs.index') }}" class="btn btn-p5-outline">Browse jobs</a>
+      <a href="{{ url_for('jobs.employer_application_inbox') }}" class="btn btn-p5"><i class="fa-solid fa-inbox me-1"></i>Manage applications</a>
+      <a href="{{ url_for('jobs.create') }}" class="btn btn-p5-outline">Post a vacancy</a>
+      <a href="{{ url_for('jobs.employer_edit') }}" class="btn btn-p5-outline">{{ 'School settings' if employer.kind == 'school' else 'Organisation settings' }}</a>
+      {% if employer.kind != 'school' %}
+        <a href="{{ url_for('jobs.create_gig') }}" class="btn btn-p5-outline">Post a gig</a>
+        <a href="{{ url_for('jobs.gig_owner_dashboard') }}" class="btn btn-p5-outline">Gig owner view</a>
+        <a href="{{ url_for('gig_deals.index') }}" class="btn btn-p5-outline">Work agreements</a>
+      {% endif %}
     </div>
   </header>
-  <h2 class="h5 fw-bold mb-3">Your vacancies</h2>
-  {% for job in listings %}
-  <article class="p5-card p-3 mb-3">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-      <div>
-        <h3 class="h5 fw-bold mb-1"><a href="{{ url_for('jobs.detail', job_id=job.id) }}">{{ job.title }}</a></h3>
-        <span class="small text-muted">{{ job.kind_label }} · {{ job.state }} · {{ job.status|capitalize }} · Due {{ job.closing_date.strftime('%d %b %Y') }}</span>
-        {% if job.review_note %}<div class="small text-danger mt-1">Review note: {{ job.review_note }}</div>{% endif %}
-      </div>
-      <div class="d-flex flex-wrap gap-2">
-        <a href="{{ url_for('jobs.employer_applications', job_id=job.id) }}" class="btn btn-p5-outline btn-sm">Applications ({{ job.applications|length }})</a>
-        {% if job.status != 'closed' %}
-          <a href="{{ url_for('jobs.edit', job_id=job.id) }}" class="btn btn-p5-outline btn-sm">Edit</a>
-          <form method="POST" action="{{ url_for('jobs.close', job_id=job.id) }}" data-confirm="Close this job to new applicants?">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-outline-danger btn-sm">Close</button>
-          </form>
-        {% endif %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4">
+      <div class="p5-card p-3 h-100">
+        <div class="small text-muted">Total applications</div>
+        <div class="display-6 fw-bold">{{ application_count }}</div>
+        <a href="{{ url_for('jobs.employer_application_inbox') }}" class="small">View all applications</a>
       </div>
     </div>
-  </article>
-  {% else %}
-  <div class="p5-card p-4 text-center text-muted">No postings yet. Start with a transparent paid vacancy and clear working hours.</div>
-  {% endfor %}
+    <div class="col-6 col-md-4">
+      <div class="p5-card p-3 h-100">
+        <div class="small text-muted">New applications</div>
+        <div class="display-6 fw-bold">{{ new_applications }}</div>
+        <a href="{{ url_for('jobs.employer_application_inbox', status='submitted') }}" class="small">Review new applicants</a>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="p5-card p-3 h-100">
+        <div class="small text-muted">Your vacancies</div>
+        <div class="display-6 fw-bold">{{ listings|length }}</div>
+        <a href="{{ url_for('jobs.create') }}" class="small">Create a vacancy</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+      <h2 class="h5 fw-bold mb-0">Recent applications</h2>
+      <a href="{{ url_for('jobs.employer_application_inbox') }}" class="small">Open applications inbox</a>
+    </div>
+    {% for application in recent_applications %}
+    <div class="p5-card p-3 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <div class="fw-semibold">{{ application.applicant.full_name }}</div>
+        <span class="small text-muted">{{ application.listing.title }} · {{ application.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+      <span class="badge text-bg-light border">{{ application.status|capitalize }}</span>
+    </div>
+    {% else %}
+    <div class="p5-card p-4 text-muted">No applications yet. Applicants will appear here when they apply to your vacancies.</div>
+    {% endfor %}
+  </section>
+
+  <section>
+    <h2 class="h5 fw-bold mb-3">Your vacancies</h2>
+    {% for job in listings %}
+    <article class="p5-card p-3 mb-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+          <h3 class="h5 fw-bold mb-1"><a href="{{ url_for('jobs.detail', job_id=job.id) }}">{{ job.title }}</a></h3>
+          <span class="small text-muted">{{ job.kind_label }} · {{ job.state }} · {{ job.status|capitalize }} · Closes {{ job.closing_date.strftime('%d %b %Y') }}</span>
+          {% if job.review_note %}<div class="small text-danger mt-1">Review note: {{ job.review_note }}</div>{% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('jobs.employer_applications', job_id=job.id) }}" class="btn btn-p5-outline btn-sm">Applications ({{ job.applications|length }})</a>
+          {% if job.status != 'closed' %}
+          <a href="{{ url_for('jobs.edit', job_id=job.id) }}" class="btn btn-p5-outline btn-sm">Edit</a>
+          <form method="POST" action="{{ url_for('jobs.close', job_id=job.id) }}" data-confirm="Close this vacancy to new applicants?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-danger btn-sm" type="submit">Close</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% else %}
+    <div class="p5-card p-4 text-center">
+      <p class="mb-2 text-muted">No vacancies yet. Post your first paid opportunity to start receiving applications.</p>
+      <a href="{{ url_for('jobs.create') }}" class="btn btn-p5">Post your first vacancy</a>
+    </div>
+    {% endfor %}
+  </section>
 </div>
 {% endblock %}
