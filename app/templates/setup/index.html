@@ -203,6 +203,23 @@
         <button type="submit">Save encrypted API keys</button>
       </form>
     </section>
+    <section class="card">
+      <h2>Verify Cloudinary connection</h2>
+      <p>Check the API connection using your saved Cloudinary settings.
+        The test sends a read-only request to Cloudinary: it does not
+        upload, delete, or change any images or API keys.</p>
+      <p class="muted">Run this after saving your Cloudinary credentials.
+        A successful connection test does not guarantee that every image upload
+        will succeed, but confirms that the credentials and API connection work.</p>
+      <form method="post" action="{{ url_for('setup.setup') }}" enctype="application/x-www-form-urlencoded">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="cloudinary_test">
+        <label for="cloudinary_test_password">Confirm administrator password</label>
+        <input id="cloudinary_test_password" name="admin_password"
+               type="password" required autocomplete="current-password">
+        <button type="submit">Test Cloudinary connection</button>
+      </form>
+    </section>
     <footer><a href="{{ url_for('admin.dashboard') }}">Back to admin dashboard</a></footer>
   {% endif %}
   <footer>Secrets are never included in page responses or application audit logs.</footer>
