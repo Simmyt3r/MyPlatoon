@@ -22,7 +22,18 @@ def _ensure_configured():
     # Resolve encrypted settings at call time so changes made on /setup work
     # across independent Vercel serverless workers, without local files.
     from app.services.site_secrets import cloudinary_credentials
-    credentials = cloudinary_credentials()
+    try:
+        credentials = cloudinary_credentials()
+    except Exception as exc:
+        # A stale encryption key or missing database table must be explained
+        # as a storage configuration failure, not an HTTP 500 during editing.
+        current_app.logger.warning(
+            "Cannot load Cloudinary credentials (%s)", type(exc).__name__
+        )
+        raise ImageUploadError(
+            "Cloudinary configuration could not be read. Please ask an "
+            "administrator to check the saved integration settings."
+        ) from None
     if not all(credentials.values()):
         raise ImageUploadError("Image storage is not configured. Contact the site administrator.")
     cloudinary.config(
