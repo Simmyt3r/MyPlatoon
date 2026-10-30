@@ -18,8 +18,17 @@ def ensure_profile(user):
     caller has usually just checked `user.profile is None`, which caches
     that (now-stale) result on the instance unless we update it this way.
     """
-    if user is None or user.profile is not None:
+    if user is None or user.role == "employer":
         return
     from app.models import Profile
-    user.profile = Profile(status="approved" if user.is_admin else "draft")
-    db.session.commit()
+    if user.profile is None:
+        user.profile = Profile(status="approved")
+        db.session.commit()
+    elif (user.role == "member"
+          and user.is_active_account
+          and not user.is_suspended
+          and user.profile.status in ("draft", "pending")):
+        # Existing signups must not remain trapped in the obsolete review
+        # workflow. Never undo an administrator rejection or suspension.
+        user.profile.status = "approved"
+        db.session.commit()
