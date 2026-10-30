@@ -35,18 +35,15 @@
     </div>
     <div class="mt-3 d-flex flex-wrap gap-2">
       <a href="{{ url_for('profile.edit') }}" class="btn btn-p5 btn-sm">Complete Profile</a>
-      {% if profile.status in ('draft', 'rejected') %}
-      <form method="POST" action="{{ url_for('profile.submit_for_approval') }}" class="d-inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <button class="btn btn-p5-outline btn-sm" type="submit">Submit for Approval</button>
-      </form>
+      {% if profile.status == 'approved' %}
+      <span class="small text-success align-self-center">Account active — no admin approval needed</span>
       {% endif %}
     </div>
   </div>
 
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-      <span class="badge w-100 py-2 badge-status-{{ profile.status }}">{{ profile.status.upper() }}</span>
+      <span class="badge w-100 py-2 badge-status-{{ profile.status }}">{{ 'ACTIVE' if profile.status == 'approved' else profile.status.upper() }}</span>
     </div>
   </div>
 

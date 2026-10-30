@@ -42,6 +42,8 @@ def test_pcm_registration_never_invents_a_platoon(client, db):
     assert user.profile.service_stage == "pcm"
     assert user.profile.platoon_id is None
     assert user.profile.platoon_label == "Awaiting camp assignment"
+    assert user.profile.status == "approved"
+    assert user.is_active is True
 
 
 def test_serving_registration_requires_complete_platoon(client, db):
@@ -69,6 +71,7 @@ def test_valid_national_alumnus_registration(client, db):
     assert p.platoon.state == "Plateau"
     assert p.platoon.service_year == 2023
     assert p.platoon.number == 7
+    assert p.status == "approved"
 
 
 def test_same_number_other_state_is_not_same_platoon(client, db):
@@ -126,3 +129,23 @@ def test_legacy_national_album_remains_admin_only(client, db, member_user):
     db.session.commit()
     login(client, member_user.email)
     assert client.get("/album/download/" + str(version.id)).status_code == 403
+
+
+def test_platoon_edit_does_not_require_admin_reapproval(client, db):
+    user = _approved(db, "edit-platoon@example.com")
+    original_id = user.profile.platoon_id
+    login(client, user.email)
+    response = client.post("/profile/edit", data={
+        "service_stage": "serving",
+        "nysc_state": "Benue",
+        "service_year": "2026",
+        "nysc_batch": "B",
+        "nysc_stream": "II",
+        "platoon_number": "6",
+        "profession": "Software Developer",
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    db.session.refresh(user.profile)
+    assert user.profile.platoon_id != original_id
+    assert user.profile.status == "approved"
+    assert user.profile.profession == "Software Developer"

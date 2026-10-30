@@ -26,7 +26,10 @@ def _approve(db, user):
 
 
 def test_persona_requires_approved_profile(client, member_user, db):
-    # member_user fixture's profile defaults to draft/unapproved
+    # New registrations are active; only explicitly moderated profiles
+    # should fail the dating eligibility check.
+    member_user.profile.status = "rejected"
+    db.session.commit()
     login(client, "member@example.com")
     resp = client.post("/dating/persona", data={
         "age_confirm": "y",
@@ -116,7 +119,8 @@ def test_unapproved_profile_not_matched_as_candidate(client, db):
     a = _create_user(db, "approved-a@example.com", full_name="Approved A")
     b = _create_user(db, "unapproved-b@example.com", full_name="Unapproved B")
     _approve(db, a)
-    # b stays unapproved (draft)
+    b.profile.status = "rejected"  # moderation keeps candidate unlisted
+    db.session.commit()
     _make_persona(db, b, gender="female", interested_in="male")
 
     login(client, "approved-a@example.com")

@@ -62,6 +62,7 @@ def test_admin_can_suspend_and_reinstate(client, admin_user, member_user, db):
     client.post(f"/admin/members/{member_user.profile.id}/reinstate", follow_redirects=True)
     user_again = User.query.get(member_user.id)
     assert user_again.is_suspended is False
+    assert Profile.query.get(member_user.profile.id).status == "approved"
 
 
 def test_non_admin_cannot_approve_profile(client, member_user, db):

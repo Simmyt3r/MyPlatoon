@@ -49,9 +49,9 @@ def _init_extensions(app):
     @login_manager.user_loader
     def load_user(user_id):
         user = db.session.get(User, int(user_id))
-        if user is not None and user.role != "employer" and user.profile is None:
-            # Self-heal: see app/services/profile_service.py for why this
-            # is needed and why it's written this specific way.
+        if user is not None and user.role != "employer":
+            # Repair missing profiles and activate legacy draft/pending
+            # registrations without overriding moderation decisions.
             from app.services.profile_service import ensure_profile
             ensure_profile(user)
         return user

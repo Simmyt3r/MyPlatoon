@@ -1,12 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.forms.profile_forms import ProfileForm, PrivacyForm, SubmitForApprovalForm
+from app.forms.profile_forms import ProfileForm, PrivacyForm
 from app.models import Skill
 from app.services.cloudinary_service import upload_image, delete_image, ImageUploadError
 from app.services.audit_service import log_action
-from app.services.notification_service import notify
 from app.services.platoon_membership import assign_platoon, set_form_assignment_defaults
 
 bp = Blueprint("profile", __name__)
@@ -48,10 +47,11 @@ def edit():
         from app.utils.urls import ensure_scheme
         previous_platoon_id = profile.platoon_id
         assign_platoon(profile, form)
-        if previous_platoon_id != (profile.platoon.id if profile.platoon else None):
-            # Do not silently keep an approved member in a different platoon.
-            if profile.status == "approved":
-                profile.status = "pending"
+        # Self-service edits must not place an active member back into a
+        # review queue; changes are auditable without revoking access.
+        platoon_changed = previous_platoon_id != (
+            profile.platoon.id if profile.platoon else None
+        )
 
         for field in ("nickname", "gender", "state_of_origin", "lga", "phone_number",
                       "whatsapp_number", "current_location", "address", "profession",
@@ -63,11 +63,8 @@ def edit():
 
         _sync_skills(profile, form.skills.data)
 
-        # Editing an approved profile sends it back for a light re-review
-        # only if it was previously rejected; approved members can keep
-        # editing without losing their listing.
-        if profile.status == "rejected":
-            profile.status = "draft"
+        # Keep explicit admin rejection/suspension in force on profile edits.
+        # Editing alone is never a way to undo moderation.
 
         photo_error = None
         if form.photo.data:
@@ -86,6 +83,8 @@ def edit():
         # what someone just filled in.
         db.session.commit()
         log_action(current_user, "profile.update", "Profile", profile.id)
+        if platoon_changed:
+            log_action(current_user, "profile.platoon_change", "Profile", profile.id)
 
         if photo_error:
             flash(photo_error, "warning")
@@ -116,30 +115,11 @@ def privacy():
 @bp.route("/submit", methods=["POST"])
 @login_required
 def submit_for_approval():
-    profile = current_user.profile
-    form = SubmitForApprovalForm()
-    if not form.validate_on_submit():
-        flash("Something went wrong. Please try again.", "danger")
-        return redirect(url_for("profile.dashboard"))
-
-    if profile.service_stage != "pcm" and not profile.platoon_id:
-        flash("Enter your assigned NYSC platoon before submitting your profile.", "warning")
-        return redirect(url_for("profile.edit"))
-
-    if profile.completion_percent() < 60:
-        flash("Please complete more of your profile (at least 60%) before submitting.", "warning")
-        return redirect(url_for("profile.dashboard"))
-
-    profile.status = "pending"
-    profile.rejection_reason = None
-    db.session.commit()
-    log_action(current_user, "profile.submit_for_approval", "Profile", profile.id)
-
-    from app.models import User
-    for admin in User.query.filter_by(role="admin").all():
-        notify(admin, f"{current_user.full_name} submitted their profile for approval.")
-
-    flash("Profile submitted for admin review.", "success")
+    """Compatibility for old clients; never send members into a review queue."""
+    if current_user.profile.status in ("rejected", "suspended"):
+        flash("This profile is restricted. Contact an administrator.", "warning")
+    else:
+        flash("No approval is needed. Your account is already active.", "info")
     return redirect(url_for("profile.dashboard"))
 
 

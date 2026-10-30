@@ -73,6 +73,3 @@ class PrivacyForm(FlaskForm):
                                       validators=[DataRequired()])
     submit = SubmitField("Save Privacy Settings")
 
-
-class SubmitForApprovalForm(FlaskForm):
-    submit = SubmitField("Submit for Approval")

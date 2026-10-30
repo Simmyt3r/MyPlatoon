@@ -1,25 +1,31 @@
 """Guarantees every User has a companion Profile.
 
-Registration always creates both together, but a few paths historically
-didn't (admin accounts created via the CLI, the ADMIN_INIT_EMAIL/PASSWORD
-auto-seed, or scripts/seed.py before this existed) -- and nearly every
-authenticated page assumes `current_user.profile` is never None. This is
-the single place that invariant gets enforced/repaired.
+Registration creates a profile immediately. Historical accounts may not
+have one, or may still carry old draft/pending approval states. This
+service ensures active members are not blocked by the obsolete workflow,
+while preserving explicit rejection and suspension decisions.
 """
 from app.extensions import db
 
 
 def ensure_profile(user):
-    """If `user` has no Profile yet, create one and attach it in-memory.
+    """Create missing profiles or activate legacy draft/pending members.
 
-    Assigning through the relationship (rather than adding a separately
-    constructed Profile and committing) keeps SQLAlchemy's identity map in
-    sync immediately on the same `user` object -- important because the
-    caller has usually just checked `user.profile is None`, which caches
-    that (now-stale) result on the instance unless we update it this way.
+    The relationship assignment updates SQLAlchemy's identity map without
+    leaving stale cached user.profile values. Rejected and suspended member
+    accounts are never automatically reactivated.
     """
-    if user is None or user.profile is not None:
+    if user is None or user.role == "employer":
         return
     from app.models import Profile
-    user.profile = Profile(status="approved" if user.is_admin else "draft")
-    db.session.commit()
+    if user.profile is None:
+        user.profile = Profile(status="approved")
+        db.session.commit()
+    elif (user.role == "member"
+          and user.is_active_account
+          and not user.is_suspended
+          and user.profile.status in ("draft", "pending")):
+        # Existing signups must not remain trapped in the obsolete review
+        # workflow. Never undo an administrator rejection or suspension.
+        user.profile.status = "approved"
+        db.session.commit()

@@ -57,33 +57,47 @@ def test_profile_completion_calculation(client, member_user, db):
     assert profile.completion_percent() == 50
 
 
-def test_submit_for_approval_requires_completion_threshold(client, member_user):
+def test_dashboard_does_not_require_profile_approval(client, member_user):
     login(client, "member@example.com")
-    resp = client.post("/profile/submit", data={}, follow_redirects=True)
-    assert b"complete more of your profile" in resp.data.lower()
+    response = client.get("/profile/dashboard")
+    assert response.status_code == 200
+    assert b"Submit for Approval" not in response.data
+    assert b"no admin approval needed" in response.data
+    assert member_user.profile.status == "approved"
 
-    from app.models import Profile
-    profile = Profile.query.filter_by(user_id=member_user.id).first()
-    assert profile.status == "draft"
+
+def test_legacy_submit_does_not_demote_active_member(client, member_user):
+    login(client, "member@example.com")
+    response = client.post("/profile/submit", follow_redirects=True)
+    assert response.status_code == 200
+    assert member_user.profile.status == "approved"
+    assert b"No approval is needed" in response.data
 
 
-def test_submit_for_approval_succeeds_when_complete_enough(client, member_user, db):
-    profile = member_user.profile
-    profile.photo_url = "x"
-    profile.profession = "Engineer"
-    profile.state_of_origin = "Lagos"
-    profile.lga = "Ikeja"
-    profile.biography = "A sufficiently long biography for completion scoring purposes."
-    profile.phone_number = "08000000000"
+def test_legacy_submit_cannot_restore_rejected_member(client, member_user, db):
+    member_user.profile.status = "rejected"
+    member_user.profile.rejection_reason = "Moderation decision"
     db.session.commit()
-
     login(client, "member@example.com")
-    resp = client.post("/profile/submit", data={}, follow_redirects=True)
-    assert resp.status_code == 200
+    response = client.post("/profile/submit", follow_redirects=True)
+    assert response.status_code == 200
+    db.session.refresh(member_user.profile)
+    assert member_user.profile.status == "rejected"
+    assert member_user.profile.rejection_reason == "Moderation decision"
 
-    from app.models import Profile
-    refreshed = Profile.query.filter_by(user_id=member_user.id).first()
-    assert refreshed.status == "pending"
+
+def test_edit_does_not_undo_rejection(client, member_user, db):
+    member_user.profile.status = "rejected"
+    db.session.commit()
+    login(client, "member@example.com")
+    response = client.post("/profile/edit", data={
+        "service_stage": "pcm",
+        "profession": "Engineer",
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    db.session.refresh(member_user.profile)
+    assert member_user.profile.profession == "Engineer"
+    assert member_user.profile.status == "rejected"
 
 
 def test_privacy_settings_update(client, member_user, db):

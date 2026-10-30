@@ -31,9 +31,9 @@
         <tr>
           <td>{{ p.user.full_name }}</td>
           <td>{{ p.user.email }}</td>
-          <td><span class="badge badge-status-{{ p.status }}">{{ p.status }}</span></td>
+          <td><span class="badge badge-status-{{ p.status }}">{{ 'active' if p.status == 'approved' else p.status }}</span></td>
           <td><small>{{ p.platoon_label }}</small></td>
-          <td><a href="{{ url_for('admin.member_detail', profile_id=p.id) }}" class="btn btn-sm btn-p5-outline">Review</a></td>
+          <td><a href="{{ url_for('admin.member_detail', profile_id=p.id) }}" class="btn btn-sm btn-p5-outline">Manage</a></td>
         </tr>
         {% else %}
         <tr><td colspan="5" class="text-center text-muted py-4">No members found.</td></tr>

@@ -64,7 +64,8 @@ class Profile(db.Model):
     address_visibility = db.Column(db.String(20), default="private", nullable=False)
 
     # --- Workflow state ---
-    status = db.Column(db.String(20), default="draft", nullable=False, index=True)
+    # Registration and profile creation are self-service; no approval queue.
+    status = db.Column(db.String(20), default="approved", nullable=False, index=True)
     rejection_reason = db.Column(db.Text)
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     reviewed_at = db.Column(db.DateTime)
