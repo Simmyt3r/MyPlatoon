@@ -31,26 +31,37 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+{% set recruitment_workspace = current_user.is_authenticated and (
+    current_user.role == 'employer' or request.endpoint in [
+        'jobs.employer_dashboard', 'jobs.employer_application_inbox',
+        'jobs.employer_applications', 'jobs.employer_edit',
+        'jobs.create', 'jobs.edit', 'jobs.close',
+        'jobs.gig_owner_dashboard', 'jobs.create_gig'
+    ]) %}
 
 <!-- ============ TOP APP BAR ============ -->
 <nav class="p5-topbar">
   <div class="d-flex align-items-center justify-content-between h-100 px-2 px-md-3">
     <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width:0;">
-      <a href="{{ url_for('main.index') }}" class="p5-brand">
+      <a href="{{ url_for('jobs.employer_dashboard') if recruitment_workspace else url_for('main.index') }}" class="p5-brand">
         <span class="p5-brand-badge">{{ APP_BRAND_INITIALS or (APP_NAME[:2]|upper) }}</span>
         <span class="d-none d-sm-inline">{{ APP_SHORT_NAME }}</span>
       </a>
+      {% if not recruitment_workspace %}
       <form method="GET" action="{{ url_for('main.search') }}" class="p5-topbar-search-wrap d-none d-md-block">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" name="q" class="p5-topbar-search" placeholder="Search {{ APP_SHORT_NAME }}" value="{{ request.args.get('q', '') }}">
       </form>
+      {% endif %}
     </div>
 
     <div class="d-flex align-items-center gap-2">
+      {% if not recruitment_workspace %}
       <a href="{{ url_for('main.search') }}" class="p5-icon-btn d-md-none" aria-label="Search">
         <i class="fa-solid fa-magnifying-glass"></i>
       </a>
       <a href="{{ url_for('main.nerd') }}" class="btn btn-p5-outline btn-sm" aria-label="NERD guide">NERD</a>
+      {% endif %}
 
       {% if current_user.is_authenticated %}
       <div class="dropdown">
@@ -77,7 +88,7 @@
         </div>
       </div>
 
-      {% if current_user.role != 'employer' %}
+      {% if not recruitment_workspace %}
       <a href="{{ url_for('album.view') }}" class="p5-icon-btn d-none d-sm-inline-flex" aria-label="Digital Album">
         <i class="fa-solid fa-book"></i>
       </a>
@@ -92,20 +103,24 @@
           {% endif %}
         </button>
         <ul class="dropdown-menu dropdown-menu-end p5-dropdown-menu">
-          {% if current_user.role == 'employer' %}
-          <li><a class="dropdown-item" href="{{ url_for('jobs.gig_owner_dashboard') }}"><i class="fa-solid fa-building me-2 text-success"></i>Gig Owner Dashboard</a></li>
+          {% if recruitment_workspace %}
+          <li><a class="dropdown-item" href="{{ url_for('jobs.employer_dashboard') }}"><i class="fa-solid fa-gauge me-2 text-success"></i>Recruitment dashboard</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('jobs.employer_application_inbox') }}"><i class="fa-solid fa-inbox me-2 text-success"></i>Applications inbox</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('jobs.employer_edit') }}"><i class="fa-solid fa-building me-2 text-success"></i>Organisation settings</a></li>
           {% else %}
           <li><a class="dropdown-item" href="{{ url_for('profile.dashboard') }}"><i class="fa-solid fa-gauge me-2 text-success"></i>Dashboard</a></li>
           {% endif %}
-          {% if current_user.role != 'employer' %}
+          {% if not recruitment_workspace %}
           <li><a class="dropdown-item" href="{{ url_for('profile.edit') }}"><i class="fa-solid fa-user-pen me-2 text-success"></i>Edit Profile</a></li>
           <li><a class="dropdown-item" href="{{ url_for('profile.privacy') }}"><i class="fa-solid fa-lock me-2 text-success"></i>Privacy Settings</a></li>
           <li><a class="dropdown-item" href="{{ url_for('business.my_businesses') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>My Business</a></li>
           <li><a class="dropdown-item" href="{{ url_for('ppa.mine') }}"><i class="fa-solid fa-location-dot me-2 text-success"></i>My PPA Reports</a></li>
           {% endif %}
+          {% if not recruitment_workspace %}
           <li><a class="dropdown-item" href="{{ url_for('jobs.index') }}"><i class="fa-solid fa-briefcase me-2 text-success"></i>Jobs &amp; Gigs</a></li>
           <li><a class="dropdown-item" href="{{ url_for('gig_deals.index') }}"><i class="fa-solid fa-handshake me-2 text-success"></i>My Gig Deals</a></li>
-          {% if current_user.role != 'employer' %}
+          {% endif %}
+          {% if not recruitment_workspace %}
           <li><a class="dropdown-item" href="{{ url_for('main.services') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Services &amp; Careers</a></li>
           {% if ENABLE_DATING %}
           <li><a class="dropdown-item" href="{{ url_for('dating.home') }}"><i class="fa-regular fa-heart me-2 text-success"></i>Dating (18+)</a></li>
@@ -148,11 +163,18 @@
 </div>
 
 <!-- ============ APP SHELL ============ -->
-<div class="p5-shell {% block body_class %}has-right-rail{% endblock %}">
+<div class="p5-shell {% block body_class %}{{ 'app-shell-focused' if recruitment_workspace else 'has-right-rail' }}{% endblock %}">
 
   {% block left_sidebar %}
   <aside class="p5-sidebar-left">
     <div class="p5-sidebar-card">
+      {% if recruitment_workspace %}
+      <div class="p5-sidebar-heading">Recruitment workspace</div>
+      <a href="{{ url_for('jobs.employer_dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'jobs.employer_dashboard' }}"><i class="fa-solid fa-gauge"></i> Overview &amp; vacancies</a>
+      <a href="{{ url_for('jobs.employer_application_inbox') }}" class="p5-nav-item {{ 'active' if request.endpoint in ('jobs.employer_application_inbox','jobs.employer_applications') }}"><i class="fa-solid fa-inbox"></i> Applications</a>
+      <a href="{{ url_for('jobs.create') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'jobs.create' }}"><i class="fa-solid fa-plus"></i> Post vacancy</a>
+      <a href="{{ url_for('jobs.employer_edit') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'jobs.employer_edit' }}"><i class="fa-solid fa-building"></i> Organisation settings</a>
+      {% else %}
       {% if current_user.is_authenticated %}
       <a href="{{ url_for('jobs.gig_owner_dashboard') if current_user.role == 'employer' else url_for('profile.dashboard') }}" class="p5-nav-item {{ 'active' if request.endpoint in ['profile.dashboard','jobs.gig_owner_dashboard'] }}">
         {% if current_user.profile and current_user.profile.photo_url %}
@@ -224,6 +246,7 @@
       <a href="{{ url_for('auth.login') }}" class="p5-nav-item"><i class="fa-solid fa-right-to-bracket"></i>Log In</a>
       <a href="{{ url_for('auth.register') }}" class="p5-nav-item"><i class="fa-solid fa-user-plus"></i>Join {{ APP_SHORT_NAME }}</a>
       {% endif %}
+      {% endif %}
     </div>
   </aside>
   {% endblock %}
@@ -233,6 +256,7 @@
   </main>
 
   {% block right_sidebar %}
+  {% if not recruitment_workspace %}
   <aside class="p5-sidebar-right">
     <div class="p5-sidebar-card">
       <div class="p5-sidebar-heading">Suggested for you</div>
@@ -254,12 +278,21 @@
       {% if APP_MOTTO %}<div class="fst-italic" style="color:var(--p5-gold);">{{ APP_MOTTO }}</div>{% endif %}
     </div>
   </aside>
+  {% endif %}
   {% endblock %}
 
 </div>
 
 <!-- ============ MOBILE BOTTOM NAV ============ -->
 <nav class="p5-bottom-nav">
+  {% if recruitment_workspace %}
+  <div class="row row-cols-4 g-0 text-center">
+    <div class="col"><a href="{{ url_for('jobs.employer_dashboard') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-gauge"></i>Overview</a></div>
+    <div class="col"><a href="{{ url_for('jobs.employer_application_inbox') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-inbox"></i>Applications</a></div>
+    <div class="col"><a href="{{ url_for('jobs.create') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-plus"></i>Post</a></div>
+    <div class="col"><a href="{{ url_for('jobs.employer_edit') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-building"></i>Settings</a></div>
+  </div>
+  {% else %}
   <div class="row row-cols-5 g-0 text-center">
     <div class="col"><a href="{{ url_for('main.feed') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.feed' }}"><i class="fa-solid fa-house"></i>Feed</a></div>
     <div class="col"><a href="{{ url_for('directory.members') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.members' }}"><i class="fa-solid fa-users"></i>Members</a></div>
@@ -272,8 +305,10 @@
     <div class="col"><a href="{{ url_for('auth.register') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-user-plus"></i>Join</a></div>
     {% endif %}
   </div>
+  {% endif %}
 </nav>
 
+{% if not recruitment_workspace %}
 <footer class="p5-footer d-none d-lg-block">
   <div class="container">
     <div class="row gy-3">
@@ -305,6 +340,7 @@
     <p class="text-center small mb-0">&copy; 2026 {{ POWERED_BY or APP_NAME }}. All rights reserved.</p>
   </div>
 </footer>
+{% endif %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
