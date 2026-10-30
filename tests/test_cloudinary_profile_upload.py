@@ -75,7 +75,7 @@ def test_profile_photo_upload_uses_encrypted_admin_settings_and_persists(
     def fake_upload(file, **kwargs):
         assert isinstance(file, io.BytesIO)
         assert file.name.endswith(".jpg")
-        assert file.read(3) == b"\\xff\\xd8\\xff"
+        assert file.read(3) == b"\xff\xd8\xff"
         file.seek(0)
         assert Image.open(file).size == (32, 24)
         uploads.append(kwargs)
