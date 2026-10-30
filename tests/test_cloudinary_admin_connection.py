@@ -139,10 +139,17 @@ def test_cloudinary_ping_unexpected_status_is_safe(
 def test_cloudinary_admin_test_requires_https_csrf_token(
     client, app, admin_user, monkeypatch,
 ):
-    app.config["WTF_CSRF_ENABLED"] = True
     monkeypatch.setattr(cloudinary.api, "ping", lambda: {"status": "ok"})
-    login(client, admin_user.email)
+    # Log in with CSRF disabled (fixture convention), using the SAME host
+    # as the HTTPS setup request so the session cookie remains available.
+    auth = client.post(
+        "/auth/login", base_url="https://myplatoon.vercel.app",
+        data={"email": admin_user.email, "password": "Password123"},
+    )
+    assert auth.status_code == 302
+    app.config["WTF_CSRF_ENABLED"] = True
     page = client.get("/setup", base_url="https://myplatoon.vercel.app")
+    assert page.status_code == 200
     match = re.search(rb'name="csrf_token" value="([^"]+)"', page.data)
     assert match is not None
 
