@@ -189,8 +189,21 @@ def employer_dashboard():
         return redirect(url_for("jobs.employer_claim"))
     listings = (JobListing.query.filter_by(employer_id=employer.id)
                 .order_by(JobListing.created_at.desc()).all())
-    return render_template("jobs/employer_dashboard.html",
-                           employer=employer, listings=listings)
+    owned_applications = JobApplication.query.join(
+        JobListing, JobApplication.job_id == JobListing.id,
+    ).filter(JobListing.employer_id == employer.id)
+    application_count = owned_applications.count()
+    new_applications = owned_applications.filter(
+        JobApplication.status == "submitted",
+    ).count()
+    recent_applications = owned_applications.order_by(
+        JobApplication.created_at.desc(),
+    ).limit(5).all()
+    return render_template(
+        "jobs/employer_dashboard.html", employer=employer, listings=listings,
+        application_count=application_count, new_applications=new_applications,
+        recent_applications=recent_applications,
+    )
 
 
 @bp.route("/employer/edit", methods=["GET", "POST"])
@@ -314,6 +327,42 @@ def my_applications():
     return render_template("jobs/my_applications.html", applications=rows)
 
 
+@bp.route("/employer/applications")
+@login_required
+def employer_application_inbox():
+    """One private inbox for applicants to this employer's own vacancies."""
+    employer = _needs_employer()
+    status = request.args.get("status", "").strip()
+    job_id = request.args.get("job", type=int)
+    page = max(request.args.get("page", default=1, type=int), 1)
+
+    if status and status not in APP_STATUSES:
+        abort(400)
+
+    listings = JobListing.query.filter_by(
+        employer_id=employer.id,
+    ).order_by(JobListing.created_at.desc()).all()
+    base = JobApplication.query.join(
+        JobListing, JobApplication.job_id == JobListing.id,
+    ).filter(JobListing.employer_id == employer.id)
+    if status:
+        base = base.filter(JobApplication.status == status)
+    if job_id is not None:
+        # Tenant scoping is mandatory even when a URL is manipulated.
+        base = base.filter(JobApplication.job_id == job_id)
+
+    applications = base.order_by(
+        JobApplication.created_at.desc(), JobApplication.id.desc(),
+    ).paginate(page=page, per_page=20, error_out=False)
+
+    return render_template(
+        "jobs/employer_application_inbox.html",
+        employer=employer, applications=applications,
+        listings=listings, status=status, job_id=job_id,
+        statuses=APP_STATUSES,
+    )
+
+
 @bp.route("/<int:job_id>/applications")
 @login_required
 def employer_applications(job_id):
@@ -350,6 +399,8 @@ def application_status(application_id):
            "Your application for {} was updated: {}.".format(
                application.listing.title, status), category="info")
     flash("Applicant status updated.", "success")
+    if request.form.get("return_to") == "inbox":
+        return redirect(url_for("jobs.employer_application_inbox"))
     return redirect(url_for("jobs.employer_applications", job_id=application.job_id))
 
 
