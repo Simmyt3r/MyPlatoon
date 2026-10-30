@@ -123,7 +123,7 @@ def reject_member(profile_id):
         db.session.commit()
 
         log_action(current_user, "profile.reject", "Profile", profile.id, detail=form.reason.data)
-        notify(profile.user, f"Your profile was not approved: {form.reason.data}", category="warning")
+        notify(profile.user, f"Your profile was restricted by moderation: {form.reason.data}", category="warning")
         flash(f"{profile.user.full_name}'s profile has been rejected.", "info")
     else:
         flash("Please provide a rejection reason.", "danger")
@@ -150,7 +150,7 @@ def suspend_member(profile_id):
 def reinstate_member(profile_id):
     profile = Profile.query.get_or_404(profile_id)
     profile.user.is_suspended = False
-    profile.status = "approved" if profile.reviewed_at else "pending"
+    profile.status = "approved"
     db.session.commit()
     log_action(current_user, "profile.reinstate", "Profile", profile.id)
     notify(profile.user, "Your account has been reinstated.", category="success")
