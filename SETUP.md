@@ -224,3 +224,38 @@ empty files, or files larger than 6 MB. The server also validates
 and re-encodes the image; browser-side previews are not security
 enforcement. Profile photo changes are persisted in PostgreSQL,
 while the image file is stored only in Cloudinary.
+
+
+## School and employer recruitment workspace
+
+Schools should register through `/jobs/employers/register` and choose
+**School or educational institution**. That creates a separate employer
+account instead of an NYSC member profile. After logging in, the school
+lands on **Recruitment dashboard** (`/jobs/employer`), not on the community
+feed. The header, sidebar and mobile navigation show only:
+
+- **Overview & vacancies** — hiring status, vacancy list and recent applications.
+- **Applications** — a private inbox across all the school's job listings,
+  filterable by vacancy or application status; change an application to
+  submitted, shortlisted, declined or hired where permitted.
+- **Post vacancy** — create a paid job listing.
+- **Organisation settings** — update the school's hiring profile.
+
+The shared social feed, NERD pages, platoons, dating, suggested members,
+community footer and public jobs browsing links are excluded from the
+school's recruitment navigation. Existing NYSC members who also manage
+an organisation get the focused navigation on recruitment screens and
+keep their personal member workspace elsewhere. Other employer types
+use the same hiring-focused navigation, without changing the
+separately supported gig-owner workflows.
+
+Application inbox queries are always restricted to the current
+employer's own listings, including vacancy/status filtering. Existing
+server-side ownership checks still apply to applicant detail and status
+changes. Applicants' contact details remain recruitment-only.
+
+**Important:** Employer verification and listing review are intentionally
+separate from self-service member registration. Registration creates
+the employer workspace immediately but does not bypass employer/listing
+moderation or publish vacancies automatically. No database migration is
+required for this navigation and inbox update.
