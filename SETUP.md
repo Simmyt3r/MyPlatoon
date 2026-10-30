@@ -199,3 +199,28 @@ the referrer (for example, a privacy extension or an embedded browser),
 open the site in a normal first-party browser tab, inspect only request
 header **names**, and keep CSRF protection enabled. No production
 database write is performed by the test route.
+
+
+## Verify Cloudinary credentials from the Admin UI
+
+Once an administrator has saved `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in
+`/setup`, they can choose **Test Cloudinary connection** and
+confirm their administrator password. This makes a **read-only
+Cloudinary Admin API ping** using the encrypted database settings
+(env variables are used only when no saved value exists for a key).
+It does **not** upload or delete images, change keys, or execute
+database migrations. Only the sanitized success/failure message
+is displayed; the raw SDK response is never logged or shown.
+
+A successful ping verifies credentials and API reachability; it
+does not guarantee that a particular photo upload will succeed
+or that the account has free storage quota. After a successful
+ping, test a small JPG through **Profile → Edit Profile**.
+
+Members now see a local preview of their selected photo before
+they save, with an immediate warning for unsupported MIME types,
+empty files, or files larger than 6 MB. The server also validates
+and re-encodes the image; browser-side previews are not security
+enforcement. Profile photo changes are persisted in PostgreSQL,
+while the image file is stored only in Cloudinary.
