@@ -28,7 +28,8 @@ class ProfileForm(FlaskForm):
     nysc_stream = SelectField("Stream", choices=[("", "Choose stream"), ("I", "I"), ("II", "II")], default="")
     platoon_number = IntegerField("Platoon Number (from camp)")
     photo = FileField("Profile Photograph", validators=[
-        Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"], "Images only.")])
+        Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"], "JPG, PNG or WebP images only.")],
+        render_kw={"accept": "image/jpeg,image/png,image/webp"})
     nickname = StringField("Nickname", validators=[Optional(), Length(max=80)])
     gender = SelectField("Gender", choices=GENDER_CHOICES, validators=[Optional()])
     state_of_origin = StringField("State of Origin", validators=[Optional(), Length(max=60)])
