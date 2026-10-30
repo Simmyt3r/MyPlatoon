@@ -11,13 +11,13 @@
         <h5 class="fw-bold mb-0">{{ profile.user.full_name }}</h5>
         <p class="text-muted small">{{ profile.user.email }}</p>
         <p class="small"><strong>Journey:</strong> {{ profile.service_stage.upper() }}<span class="d-block">{{ profile.platoon_label }}</span></p>
-        <span class="badge badge-status-{{ profile.status }} mb-3">{{ profile.status.upper() }}</span>
+        <span class="badge badge-status-{{ profile.status }} mb-3">{{ 'ACTIVE' if profile.status == 'approved' else profile.status.upper() }}</span>
 
         <div class="d-grid gap-2">
-          {% if profile.status != 'approved' %}
+          {% if profile.status not in ('approved', 'suspended') %}
           <form method="POST" action="{{ url_for('admin.approve_member', profile_id=profile.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-check me-1"></i>Approve</button>
+            <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-check me-1"></i>Activate Profile</button>
           </form>
           {% endif %}
 
