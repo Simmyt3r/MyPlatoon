@@ -11,12 +11,17 @@
     <div class="p5-card p5-card-body mb-4">
       <div class="row align-items-center">
         <div class="col-auto">
-          <img src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
-               class="rounded-circle" width="80" height="80" style="object-fit:cover;" alt="Current photo">
+          <img id="profile-photo-preview"
+               src="{{ profile.photo_url or url_for('static', filename='img/placeholder-avatar.png') }}"
+               class="rounded-circle" width="80" height="80" style="object-fit:cover;"
+               alt="Current or selected profile photo preview">
         </div>
         <div class="col">
           {{ field(form.photo) }}
-          <p class="small text-muted mb-0">JPG, PNG or WebP, up to 6 MB. Photos are resized and stored securely in Cloudinary.</p>
+          <p class="small text-muted mb-1">JPG, PNG or WebP, up to 6 MB. Photos are resized and stored securely in Cloudinary.</p>
+          <p id="profile-photo-status" class="small mb-0" role="status" aria-live="polite">
+            Select a photo to preview it before saving your profile.
+          </p>
         </div>
       </div>
     </div>
@@ -76,4 +81,50 @@
     {{ field(form.submit) }}
   </form>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  "use strict";
+  const picker = document.getElementById("photo");
+  const preview = document.getElementById("profile-photo-preview");
+  const status = document.getElementById("profile-photo-status");
+  if (!picker || !preview || !status || !window.URL) return;
+
+  const original = preview.getAttribute("src");
+  const types = new Set(["image/jpeg", "image/png", "image/webp"]);
+  const limit = 6 * 1024 * 1024;
+  let temporaryUrl = null;
+
+  function revokePreview() {
+    if (temporaryUrl) {
+      URL.revokeObjectURL(temporaryUrl);
+      temporaryUrl = null;
+    }
+  }
+
+  picker.addEventListener("change", function () {
+    revokePreview();
+    const file = picker.files && picker.files[0];
+    if (!file) {
+      preview.src = original;
+      status.textContent = "No new photo selected.";
+      return;
+    }
+    if (!types.has(file.type) || file.size === 0 || file.size > limit) {
+      picker.value = "";
+      preview.src = original;
+      status.textContent = file.size > limit
+        ? "Photo is too large. Please select an image smaller than 6 MB."
+        : "Please choose a JPG, PNG or WebP image.";
+      return;
+    }
+    temporaryUrl = URL.createObjectURL(file);
+    preview.src = temporaryUrl;
+    status.textContent = "Photo selected. Save Profile to upload it.";
+  });
+
+  window.addEventListener("pagehide", revokePreview, { once: true });
+}());
+</script>
 {% endblock %}

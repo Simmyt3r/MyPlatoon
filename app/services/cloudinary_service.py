@@ -11,6 +11,7 @@ import uuid
 
 import cloudinary
 import cloudinary.uploader
+import cloudinary.api
 from flask import current_app
 from PIL import Image
 
@@ -42,6 +43,36 @@ def _ensure_configured():
         api_secret=credentials["CLOUDINARY_API_SECRET"],
         secure=True,
     )
+
+
+def test_cloudinary_connection():
+    """Verify saved credentials against Cloudinary without uploading assets.
+
+    This is strictly an administrator-only diagnostic called from /setup.
+    Return only curated errors; the SDK response/exception may contain
+    deployment details and must never be reflected in the browser or logs.
+    """
+    _ensure_configured()
+    try:
+        response = cloudinary.api.ping()
+    except Exception as exc:
+        current_app.logger.warning(
+            "Cloudinary connection check failed (%s)", type(exc).__name__
+        )
+        raise ImageUploadError(
+            "Cloudinary connection test failed. Check that the saved cloud "
+            "name, API key, and API secret belong to the same Cloudinary "
+            "environment, and that outbound access is available."
+        ) from None
+
+    if not isinstance(response, dict) or response.get("status") != "ok":
+        current_app.logger.warning(
+            "Cloudinary connection check returned an unexpected status."
+        )
+        raise ImageUploadError(
+            "Cloudinary did not confirm a healthy API connection. Check "
+            "your Cloudinary environment and API permissions."
+        )
 
 
 def _validate(file_storage):

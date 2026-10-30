@@ -198,6 +198,21 @@ def setup():
                 db.session.rollback()
                 current_app.logger.exception("Admin-approved schema upgrade failed.")
                 flash("Upgrade failed. Check runtime logs and review the schema before retrying.", "danger")
+        elif action == "cloudinary_test":
+            # Read-only connectivity test. Never upload/delete files, change
+            # credentials, or reveal SDK responses in the administration UI.
+            from app.services.cloudinary_service import (
+                ImageUploadError, test_cloudinary_connection,
+            )
+            try:
+                test_cloudinary_connection()
+                log_action(current_user, "integrations.test", "site",
+                           "cloudinary", "Cloudinary API check passed")
+                flash("Cloudinary connection verified successfully. No images were uploaded.", "success")
+            except ImageUploadError as exc:
+                log_action(current_user, "integrations.test", "site",
+                           "cloudinary", "Cloudinary API check failed")
+                flash(str(exc), "warning")
         elif action == "cloudinary":
             values = {key: (request.form.get(key) or "").strip()
                       for key in ALLOWED_KEYS}
