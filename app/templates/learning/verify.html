@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Verify Silabs Certificate{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-5" style="max-width:780px">
+  <section class="p5-card p-4 p-md-5 text-center">
+    <img src="{{ url_for('static', filename='img/silabs-academy-logo.svg') }}" width="105" height="105" alt="Silab &amp; Co Technologies Ltd. logo">
+    <div class="small text-success text-uppercase fw-bold mt-3">Verified certificate record</div>
+    <h1 class="h3 fw-bold my-3">Certificate of Completion</h1>
+    <p>This certificate was issued by <strong>Silab &amp; Co Technologies Ltd.</strong> to</p>
+    <h2 class="h4 fw-bold">{{ certificate.learner_name }}</h2>
+    <p>for recording completion of the learning series</p>
+    <h3 class="h5 fw-bold">{{ certificate.course_title }}</h3>
+    <p class="text-muted small">{{ certificate.lesson_count }} video lessons · Issued {{ certificate.issued_at.strftime('%d %B %Y') }}</p>
+    <p class="small text-muted" style="overflow-wrap:anywhere">Certificate ID: {{ certificate.code }}</p>
+    <div class="alert alert-info small mt-4">Verification confirms an authentic completion record. Video viewing was self-reported and no supervised assessment or professional qualification is implied.</div>
+  </section>
+</div>
+{% endblock %}
