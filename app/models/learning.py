@@ -75,3 +75,25 @@ class LearningCertificate(db.Model):
     issued_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     course = db.relationship("LearningCourse", back_populates="certificates")
+
+
+class LearningWatch(db.Model):
+    """Server-metered visible playback checkpoints, scoped to user + lesson.
+
+    Client playback status is a claim reported by the YouTube IFrame API,
+    not independent attestation of viewing. Server limits accrued seconds
+    using its own clock and successive, plausible video positions.
+    """
+    __tablename__ = "learning_watch"
+    __table_args__ = (db.UniqueConstraint("user_id", "lesson_id",
+                                          name="uq_learning_watch_user_lesson"),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        "users.id", ondelete="CASCADE"), nullable=False, index=True)
+    lesson_id = db.Column(db.Integer, db.ForeignKey(
+        "learning_lessons.id", ondelete="CASCADE"), nullable=False, index=True)
+    watched_seconds = db.Column(db.Float(), nullable=False, default=0.0)
+    session_id = db.Column(db.String(36), nullable=False,
+                           default=lambda: str(uuid4()))
+    last_seen_at = db.Column(db.DateTime(), nullable=True)
+    last_position = db.Column(db.Float(), nullable=True)
