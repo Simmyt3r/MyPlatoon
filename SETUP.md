@@ -302,3 +302,35 @@ use the existing admin **Database & API Setup → Apply reviewed migrations**
 workflow on a backed-up database before opening the Academy. Production
 does not auto-create the tables. Never run migrations automatically in
 request handlers. The schema release check expects this revision.
+
+## Minimum video playback before marking a lesson complete
+
+Silabs Academy requires **90 seconds (1 minute 30 seconds) of accumulated
+active video playback per lesson** before the completion endpoint will
+record a lesson. The YouTube IFrame Player API reports playing/paused/
+buffering and video playback position. The browser sends checkpoints
+about every five seconds only for a visible tab. PostgreSQL tracks
+progress **per learner and lesson**, using server time and sanity checks
+on consecutive video positions; page reloads preserve earned seconds.
+
+Pausing, buffering, leaving the browser tab, seeking ahead or sending
+a burst of fake time requests will not earn immediate credit. Playback
+can resume later and repeated viewings contribute to the 90 seconds.
+A short video must be replayed as necessary; administrators should
+prefer lessons at least 90 seconds long.
+
+The completion endpoint re-checks the stored server-side watch time
+before saving a completed lesson or automatically issuing a Silabs
+certificate. Older already-completed lessons/certificates remain valid.
+Signed-in employers still cannot mark learning progress.
+
+**Security limitation:** IFrame playback is observed by a user's own
+browser. It is practical friction against skipping and casual bypass,
+but a manipulated client can still forge credible timed playback
+reports. A supervised exam or trusted-video-attestation service would
+be necessary to independently certify attention or skill acquisition.
+
+**Production migration:** revision `f49a1d8e2c90` adds the
+`learning_watch` table after `e2c5a84f9b31`. Deploy, back up Aiven,
+then run **/setup → Apply reviewed migrations** as admin. Do not
+run automatically on incoming requests.
