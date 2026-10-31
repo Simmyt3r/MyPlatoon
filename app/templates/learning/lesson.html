@@ -76,6 +76,7 @@
   let player = null;
   let playing = false;
   let busy = false;
+  let queuedStop = false;
   let ready = false;
 
   const hint = document.getElementById("watch-hint");
@@ -95,7 +96,11 @@
   }
 
   async function send(playingNow) {
-    if (!player || !ready || busy || seconds >= required) return;
+    if (!player || !ready || seconds >= required) return;
+    if (busy) {
+      if (!playingNow) queuedStop = true;
+      return;
+    }
     busy = true;
     try {
       const position = player.getCurrentTime();
@@ -126,6 +131,10 @@
       hint.textContent = "Could not save watch time. Check your network connection.";
     } finally {
       busy = false;
+      if (queuedStop) {
+        queuedStop = false;
+        send(false);
+      }
     }
   }
 
