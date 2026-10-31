@@ -1,7 +1,5 @@
 """Downloadable, verification-linked Silabs & Co completion certificates."""
 from io import BytesIO
-from pathlib import Path
-
 import qrcode
 from flask import current_app, url_for
 from reportlab.lib.colors import HexColor
@@ -47,17 +45,42 @@ def render_certificate(certificate):
     pdf.setStrokeColor(blue)
     pdf.rect(34, 34, width - 68, height - 68, fill=0, stroke=1)
 
-    logo = Path(current_app.static_folder) / "img" / "silabs-academy-logo.jpg"
-    if logo.is_file():
-        pdf.drawImage(ImageReader(str(logo)), width / 2 - 42, 430,
-                      width=84, height=84, preserveAspectRatio=True, mask="auto")
-    else:
-        # No external asset/network dependency when rendering certificates.
-        pdf.setFillColor(navy)
-        pdf.circle(width / 2, 470, 40, fill=1, stroke=0)
-        pdf.setFillColor(HexColor("#FFFFFF"))
-        pdf.setFont("Helvetica-Bold", 22)
-        pdf.drawCentredString(width / 2, 462, "S&Co")
+    # Draw the Silabs circular monogram directly as vector artwork.
+    # No network, external font, or image file needed for certificate PDFs.
+    cx, cy = width / 2, 468
+    pdf.setStrokeColor(navy)
+    pdf.setLineWidth(4)
+    pdf.setFillColor(HexColor("#FFFFFF"))
+    pdf.circle(cx, cy, 43, stroke=1, fill=1)
+    pdf.setFillColor(blue)
+    pdf.setFont("Helvetica-Bold", 5.3)
+    pdf.drawCentredString(cx, cy + 30, "SILAB & CO.")
+    pdf.setFillColor(navy)
+    pdf.drawCentredString(cx, cy - 33, "TECHNOLOGIES LTD.")
+    shape = pdf.beginPath()
+    shape.moveTo(cx - 17, cy + 21)
+    shape.lineTo(cx + 18, cy + 21)
+    shape.lineTo(cx + 18, cy + 10)
+    shape.lineTo(cx - 6, cy + 10)
+    shape.lineTo(cx - 6, cy - 3)
+    shape.lineTo(cx + 3, cy - 3)
+    shape.lineTo(cx + 3, cy - 13)
+    shape.lineTo(cx - 17, cy - 13)
+    shape.close()
+    pdf.setFillColor(navy)
+    pdf.drawPath(shape, fill=1, stroke=0)
+    shape = pdf.beginPath()
+    shape.moveTo(cx + 3, cy + 4)
+    shape.lineTo(cx + 18, cy + 4)
+    shape.lineTo(cx + 18, cy - 21)
+    shape.lineTo(cx - 17, cy - 21)
+    shape.lineTo(cx - 17, cy - 10)
+    shape.lineTo(cx + 6, cy - 10)
+    shape.lineTo(cx + 6, cy - 3)
+    shape.lineTo(cx + 3, cy - 3)
+    shape.close()
+    pdf.setFillColor(blue)
+    pdf.drawPath(shape, fill=1, stroke=0)
 
     pdf.setFillColor(navy)
     pdf.setFont("Helvetica-Bold", 17)
