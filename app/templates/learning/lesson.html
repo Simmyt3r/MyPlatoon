@@ -10,8 +10,8 @@
         <div class="small text-success fw-bold">Lesson {{ lesson.position }} of {{ course.lessons|length }}</div>
         <h1 class="h4 fw-bold my-2">{{ lesson.title }}</h1>
         <div class="ratio ratio-16x9 rounded overflow-hidden bg-dark mt-3">
-          <iframe title="YouTube video lesson: {{ lesson.title }}"
-                  src="https://www.youtube-nocookie.com/embed/{{ lesson.youtube_id }}"
+          <iframe id="lesson-player" title="YouTube video lesson: {{ lesson.title }}"
+                  src="https://www.youtube-nocookie.com/embed/{{ lesson.youtube_id }}?enablejsapi=1&amp;origin={{ request.host_url.rstrip('/')|urlencode }}"
                   referrerpolicy="strict-origin-when-cross-origin"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowfullscreen loading="lazy"></iframe>
@@ -20,15 +20,29 @@
         {% if lesson.id in done %}
         <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i>Lesson recorded as complete.</div>
         {% else %}
+        <div class="mb-3" aria-live="polite">
+          <div class="d-flex justify-content-between gap-2 small mb-1">
+            <span class="fw-semibold">Minimum active playback: 1:30</span>
+            <span id="watch-time-label">{{ watched_seconds|int }} / {{ required_seconds }} seconds</span>
+          </div>
+          <div class="progress" style="height:10px">
+            <div class="progress-bar bg-success" id="watch-progress" role="progressbar"
+                 aria-label="Qualifying lesson play time"
+                 aria-valuenow="{{ watched_seconds|int }}" aria-valuemin="0" aria-valuemax="{{ required_seconds }}"
+                 style="width:{{ (100 * watched_seconds / required_seconds)|round|int }}%"></div>
+          </div>
+          <p id="watch-hint" class="small text-muted mt-2 mb-0">Play the video to start the timer. Pausing, buffering, or leaving the tab stops earning time.</p>
+        </div>
         <form method="POST" action="{{ url_for('learning.complete_lesson', slug=course.slug, lesson_id=lesson.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-p5">I have finished watching — mark complete</button>
+          <button type="submit" class="btn btn-p5" id="complete-lesson-btn"
+                  {{ 'disabled' if watched_seconds < required_seconds }}>Mark lesson complete</button>
         </form>
         {% endif %}
         {% if certificate %}
         <a href="{{ url_for('learning.download_certificate', code=certificate.code) }}" class="btn btn-p5-outline mt-3">Download course certificate</a>
         {% endif %}
-        <p class="small text-muted mt-3 mb-0">Marking a lesson complete is your declaration that you watched it; playback cannot be independently verified by MyPlatoon.</p>
+        <p class="small text-muted mt-3 mb-0">Qualifying time is measured from YouTube player playback signals and checked against server time. This discourages skipping but is not tamper-proof proof of attention.</p>
       </div>
     </main>
     <aside class="col-lg-4">
@@ -47,4 +61,109 @@
     </aside>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if watch_session and lesson.id not in done %}
+<script>
+(function () {
+  "use strict";
+  const sessionId = {{ watch_session.session_id|tojson }};
+  const heartbeatUrl = {{ url_for('learning.watch_heartbeat', slug=course.slug, lesson_id=lesson.id)|tojson }};
+  const csrf = {{ csrf_token()|tojson }};
+  const required = {{ required_seconds }};
+  let seconds = {{ watched_seconds|round(1) }};
+  let player = null;
+  let playing = false;
+  let busy = false;
+  let ready = false;
+
+  const hint = document.getElementById("watch-hint");
+  const timeLabel = document.getElementById("watch-time-label");
+  const progress = document.getElementById("watch-progress");
+  const button = document.getElementById("complete-lesson-btn");
+
+  function draw() {
+    const shown = Math.min(required, Math.floor(seconds));
+    timeLabel.textContent = shown + " / " + required + " seconds";
+    progress.style.width = Math.min(100, 100 * seconds / required) + "%";
+    progress.setAttribute("aria-valuenow", String(shown));
+    if (seconds >= required) {
+      button.disabled = false;
+      hint.textContent = "Playback requirement met. You may mark this lesson complete.";
+    }
+  }
+
+  async function send(playingNow) {
+    if (!player || !ready || busy || seconds >= required) return;
+    busy = true;
+    try {
+      const position = player.getCurrentTime();
+      if (!Number.isFinite(position)) return;
+      const response = await fetch(heartbeatUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+        body: JSON.stringify({
+          session: sessionId,
+          position: position,
+          playing: playingNow,
+          visible: document.visibilityState === "visible"
+        })
+      });
+      if (response.status === 409) {
+        hint.textContent = "This lesson was reopened in another tab. Reload to continue tracking.";
+        return;
+      }
+      if (!response.ok) {
+        hint.textContent = "Playback tracking is temporarily unavailable. Check your connection and resume.";
+        return;
+      }
+      const result = await response.json();
+      seconds = result.seconds;
+      draw();
+    } catch (e) {
+      hint.textContent = "Could not save watch time. Check your network connection.";
+    } finally {
+      busy = false;
+    }
+  }
+
+  window.onYouTubeIframeAPIReady = function () {
+    player = new YT.Player("lesson-player", {
+      events: {
+        onReady: function () {
+          ready = true;
+          hint.textContent = "Play the lesson. Only active visible playback counts toward 1:30.";
+        },
+        onStateChange: function (event) {
+          playing = event.data === YT.PlayerState.PLAYING;
+          if (!playing) {
+            if (seconds < required) {
+              hint.textContent = "Paused or buffering — the playback timer is stopped.";
+            }
+            send(false);
+          }
+        },
+        onError: function () {
+          hint.textContent = "This YouTube video could not be played. Ask the course administrator to check its embed settings.";
+        }
+      }
+    });
+  };
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "visible") send(false);
+  });
+
+  window.setInterval(function () {
+    if (ready && playing && document.visibilityState === "visible" && seconds < required) {
+      send(true);
+    }
+  }, 5000);
+  draw();
+}());
+</script>
+<script src="https://www.youtube.com/iframe_api" async></script>
+{% endif %}
 {% endblock %}
