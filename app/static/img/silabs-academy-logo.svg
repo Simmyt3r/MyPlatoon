@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 688 667" role="img" aria-labelledby="title desc">
+<title id="title">Silab &amp; Co Technologies Ltd. logo</title>
+<desc id="desc">Blue circular Silab and Co Technologies mark with interlocking geometric letter shapes.</desc>
+<defs><path id="top" d="M 92 314 A 252 252 0 0 1 596 314"/>
+<path id="bottom" d="M 60 336 A 283 283 0 0 0 628 336"/></defs>
+<circle cx="344" cy="333.5" r="323" fill="#fff" stroke="#070d74" stroke-width="17"/>
+<text fill="#2437b4" font-family="Georgia,'Times New Roman',serif" font-size="74" letter-spacing="6" font-weight="bold"><textPath href="#top" startOffset="50%" text-anchor="middle">SILAB &amp; CO.</textPath></text>
+<text fill="#080c63" font-family="Georgia,'Times New Roman',serif" font-size="54" letter-spacing="7" font-weight="bold"><textPath href="#bottom" startOffset="50%" text-anchor="middle">TECHNOLOGIES LTD.</textPath></text>
+<path d="M 245 198 H 443 V 251 H 300 V 348 H 341 V 403 H 245 Z" fill="#070b73"/>
+<path d="M 329 281 H 442 V 330 H 425 V 481 H 245 V 425 H 368 V 331 H 329 Z" fill="#2939b5"/>
+</svg>

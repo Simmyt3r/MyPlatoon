@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }} · {{ course.title }}{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1100px">
+  <a href="{{ url_for('learning.course_detail', slug=course.slug) }}" class="small text-decoration-none">← {{ course.title }}</a>
+  <div class="row g-4 mt-1">
+    <main class="col-lg-8">
+      <div class="p5-card p-3 p-md-4">
+        <div class="small text-success fw-bold">Lesson {{ lesson.position }} of {{ course.lessons|length }}</div>
+        <h1 class="h4 fw-bold my-2">{{ lesson.title }}</h1>
+        <div class="ratio ratio-16x9 rounded overflow-hidden bg-dark mt-3">
+          <iframe title="YouTube video lesson: {{ lesson.title }}"
+                  src="https://www.youtube-nocookie.com/embed/{{ lesson.youtube_id }}"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen loading="lazy"></iframe>
+        </div>
+        <p class="text-muted mt-3" style="white-space:pre-wrap">{{ lesson.description }}</p>
+        {% if lesson.id in done %}
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i>Lesson recorded as complete.</div>
+        {% else %}
+        <form method="POST" action="{{ url_for('learning.complete_lesson', slug=course.slug, lesson_id=lesson.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-p5">I have finished watching — mark complete</button>
+        </form>
+        {% endif %}
+        {% if certificate %}
+        <a href="{{ url_for('learning.download_certificate', code=certificate.code) }}" class="btn btn-p5-outline mt-3">Download course certificate</a>
+        {% endif %}
+        <p class="small text-muted mt-3 mb-0">Marking a lesson complete is your declaration that you watched it; playback cannot be independently verified by MyPlatoon.</p>
+      </div>
+    </main>
+    <aside class="col-lg-4">
+      <div class="p5-card p-3">
+        <h2 class="h6 fw-bold">Course lessons</h2>
+        <p class="small text-muted">{{ done|length }} of {{ course.lessons|length }} complete</p>
+        <div class="list-group list-group-flush">
+          {% for item in course.lessons %}
+          <a class="list-group-item list-group-item-action {{ 'active' if item.id == lesson.id }}" href="{{ url_for('learning.lesson_detail', slug=course.slug, lesson_id=item.id) }}">
+            <span class="me-2">{{ item.position }}.</span>{{ item.title }}
+            {% if item.id in done %}<i class="fa-solid fa-check ms-1" aria-label="Complete"></i>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

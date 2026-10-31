@@ -71,6 +71,7 @@ def _register_blueprints(app):
     from app.blueprints.gig_deals.routes import bp as gig_deals_bp
     from app.blueprints.platoons.routes import bp as platoons_bp
     from app.blueprints.setup.routes import bp as setup_bp
+    from app.blueprints.learning.routes import bp as learning_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -85,6 +86,7 @@ def _register_blueprints(app):
     app.register_blueprint(gig_deals_bp, url_prefix="/jobs/deals")
     app.register_blueprint(platoons_bp, url_prefix="/platoons")
     app.register_blueprint(setup_bp)
+    app.register_blueprint(learning_bp, url_prefix="/learn")
 
 
 def _register_error_handlers(app):

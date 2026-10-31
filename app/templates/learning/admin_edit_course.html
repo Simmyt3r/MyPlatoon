@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit course' if course else 'Create course' }} · Silabs Academy{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1000px">
+  <a href="{{ url_for('learning.admin_courses') }}" class="small text-decoration-none">← Manage all courses</a>
+  <h1 class="h3 fw-bold mt-3">{{ 'Manage course &amp; video lessons' if course else 'Create a new course' }}</h1>
+  <div class="p5-card p-4 mb-4">
+    <form method="POST" action="{{ url_for('learning.admin_edit_course', course_id=course.id) if course else url_for('learning.admin_create_course') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="save">
+      <div class="mb-3"><label class="form-label fw-semibold" for="title">Course title</label>
+        <input id="title" name="title" class="form-control" required maxlength="180" value="{{ course.title if course else '' }}"></div>
+      <div class="mb-3"><label class="form-label fw-semibold" for="summary">Short summary</label>
+        <textarea id="summary" name="summary" class="form-control" rows="2" maxlength="320" required>{{ course.summary if course else '' }}</textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold" for="description">Course details / outcomes</label>
+        <textarea id="description" name="description" class="form-control" rows="5" maxlength="6000" required>{{ course.description if course else '' }}</textarea></div>
+      <div class="mb-3"><label class="form-label fw-semibold" for="level">Difficulty</label>
+        <select id="level" name="level" class="form-select">
+          {% for level in ('Beginner','Intermediate','Advanced') %}
+          <option value="{{ level }}" {{ 'selected' if course and course.level == level }}>{{ level }}</option>
+          {% endfor %}
+        </select></div>
+      <button class="btn btn-p5" type="submit">Save course details</button>
+    </form>
+    {% if course %}
+    <hr>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <span class="badge {{ 'text-bg-success' if course.published else 'text-bg-warning' }}">{{ 'Published' if course.published else 'Draft' }}</span>
+      <form method="POST" action="{{ url_for('learning.admin_edit_course', course_id=course.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="{{ 'unpublish' if course.published else 'publish' }}">
+        <button class="btn btn-p5-outline" type="submit">{{ 'Unpublish' if course.published else 'Publish course' }}</button>
+      </form>
+      <a class="btn btn-p5-outline" href="{{ url_for('learning.course_detail', slug=course.slug) }}">Preview course</a>
+    </div>
+    {% endif %}
+  </div>
+  {% if course %}
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold">Course series · {{ course.lessons|length }} lessons</h2>
+    {% if course.certificates %}
+    <div class="alert alert-info">Certificates have already been issued for this course. Its lesson series is locked to preserve the meaning of those awards. Create a new course edition for major changes.</div>
+    {% else %}
+    <p class="text-muted small">Add HTTPS links from YouTube, youtu.be, YouTube Shorts, or YouTube embeds. Lessons appear in the order added.</p>
+    <form method="POST" action="{{ url_for('learning.admin_add_lesson', course_id=course.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label" for="lesson-title">Lesson title</label>
+        <input id="lesson-title" class="form-control" name="lesson_title" maxlength="180" required></div>
+      <div class="mb-3"><label class="form-label" for="youtube-url">YouTube video URL</label>
+        <input id="youtube-url" class="form-control" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=..." maxlength="500" required></div>
+      <div class="mb-3"><label class="form-label" for="lesson-description">Lesson description</label>
+        <textarea id="lesson-description" class="form-control" name="lesson_description" maxlength="3000" rows="3"></textarea></div>
+      <button type="submit" class="btn btn-p5">Add lesson to series</button>
+    </form>
+    {% endif %}
+    {% for lesson in course.lessons %}
+    <div class="border-top pt-3 mt-3">
+      <h3 class="h6 fw-bold">{{ lesson.position }}. {{ lesson.title }}</h3>
+      <div class="small text-muted mb-2">YouTube ID: {{ lesson.youtube_id }}</div>
+      {% if not course.certificates %}
+      <form method="POST" action="{{ url_for('learning.admin_modify_lesson', course_id=course.id, lesson_id=lesson.id) }}" class="mb-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="edit">
+        <div class="row g-2">
+          <div class="col-md-5"><input class="form-control" name="lesson_title" maxlength="180" value="{{ lesson.title }}" aria-label="Lesson title" required></div>
+          <div class="col-md-7"><input class="form-control" name="youtube_url" type="url" value="https://www.youtube.com/watch?v={{ lesson.youtube_id }}" aria-label="YouTube link" required></div>
+          <div class="col-12"><textarea class="form-control" name="lesson_description" maxlength="3000" rows="2" aria-label="Lesson description">{{ lesson.description }}</textarea></div>
+        </div>
+        <button class="btn btn-p5-outline btn-sm mt-2" type="submit">Save lesson</button>
+      </form>
+      {% if not course.published %}
+      <form method="POST" action="{{ url_for('learning.admin_modify_lesson', course_id=course.id, lesson_id=lesson.id) }}" onsubmit="return confirm('Delete this lesson and its completion records?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="delete">
+        <button class="btn btn-outline-danger btn-sm" type="submit">Delete lesson</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

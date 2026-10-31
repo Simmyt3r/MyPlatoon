@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Silabs Academy Courses{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1140px">
+  <div class="p5-card p-4 p-md-5 mb-4" style="background:linear-gradient(110deg,#101969,#3243bc);color:white">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      <img src="{{ url_for('static', filename='img/silabs-academy-logo.svg') }}" width="90" height="90" alt="Silab & Co Technologies Ltd. logo">
+      <div class="flex-grow-1">
+        <div class="small text-uppercase fw-semibold" style="letter-spacing:.1em">Silab &amp; Co Technologies Ltd.</div>
+        <h1 class="h2 fw-bold my-2">Silabs Academy</h1>
+        <p class="mb-0">Learn practical skills through free, structured video lessons and earn a verifiable course completion certificate.</p>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="h4 fw-bold mb-0">Explore courses</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {% if current_user.is_authenticated and current_user.role != 'employer' %}
+      <a class="btn btn-p5-outline btn-sm" href="{{ url_for('learning.my_certificates') }}">My certificates</a>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.is_admin %}
+      <a class="btn btn-p5 btn-sm" href="{{ url_for('learning.admin_courses') }}">Manage courses</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="row g-3">
+    {% for course in courses %}
+    <div class="col-md-6 col-xl-4">
+      <article class="p5-card p-4 h-100 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="badge text-bg-light border">{{ course.level }}</span>
+          <span class="small text-muted">{{ course.lessons|length }} lessons</span>
+        </div>
+        <h3 class="h5 fw-bold mt-3">{{ course.title }}</h3>
+        <p class="text-muted">{{ course.summary }}</p>
+        {% if current_user.is_authenticated and current_user.role != 'employer' %}
+        {% set count = done.get(course.id, 0) %}
+        <div class="small mb-1">Progress: {{ count }} / {{ course.lessons|length }} lessons</div>
+        <div class="progress mb-3" style="height:7px">
+          <div class="progress-bar bg-success" role="progressbar" style="width:{{ (count * 100 / course.lessons|length)|round|int if course.lessons else 0 }}%" aria-valuenow="{{ count }}" aria-valuemin="0" aria-valuemax="{{ course.lessons|length }}"></div>
+        </div>
+        {% if course.id in certs %}
+        <span class="text-success small mb-3"><i class="fa-solid fa-circle-check"></i> Certificate earned</span>
+        {% endif %}
+        {% endif %}
+        <a href="{{ url_for('learning.course_detail', slug=course.slug) }}" class="btn btn-p5 mt-auto">View course</a>
+      </article>
+    </div>
+    {% else %}
+    <div class="col-12">
+      <div class="p5-card text-center p-5">
+        <h3 class="h5">Courses are on the way</h3>
+        <p class="text-muted">New learning series will be published here by the MyPlatoon team.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="text-muted small mt-4">Completion certificates confirm lessons marked complete by the learner; they do not certify a supervised examination.</p>
+</div>
+{% endblock %}

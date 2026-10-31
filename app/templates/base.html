@@ -121,6 +121,7 @@
           <li><a class="dropdown-item" href="{{ url_for('gig_deals.index') }}"><i class="fa-solid fa-handshake me-2 text-success"></i>My Gig Deals</a></li>
           {% endif %}
           {% if not recruitment_workspace %}
+          <li><a class="dropdown-item" href="{{ url_for('learning.catalog') }}"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Silabs Academy</a></li>
           <li><a class="dropdown-item" href="{{ url_for('main.services') }}"><i class="fa-solid fa-file-lines me-2 text-success"></i>Services &amp; Careers</a></li>
           {% if ENABLE_DATING %}
           <li><a class="dropdown-item" href="{{ url_for('dating.home') }}"><i class="fa-regular fa-heart me-2 text-success"></i>Dating (18+)</a></li>
@@ -195,6 +196,7 @@
       <a href="{{ url_for('main.platoon_guide') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.platoon_guide' }}">
         <i class="fa-solid fa-people-group"></i>Platoon Guide
       </a>
+      <a href="{{ url_for('learning.catalog') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'learning' }}"><i class="fa-solid fa-graduation-cap"></i> Silabs Academy</a>
       <a href="{{ url_for('main.nerd') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.nerd' }}" aria-label="NERD and NYSC mobilisation guide">
         <i class="fa-solid fa-graduation-cap"></i>NERD Guide
       </a>
@@ -296,7 +298,7 @@
   <div class="row row-cols-5 g-0 text-center">
     <div class="col"><a href="{{ url_for('main.feed') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.feed' }}"><i class="fa-solid fa-house"></i>Feed</a></div>
     <div class="col"><a href="{{ url_for('directory.members') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'directory.members' }}"><i class="fa-solid fa-users"></i>Members</a></div>
-    <div class="col"><a href="{{ url_for('main.services') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.services' }}"><i class="fa-solid fa-layer-group"></i>Services</a></div>
+    <div class="col"><a href="{{ url_for('learning.catalog') }}" class="p5-bottom-nav-item {{ 'active' if request.blueprint == 'learning' }}"><i class="fa-solid fa-graduation-cap"></i>Learn</a></div>
     {% if current_user.is_authenticated %}
     <div class="col"><a href="{{ url_for('main.notifications') }}" class="p5-bottom-nav-item {{ 'active' if request.endpoint == 'main.notifications' }}"><i class="fa-regular fa-bell"></i>Alerts</a></div>
     <div class="col"><a href="{{ url_for('jobs.gig_owner_dashboard') if current_user.role == 'employer' else url_for('profile.dashboard') }}" class="p5-bottom-nav-item"><i class="fa-solid fa-circle-user"></i>{{ 'Employer' if current_user.role == 'employer' else 'You' }}</a></div>
@@ -324,6 +326,7 @@
           <li><a href="{{ url_for('directory.businesses') }}">Business Directory</a></li>
           <li><a href="{{ url_for('ppa.index') }}">PPA Lookup &amp; Map</a></li>
           <li><a href="{{ url_for('jobs.index') }}">Jobs &amp; Gigs</a></li>
+          <li><a href="{{ url_for('learning.catalog') }}">Silabs Academy</a></li>
           <li><a href="{{ url_for('main.services') }}">Services &amp; Career Tools</a></li>
           <li><a href="{{ url_for('main.nerd') }}">NERD &amp; NYSC Guide</a></li>
           <li><a href="{{ url_for('platoons.rankings') }}">Platoon Power Rankings</a></li>
