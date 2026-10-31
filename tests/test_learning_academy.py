@@ -1,14 +1,42 @@
 """Silabs Academy: publisher permissions, YouTube safety, completion and PDFs."""
+from datetime import datetime, timedelta
+
 from app.extensions import db
 from app.models import User
 from app.models.learning import (
-    LearningCertificate, LearningCourse, LearningLesson, LearningProgress,
+    LearningCertificate, LearningCourse, LearningLesson, LearningProgress, LearningWatch,
 )
 from app.services.learning_service import parse_youtube_id
 from tests.conftest import _create_user, login
 
 
 VIDEO_ID = "dQw4w9WgXcQ"
+
+
+def simulate_90_seconds_of_video(client, course, lesson, monkeypatch):
+    """Model 90 seconds of spaced, advancing player events without waiting."""
+    moment = [datetime(2026, 10, 31, 12, 0, 0)]
+    monkeypatch.setattr(
+        "app.services.learning_service.clock_now", lambda: moment[0]
+    )
+    page = client.get(
+        f"/learn/courses/{course.slug}/lessons/{lesson.id}"
+    )
+    assert page.status_code == 200
+    watch = LearningWatch.query.filter_by(lesson_id=lesson.id).one()
+    url = f"/learn/courses/{course.slug}/lessons/{lesson.id}/watch"
+    for i in range(19):
+        moment[0] += timedelta(seconds=5)
+        response = client.post(url, json={
+            "session": watch.session_id,
+            "position": float(i * 5),
+            "playing": True,
+            "visible": True,
+        })
+        assert response.status_code == 200
+    assert response.json["ready"] is True
+    assert response.json["seconds"] == 90
+
 
 
 def create_course(db, admin_user, published=True, lessons=2):
@@ -108,7 +136,7 @@ def test_invalid_youtube_link_is_rejected(client, admin_user, db):
 
 
 def test_course_completion_issues_one_certificate_with_valid_pdf(
-    client, db, admin_user, member_user,
+    client, db, admin_user, member_user, monkeypatch,
 ):
     course = create_course(db, admin_user)
     login(client, member_user.email)
@@ -117,8 +145,16 @@ def test_course_completion_issues_one_certificate_with_valid_pdf(
     page = client.get(f"/learn/courses/{course.slug}/lessons/{lesson1.id}")
     assert page.status_code == 200
     assert b"youtube-nocookie.com/embed/" + VIDEO_ID.encode() in page.data
-    assert b"Marking a lesson complete is your declaration" in page.data
+    assert b"Minimum active playback: 1:30" in page.data
+    assert b"id=\"complete-lesson-btn\" disabled" in page.data
 
+    rejected = client.post(
+        f"/learn/courses/{course.slug}/lessons/{lesson1.id}/complete",
+        follow_redirects=True,
+    )
+    assert b"Watch at least 1 minute 30 seconds" in rejected.data
+    assert LearningProgress.query.count() == 0
+    simulate_90_seconds_of_video(client, course, lesson1, monkeypatch)
     first = client.post(
         f"/learn/courses/{course.slug}/lessons/{lesson1.id}/complete",
     )
@@ -126,6 +162,7 @@ def test_course_completion_issues_one_certificate_with_valid_pdf(
     assert LearningCertificate.query.count() == 0
     assert LearningProgress.query.count() == 1
 
+    simulate_90_seconds_of_video(client, course, lesson2, monkeypatch)
     second = client.post(
         f"/learn/courses/{course.slug}/lessons/{lesson2.id}/complete",
         follow_redirects=True,
@@ -165,6 +202,7 @@ def test_cannot_forge_certificate_or_download_another_users_pdf(
     assert LearningCertificate.query.count() == 0
 
     for lesson in course.lessons:
+        simulate_90_seconds_of_video(client, course, lesson, monkeypatch)
         client.post(f"/learn/courses/{course.slug}/lessons/{lesson.id}/complete")
     certificate = LearningCertificate.query.one()
     client.post("/auth/logout")
@@ -193,6 +231,7 @@ def test_admin_only_course_writes_and_course_revision_lock(
     assert client.post(f"/learn/admin/courses/{course.id}/lessons",
                        data=new_lesson).status_code == 403
     for item in course.lessons:
+        simulate_90_seconds_of_video(client, course, item, monkeypatch)
         client.post(f"/learn/courses/{course.slug}/lessons/{item.id}/complete")
     assert LearningCertificate.query.count() == 1
 
