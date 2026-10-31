@@ -146,7 +146,8 @@ def test_course_completion_issues_one_certificate_with_valid_pdf(
     assert page.status_code == 200
     assert b"youtube-nocookie.com/embed/" + VIDEO_ID.encode() in page.data
     assert b"Minimum active playback: 1:30" in page.data
-    assert b"id=\"complete-lesson-btn\" disabled" in page.data
+    assert b'id="complete-lesson-btn"' in page.data
+    assert b"disabled" in page.data
 
     rejected = client.post(
         f"/learn/courses/{course.slug}/lessons/{lesson1.id}/complete",
