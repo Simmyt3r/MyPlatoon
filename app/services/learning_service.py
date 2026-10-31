@@ -1,11 +1,14 @@
 """YouTube link validation and certificate issuance for Silabs Academy."""
 import re
+import math
+from datetime import datetime
+from uuid import uuid4
 from urllib.parse import urlsplit, parse_qs
 
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models.learning import LearningCertificate, LearningLesson, LearningProgress
+from app.models.learning import LearningCertificate, LearningLesson, LearningProgress, LearningWatch
 
 
 _YOUTUBE_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
@@ -78,3 +81,75 @@ def issue_certificate_if_complete(user, course):
             user_id=user.id, course_id=course.id,
         ).first()
     return certificate
+
+
+REQUIRED_WATCH_SECONDS = 90
+# Heartbeats arrive approximately every five seconds. Server time always
+# limits credit; no single heartbeat can earn more than six seconds.
+MAX_HEARTBEAT_GAP = 12
+MAX_HEARTBEAT_CREDIT = 6
+
+
+def clock_now():
+    return datetime.utcnow()
+
+
+def watch_time(user_id, lesson_id):
+    record = LearningWatch.query.filter_by(
+        user_id=user_id, lesson_id=lesson_id,
+    ).first()
+    return record.watched_seconds if record is not None else 0.0
+
+
+def start_watch_session(user_id, lesson_id):
+    """Rotate the tab token so multiple open tabs cannot double count time."""
+    record = LearningWatch.query.filter_by(
+        user_id=user_id, lesson_id=lesson_id,
+    ).with_for_update().first()
+    if record is None:
+        record = LearningWatch(user_id=user_id, lesson_id=lesson_id)
+        db.session.add(record)
+    record.session_id = str(uuid4())
+    record.last_position = None
+    record.last_seen_at = None
+    db.session.commit()
+    return record
+
+
+def record_watch_heartbeat(user_id, lesson_id, session_id, position,
+                           playing, visible):
+    """Meter plausible active playback, never trust claimed elapsed seconds.
+
+    This is still client-observed YouTube playback, *not* tamper-proof evidence
+    of attention, but replaying posts or changing client timers cannot instantly
+    complete a lesson. All credits are limited by the server's elapsed time.
+    """
+    record = LearningWatch.query.filter_by(
+        user_id=user_id, lesson_id=lesson_id,
+    ).with_for_update().first()
+    if record is None or session_id != record.session_id:
+        return None
+    now = clock_now()
+    if (not isinstance(position, (int, float)) or isinstance(position, bool)
+            or not math.isfinite(position) or position < 0 or position > 86400):
+        return None
+    if playing is not True or visible is not True:
+        record.last_seen_at = None
+        record.last_position = None
+        db.session.commit()
+        return record.watched_seconds
+
+    if record.last_seen_at is not None and record.last_position is not None:
+        elapsed = (now - record.last_seen_at).total_seconds()
+        advance = position - record.last_position
+        if (1 <= elapsed <= MAX_HEARTBEAT_GAP
+                and advance >= elapsed * 0.20
+                and advance <= elapsed * 2.3 + 0.75):
+            record.watched_seconds = min(
+                float(REQUIRED_WATCH_SECONDS),
+                record.watched_seconds + min(elapsed, MAX_HEARTBEAT_CREDIT),
+            )
+    record.last_seen_at = now
+    record.last_position = float(position)
+    db.session.commit()
+    return record.watched_seconds

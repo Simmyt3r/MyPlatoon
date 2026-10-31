@@ -13,12 +13,13 @@ from sqlalchemy import inspect, text
 from app import create_app
 from app.extensions import db
 
-EXPECTED_REVISION = "e2c5a84f9b31"
+EXPECTED_REVISION = "f49a1d8e2c90"
 REQUIRED_COLUMNS = {
     "site_secrets": {"key", "ciphertext", "updated_at", "updated_by_id"},
     "learning_courses": {"id", "slug", "title", "published"},
     "learning_lessons": {"id", "course_id", "youtube_id", "position"},
     "learning_progress": {"id", "user_id", "lesson_id"},
+    "learning_watch": {"id", "user_id", "lesson_id", "watched_seconds", "session_id", "last_seen_at", "last_position"},
     "learning_certificates": {"id", "code", "user_id", "course_id", "issued_at"},
     "users": {"id", "email", "role", "is_suspended"},
     "job_employers": {"id", "owner_user_id", "status"},

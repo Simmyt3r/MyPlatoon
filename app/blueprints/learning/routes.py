@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 
 from flask import (Blueprint, abort, flash, redirect, render_template,
-                   request, send_file, url_for)
+                   request, send_file, url_for, jsonify)
 from flask_login import current_user, login_required
 from sqlalchemy import func
 
@@ -14,6 +14,8 @@ from app.models.learning import (
 from app.services.audit_service import log_action
 from app.services.learning_service import (
     completed_lesson_ids, issue_certificate_if_complete, parse_youtube_id,
+    start_watch_session, record_watch_heartbeat, watch_time,
+    REQUIRED_WATCH_SECONDS,
 )
 
 bp = Blueprint("learning", __name__)
@@ -102,8 +104,43 @@ def lesson_detail(slug, lesson_id):
     certificate = LearningCertificate.query.filter_by(
         user_id=current_user.id, course_id=course.id,
     ).first()
-    return render_template("learning/lesson.html", course=course, lesson=lesson,
-                           done=done, certificate=certificate)
+    watch = None
+    seconds = watch_time(current_user.id, lesson.id)
+    if lesson.id not in done and course.published:
+        watch = start_watch_session(current_user.id, lesson.id)
+    return render_template(
+        "learning/lesson.html", course=course, lesson=lesson,
+        done=done, certificate=certificate, watch_session=watch,
+        watched_seconds=seconds, required_seconds=REQUIRED_WATCH_SECONDS,
+    )
+
+
+@bp.route("/courses/<slug>/lessons/<int:lesson_id>/watch", methods=["POST"])
+@login_required
+@limiter.limit("900 per hour")
+def watch_heartbeat(slug, lesson_id):
+    """Meter server-time-backed playback reports from the YouTube player."""
+    _learner()
+    course = LearningCourse.query.filter_by(slug=slug, published=True).first_or_404()
+    lesson = LearningLesson.query.filter_by(
+        course_id=course.id, id=lesson_id,
+    ).first_or_404()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        abort(400)
+    seconds = record_watch_heartbeat(
+        current_user.id, lesson.id, data.get("session"),
+        data.get("position"), data.get("playing"), data.get("visible"),
+    )
+    if seconds is None:
+        return jsonify(error="Playback session is invalid. Reload the lesson."), 409
+    response = jsonify(
+        seconds=round(seconds, 1),
+        required_seconds=REQUIRED_WATCH_SECONDS,
+        ready=(seconds >= REQUIRED_WATCH_SECONDS),
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @bp.route("/courses/<slug>/lessons/<int:lesson_id>/complete", methods=["POST"])
@@ -119,6 +156,17 @@ def complete_lesson(slug, lesson_id):
         user_id=current_user.id, lesson_id=lesson.id,
     ).first()
     if progress is None:
+        seconds = watch_time(current_user.id, lesson.id)
+        if seconds < REQUIRED_WATCH_SECONDS:
+            flash(
+                "Watch at least 1 minute 30 seconds of active video playback "
+                "before completing this lesson ({} seconds recorded).".format(
+                    int(seconds)),
+                "warning",
+            )
+            return redirect(url_for(
+                "learning.lesson_detail", slug=slug, lesson_id=lesson.id,
+            ))
         db.session.add(LearningProgress(
             user_id=current_user.id, lesson_id=lesson.id,
         ))
