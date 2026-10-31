@@ -193,7 +193,7 @@ def test_course_completion_issues_one_certificate_with_valid_pdf(
 
 
 def test_cannot_forge_certificate_or_download_another_users_pdf(
-    client, db, admin_user, member_user,
+    client, db, admin_user, member_user, monkeypatch,
 ):
     course = create_course(db, admin_user)
     extra = _create_user(db, "other-learner@example.com")
@@ -215,7 +215,7 @@ def test_cannot_forge_certificate_or_download_another_users_pdf(
 
 
 def test_admin_only_course_writes_and_course_revision_lock(
-    client, db, admin_user, member_user,
+    client, db, admin_user, member_user, monkeypatch,
 ):
     course = create_course(db, admin_user)
     lesson = course.lessons[0]
