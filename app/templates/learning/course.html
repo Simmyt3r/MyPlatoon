@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} · Silabs Academy{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1000px">
+  <a href="{{ url_for('learning.catalog') }}" class="small text-decoration-none">← All courses</a>
+  <header class="p5-card p-4 mt-3 mb-4">
+    <div class="small text-success fw-bold text-uppercase">Silabs Academy · {{ course.level }}</div>
+    <h1 class="h3 fw-bold my-2">{{ course.title }}</h1>
+    <p class="text-muted">{{ course.summary }}</p>
+    <p style="white-space:pre-wrap">{{ course.description }}</p>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="badge text-bg-light border">{{ course.lessons|length }} video lessons</span>
+      {% if certificate %}
+      <a class="btn btn-p5 btn-sm" href="{{ url_for('learning.download_certificate', code=certificate.code) }}">Download your certificate (PDF)</a>
+      {% elif current_user.is_authenticated and current_user.role != 'employer' %}
+      <span class="small text-muted">{{ done|length }} of {{ course.lessons|length }} lessons completed</span>
+      {% else %}
+      <a class="btn btn-p5 btn-sm" href="{{ url_for('auth.login', next=request.path) }}">Sign in to learn</a>
+      {% endif %}
+    </div>
+  </header>
+  <h2 class="h5 fw-bold mb-3">Course series</h2>
+  {% for lesson in course.lessons %}
+  <article class="p5-card p-3 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded-circle border d-flex align-items-center justify-content-center" style="width:40px;height:40px;flex:none">
+        {% if lesson.id in done %}<i class="fa-solid fa-check text-success" aria-label="Completed"></i>
+        {% else %}<span>{{ lesson.position }}</span>{% endif %}
+      </div>
+      <div>
+        <div class="fw-semibold">{{ lesson.title }}</div>
+        {% if lesson.description %}<p class="text-muted small mb-0">{{ lesson.description|truncate(120) }}</p>{% endif %}
+      </div>
+    </div>
+    {% if current_user.is_authenticated and current_user.role != 'employer' %}
+    <a class="btn btn-p5-outline btn-sm" href="{{ url_for('learning.lesson_detail', slug=course.slug, lesson_id=lesson.id) }}">Watch lesson</a>
+    {% else %}
+    <span class="small text-muted">Sign in to watch</span>
+    {% endif %}
+  </article>
+  {% endfor %}
+  <p class="small text-muted mt-4">Lessons are hosted on YouTube. You will mark each lesson complete after watching; video watching is not independently verified.</p>
+</div>
+{% endblock %}
