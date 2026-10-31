@@ -259,3 +259,46 @@ separate from self-service member registration. Registration creates
 the employer workspace immediately but does not bypass employer/listing
 moderation or publish vacancies automatically. No database migration is
 required for this navigation and inbox update.
+
+
+## Silabs Academy — learning platform and certificates
+
+After this release, open **Admin Dashboard → Manage Silabs Academy**
+(`/learn/admin`) to create a course, enter the title, summary, detailed
+learning outcomes and difficulty, and save it as a **draft**. Add an ordered
+series of lessons by pasting a valid **HTTPS YouTube watch, share, Shorts or
+embed URL** for each lesson. Titles and descriptions are editable. Publish
+only once at least one lesson exists. Unpublished courses are hidden from
+normal learners. Each course may be unpublished later.
+
+Members browse **Silabs Academy** (`/learn/`), view course details, watch
+privacy-enhanced embedded YouTube videos, and press **Mark complete** after
+each lesson. Records are stored per user and lesson. A downloadable PDF
+certificate with a unique ID and QR verification link is issued automatically
+**once all lessons in a published course are marked complete**. Certificates
+remain valid when the course is unpublished. Award records store immutable
+learner name, course title, lesson count and issuance date. After certificates
+are issued, lessons are locked so the awarded learning series does not change.
+Administrators can still edit course details or create a new course edition.
+
+The public verification endpoint `/learn/certificates/<uuid>` displays
+the certificate holder's name, course and date to anyone possessing the
+unguessable certificate ID or QR link. **Downloads are private** to the
+recipient and platform administrators. A certificate is a record of
+**self-reported completion of video lessons**, not proof of viewing,
+proctored examination, competence or professional licensing. For such
+claims, add a verified assessment workflow.
+
+The Silabs logo mark is included at
+`app/static/img/silabs-academy-logo.svg`, and the PDF is branded
+**SILAB & CO TECHNOLOGIES LTD.**, matching the supplied logo.
+Set `APP_BASE_URL=https://myplatoon.vercel.app` in Vercel Production for
+QR codes to resolve reliably to the correct public hostname. No Cloudinary
+configuration is needed for YouTube lessons or certificate PDFs.
+
+**Production database action required:** this feature adds four new
+tables with Alembic revision `e2c5a84f9b31`. After deployment,
+use the existing admin **Database & API Setup → Apply reviewed migrations**
+workflow on a backed-up database before opening the Academy. Production
+does not auto-create the tables. Never run migrations automatically in
+request handlers. The schema release check expects this revision.
