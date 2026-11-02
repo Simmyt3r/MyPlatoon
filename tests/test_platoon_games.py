@@ -1,5 +1,6 @@
 """Quarterly interplatoon events and election eligibility regression tests."""
 from datetime import date, timedelta
+from html import escape
 
 from app.extensions import db
 from app.models import Platoon
@@ -161,7 +162,7 @@ def test_games_have_ten_cards_and_cohort_scoped_verified_scores(
     page = client.get(f"/platoons/games?platoon_id={own.id}")
     assert page.status_code == 200
     for _, title, _ in svc.GAMES:
-        assert title.encode() in page.data
+        assert escape(title).encode() in page.data
     assert b"Submit for review" in page.data
     route = f"/platoons/games/{own.id}/submit"
     result = client.post(route, data={
