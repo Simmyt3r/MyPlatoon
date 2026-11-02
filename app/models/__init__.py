@@ -1,3 +1,4 @@
+from app.models.platoon_games import PlatoonLeaderCandidate, PlatoonLeaderVote, PlatoonGameResult
 from app.models.learning import LearningCourse, LearningLesson, LearningProgress, LearningCertificate, LearningWatch
 from app.models.site_secret import SiteSecret
 from app.models.user import User
@@ -18,6 +19,7 @@ from app.models.dating import DatingPersona, DatingMatch, DatingBlock, DatingInt
 
 __all__ = [
     "LearningCourse", "LearningLesson", "LearningProgress", "LearningCertificate", "LearningWatch",
+    "PlatoonLeaderCandidate", "PlatoonLeaderVote", "PlatoonGameResult",
     "SiteSecret", "User", "Platoon", "SERVICE_STAGES", "NYSC_STATES", "BATCH_CHOICES", "STREAM_CHOICES",
     "PPA", "PPAExperience", "PPA_SECTORS", "PPA_STATUSES", "PPA_YES_NO",
     "Profile", "VISIBILITY_LEVELS", "ADDRESS_VISIBILITY_LEVELS", "PROFILE_STATES",
