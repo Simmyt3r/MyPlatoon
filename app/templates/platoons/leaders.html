@@ -25,7 +25,7 @@
   </section>
   <section class="p5-card p-4">
     <h2 class="h5 fw-bold">Next term election</h2>
-    <p class="small text-muted">Term {{ target.strftime('%d %b') }}–{{ (target + timedelta(days=13)).strftime('%d %b %Y') }}. Voting opens {{ starts.strftime('%d %b') }} and closes {{ deadline.strftime('%d %b %Y') }}.</p>
+    <p class="small text-muted">Term {{ target.strftime('%d %b') }}–{{ target_end.strftime('%d %b %Y') }}. Voting opens {{ starts.strftime('%d %b') }} and closes {{ deadline.strftime('%d %b %Y') }}.</p>
     {% if ballot_open %}
       <span class="badge bg-success mb-3">Ballot open</span>
       {% if eligible %}
