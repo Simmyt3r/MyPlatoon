@@ -70,8 +70,14 @@ def member_profile(slug):
     qr_data_uri = generate_qr_data_uri(profile_public_url(profile.slug))
     public_url = profile_public_url(profile.slug)
 
+    from app.services.platoon_games import elected_leader
+    leader = elected_leader(profile.platoon_id) if profile.platoon_id else None
     return render_template("directory/member_profile.html", profile=profile,
-                            contact=contact, qr_data_uri=qr_data_uri, public_url=public_url)
+                            contact=contact, qr_data_uri=qr_data_uri,
+                            public_url=public_url,
+                            is_elected_leader=bool(
+                                leader and leader[0].user_id == profile.user_id),
+                            leader_term_end=leader[3] if leader else None)
 
 
 @bp.route("/businesses")
