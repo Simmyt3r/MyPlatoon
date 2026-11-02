@@ -1,5 +1,5 @@
 """Blueprint routes for NYSC-inspired quarterly interplatoon competitions."""
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -67,7 +67,8 @@ def register_game_routes(bp):
         return render_template(
             "platoons/leaders.html", platoon=platoon, nominees=nominees,
             active=active, term_start=term_start, term_end=term_end,
-            target=target, starts=starts, deadline=deadline,
+            target=target, target_end=target + timedelta(days=13),
+            starts=starts, deadline=deadline,
             ballot_open=ballot_open, my_vote=my_vote,
             eligible=member_is_eligible(current_user, platoon.id),
         )
