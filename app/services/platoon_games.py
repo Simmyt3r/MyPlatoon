@@ -96,7 +96,7 @@ def cohort_match(left, right):
 
 def member_is_eligible(user, platoon_id):
     return bool(
-        user and user.role == "member" and user.is_active
+        user and user.is_authenticated and user.role == "member" and user.is_active
         and user.profile and user.profile.status == "approved"
         and user.profile.service_stage == "serving"
         and user.profile.platoon_id == platoon_id
