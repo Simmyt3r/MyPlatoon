@@ -193,6 +193,7 @@
       <a href="{{ url_for('platoons.rankings') }}" class="p5-nav-item {{ 'active' if request.blueprint == 'platoons' }}">
         <i class="fa-solid fa-trophy"></i>Platoon Rankings
       </a>
+      <a href="{{ url_for('platoons.games') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'platoons.games' }}"><i class="fa-solid fa-medal"></i>Interplatoon Games</a>
       <a href="{{ url_for('main.platoon_guide') }}" class="p5-nav-item {{ 'active' if request.endpoint == 'main.platoon_guide' }}">
         <i class="fa-solid fa-people-group"></i>Platoon Guide
       </a>
