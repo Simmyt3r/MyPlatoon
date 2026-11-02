@@ -334,3 +334,53 @@ be necessary to independently certify attention or skill acquisition.
 `learning_watch` table after `e2c5a84f9b31`. Deploy, back up Aiven,
 then run **/setup → Apply reviewed migrations** as admin. Do not
 run automatically on incoming requests.
+
+## Interplatoon games, quarterly schedule and elected leaders
+
+MyPlatoon has ten **camp-inspired community competitions**, not official
+NYSC events or online simulations of physical sports: football,
+volleyball, table tennis, cooking, sanitation, parade/drill,
+tug of war, drama, cultural dance, and athletics/relay.
+See `/platoons/games` or the **Interplatoon Games** sidebar link.
+
+The first round starts **15 November 2026**. Subsequent rounds run
+every three months: **February 15–28/29, May 15–30, August 15–30, and
+November 15–30**. The round and results are calculated using Nigeria
+local dates (`Africa/Lagos`). Scores are separate for each **NYSC
+state, service year, batch and stream**; platoons in other cohorts
+cannot contaminate the standings. Rankings show only results verified
+by an admin. Event placements 1–10 score 10 to 1 point respectively.
+
+Only an elected platoon leader can submit results for their own
+platoon during the active round; an administrator may submit on
+behalf of a platoon. Each submission is **pending** until an admin
+verifies or rejects it. Duplicate verified placements in the same
+camp/game are blocked. Decisions are auditable. Unreviewed claims
+never count towards the competition table.
+
+Leadership uses automatic, continuous **14-day terms**, beginning
+at the fixed anchor 1 January 2026. Nominations and voting open
+during the **seven days before each new term**. Active approved
+**serving** corps members may nominate themselves and cast **one
+ballot per term**, exclusively for their own assigned platoon.
+At the term start, the nominee with the most eligible votes receives
+a **Platoon Leader** badge on their profile and on the platoon
+elections page. Ties use earliest nomination as a deterministic
+tie-break, and nominees with zero votes do not become leaders.
+The badge expires automatically after 14 calendar days.
+Members who leave a platoon or are suspended/rejected lose
+eligibility; old votes from ineligible members are ignored.
+
+The standalone game scoring workflow is an **admin-reviewed event
+tracker** for real or community-organised activities, not a claim
+that NYSC authorised the competitions. Existing platform rankings
+remain independent of reported event placements.
+
+**Production DB action required:** Alembic revision
+`h50d2e9a7c14` follows learning watch-time revision
+`f49a1d8e2c90` and creates
+`platoon_leader_candidates`, `platoon_leader_votes` and
+`platoon_game_results`. Deploy and back up Aiven first, then
+apply the reviewed migrations via **Admin /setup**. No background
+cron, new environment variable or live database changes occur
+from merging this code.
