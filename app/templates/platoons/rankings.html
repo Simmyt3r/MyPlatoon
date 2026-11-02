@@ -3,6 +3,7 @@
 {% block meta_description %}Compare on-platform participation and member mini-ratings across real NYSC cohort-scoped platoons. Independent of NYSC.{% endblock %}
 {% block content %}
 <div class="container my-4" style="max-width:1100px">
+  <div class="mb-3"><a href="{{ url_for('platoons.games') }}" class="btn btn-p5 btn-sm"><i class="fa-solid fa-medal me-1"></i>Quarterly interplatoon games</a></div>
   <header class="p5-card p-4 p-md-5 mb-4">
     <div class="text-success fw-bold small text-uppercase">Community spirit</div>
     <h1 class="h2 fw-bold mb-2">Platoon Power Rankings</h1>
@@ -90,6 +91,7 @@
         </span>
         <div>
           <h3 class="h5 fw-bold mb-1">{{ row.platoon.label }}</h3>
+          <a class="small" href="{{ url_for('platoons.leaders', platoon_id=row.platoon.id) }}">View elected leader &amp; ballot</a> · <a class="small" href="{{ url_for('platoons.games', platoon_id=row.platoon.id) }}">Competition scores</a>
           <p class="small text-muted mb-2">{{ row.members }} approved active members · {{ row.ratings }} mini ratings</p>
           <div class="d-flex gap-2 flex-wrap">
             <span class="badge text-bg-light border"><i class="fa-solid fa-star text-warning me-1" aria-hidden="true"></i>
