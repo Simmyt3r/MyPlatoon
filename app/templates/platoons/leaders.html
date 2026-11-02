@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Platoon Leader Elections{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:940px">
+  <header class="p5-card p-4 mb-4">
+    <div class="small fw-bold text-success text-uppercase">Democratic platoon leadership</div>
+    <h1 class="h3 fw-bold mt-2">{{ platoon.label }}</h1>
+    <p class="text-muted">A platoon leader serves for exactly 14 calendar days. Members vote once for a nominee in their own NYSC platoon during the seven days before each term.</p>
+    <a href="{{ url_for('platoons.games', platoon_id=platoon.id) }}" class="btn btn-p5-outline btn-sm">Interplatoon competitions</a>
+  </header>
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold mb-3">Current leader · {{ term_start.strftime('%d %b') }}–{{ term_end.strftime('%d %b %Y') }}</h2>
+    {% if active %}
+      <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-crown text-warning fa-2x" aria-hidden="true"></i>
+        <div>
+          <strong class="h5 d-block mb-0">{{ active[0].user.full_name }}</strong>
+          <span class="badge bg-primary">Platoon Leader · 14-day term</span>
+          <div class="small text-muted mt-1">{{ active[1] }} valid votes · Badge expires {{ active[3].strftime('%d %b %Y') }}</div>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No elected leader for the current term. A badge is awarded only after a valid ballot closes.</p>
+    {% endif %}
+  </section>
+  <section class="p5-card p-4">
+    <h2 class="h5 fw-bold">Next term election</h2>
+    <p class="small text-muted">Term {{ target.strftime('%d %b') }}–{{ target_end.strftime('%d %b %Y') }}. Voting opens {{ starts.strftime('%d %b') }} and closes {{ deadline.strftime('%d %b %Y') }}.</p>
+    {% if ballot_open %}
+      <span class="badge bg-success mb-3">Ballot open</span>
+      {% if eligible %}
+        <form method="POST" action="{{ url_for('platoons.nominate', platoon_id=platoon.id) }}" class="mb-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-p5-outline btn-sm">Nominate myself as leader</button>
+        </form>
+      {% endif %}
+      {% for person in nominees %}
+      <div class="border-top py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="fw-semibold">{{ person.user.full_name }}</div>
+        {% if eligible and not my_vote %}
+          <form method="POST" action="{{ url_for('platoons.leader_vote', platoon_id=platoon.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="candidate_id" value="{{ person.id }}">
+            <button class="btn btn-p5 btn-sm" type="submit">Vote for nominee</button>
+          </form>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-muted">No candidates yet. Eligible serving members of this platoon can nominate themselves.</p>
+      {% endfor %}
+      {% if my_vote %}<p class="text-success mb-0">Your ballot has been recorded. Only one vote per member is allowed for this term.</p>{% endif %}
+      {% if not eligible %}<p class="small text-muted">Only active, approved serving members assigned to this platoon may nominate or vote.</p>{% endif %}
+    {% else %}
+      <p class="text-muted mb-0">Voting is not open yet. Return during the announced seven-day election window.</p>
+    {% endif %}
+    <p class="small text-muted mt-3 mb-0">The candidate with the most eligible votes wins. Ties are resolved by nomination time, then candidate ID. Reassigned, suspended or ineligible accounts do not count.</p>
+  </section>
+</div>
+{% endblock %}

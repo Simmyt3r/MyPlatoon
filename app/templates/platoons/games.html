@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Interplatoon Games{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1120px">
+  <header class="p5-card p-4 mb-4">
+    <div class="small fw-bold text-success text-uppercase">Independent MyPlatoon community competitions</div>
+    <h1 class="h3 fw-bold my-2">Interplatoon Games</h1>
+    <p class="text-muted mb-2">Ten competitions inspired by NYSC orientation camp. Each round runs from the 15th to the 30th in February, May, August, and November (February ends on the 28th or 29th).</p>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="badge text-bg-light border">{{ period.strftime('%d %b') }}–{{ end.strftime('%d %b %Y') }}</span>
+      <span class="badge {{ 'bg-success' if live else 'text-bg-light border' }}">{{ 'Competition live' if live else ('Upcoming' if today < period else 'Closed') }}</span>
+      <a href="{{ url_for('platoons.rankings') }}" class="btn btn-p5-outline btn-sm">Community rankings</a>
+      {% if platoon %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('platoons.leaders', platoon_id=platoon.id) }}">Leader elections &amp; badges</a>{% endif %}
+    </div>
+    <p class="small text-muted mt-2 mb-0">These are MyPlatoon-managed events, not official NYSC competitions. Results must be verified by an administrator.</p>
+  </header>
+  {% if platoon %}
+  <form class="p5-card p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="GET">
+    <div class="flex-grow-1">
+      <label for="camp-platoon" class="form-label small fw-semibold">Orientation camp / platoon</label>
+      <select class="form-select" name="platoon_id" id="camp-platoon">
+        {% for p in cohort %}
+        <option value="{{ p.id }}" {{ 'selected' if p.id == platoon.id }}>{{ p.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <input type="hidden" name="period" value="{{ period.isoformat() }}">
+    <button type="submit" class="btn btn-p5">View</button>
+  </form>
+  <div class="mb-3">
+    <h2 class="h5 fw-bold">Verified competition standings · {{ platoon.state }} {{ platoon.service_year }} Batch {{ platoon.batch }} Stream {{ platoon.stream }}</h2>
+    <p class="small text-muted mb-0">10 points for 1st, 9 for 2nd, down to 1 for 10th. Unverified reports never affect the scoreboard.</p>
+  </div>
+  <div class="p5-card p-3 mb-4 table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Platoon</th><th class="text-end">Verified games</th><th class="text-end">Total points</th><th></th></tr></thead>
+      <tbody>
+      {% for row in table %}
+      <tr><td><strong>Platoon {{ row.platoon.number }}</strong></td>
+      <td class="text-end">{{ row.events }}</td><td class="text-end fw-bold">{{ row.points }}</td>
+      <td class="text-end"><a href="{{ url_for('platoons.leaders', platoon_id=row.platoon.id) }}" class="small">Leader</a></td></tr>
+      {% else %}<tr><td colspan="4">No platoons registered for this camp yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    Choose a registered camp from <a href="{{ url_for('platoons.rankings') }}">Platoon Power Rankings</a>
+    or add your NYSC platoon in your profile to see camp-specific scores and elections.
+  </div>
+  {% endif %}
+  <h2 class="h5 fw-bold mt-4">Ten camp-style events</h2>
+  <div class="row g-3 mb-4">
+  {% for key, title, description in games %}
+  <div class="col-md-6 col-lg-4">
+    <article class="p5-card p-3 h-100">
+      <span class="small text-success fw-semibold">Event {{ loop.index }}/10</span>
+      <h3 class="h5 mt-1">{{ title }}</h3>
+      <p class="small text-muted mb-3">{{ description }}</p>
+      {% if can_submit and platoon %}
+      <form method="POST" action="{{ url_for('platoons.submit_game', platoon_id=platoon.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="period" value="{{ period.isoformat() }}">
+        <input type="hidden" name="game" value="{{ key }}">
+        <label class="form-label small fw-semibold" for="placement-{{ key }}">Platoon placement</label>
+        <select class="form-select form-select-sm mb-2" name="placement" id="placement-{{ key }}" required>
+          {% for rank in range(1, 11) %}<option value="{{ rank }}">{{ rank }}{{ 'st' if rank==1 else ('nd' if rank==2 else ('rd' if rank==3 else 'th')) }}</option>{% endfor %}
+        </select>
+        <label class="form-label small" for="details-{{ key }}">Results / evidence notes</label>
+        <textarea name="details" id="details-{{ key }}" class="form-control form-control-sm mb-2" rows="2" maxlength="500" placeholder="How did the team perform?"></textarea>
+        <button type="submit" class="btn btn-p5 btn-sm">Submit for review</button>
+      </form>
+      {% endif %}
+    </article>
+  </div>
+  {% endfor %}
+  </div>
+  {% if platoon %}
+  <h2 class="h5 fw-bold">Reported results</h2>
+  <div class="p5-card p-3 table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Event</th><th>Platoon</th><th>Placement</th><th>Status</th>{% if current_user.is_authenticated and current_user.is_admin %}<th>Admin verification</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for entry in entries %}
+      <tr>
+        <td>{{ entry.game_key|replace('-', ' ')|title }}</td><td>{{ entry.platoon.number }}</td>
+        <td>{{ entry.placement }}</td><td>{{ entry.status|capitalize }}</td>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <td><form method="POST" action="{{ url_for('platoons.review_game', result_id=entry.id) }}" class="d-flex flex-wrap gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-success btn-sm" type="submit" name="decision" value="verified">Verify</button>
+          <button class="btn btn-outline-danger btn-sm" type="submit" name="decision" value="rejected">Reject</button>
+        </form></td>
+        {% endif %}
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-muted">No results reported for this round yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

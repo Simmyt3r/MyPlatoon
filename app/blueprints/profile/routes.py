@@ -29,9 +29,14 @@ def _sync_skills(profile, raw_skills: str):
 @login_required
 def dashboard():
     profile = current_user.profile
+    from app.services.platoon_games import elected_leader
+    leader = elected_leader(profile.platoon_id) if profile and profile.platoon_id else None
     return render_template("profile/dashboard.html", profile=profile,
                             completion=profile.completion_percent() if profile else 0,
-                            breakdown=profile.completion_breakdown() if profile else {})
+                            breakdown=profile.completion_breakdown() if profile else {},
+                            is_elected_leader=bool(
+                                leader and leader[0].user_id == current_user.id),
+                            leader_term_end=leader[3] if leader else None)
 
 
 @bp.route("/edit", methods=["GET", "POST"])

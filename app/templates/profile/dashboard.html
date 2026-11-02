@@ -8,6 +8,14 @@
       <div>
         <span class="small text-muted d-block">Your NYSC community</span>
         <h5 class="fw-bold mb-1">{{ profile.platoon_label }}</h5>
+        {% if is_elected_leader %}
+        <div class="my-2"><span class="badge bg-primary"><i class="fa-solid fa-crown me-1"></i>Platoon Leader</span>
+          <span class="small text-muted">Expires {{ leader_term_end.strftime('%d %b %Y') }}</span></div>
+        {% endif %}
+        {% if profile.platoon %}
+        <a href="{{ url_for('platoons.leaders', platoon_id=profile.platoon.id) }}" class="small">Leader elections</a> ·
+        <a href="{{ url_for('platoons.games', platoon_id=profile.platoon.id) }}" class="small">Interplatoon games</a>
+        {% endif %}
         <span class="small">{{ 'Prospective Corps Member (PCM)' if profile.service_stage == 'pcm' else ('Serving Corps Member' if profile.service_stage == 'serving' else 'NYSC Alumnus') }}</span>
       </div>
       <a href="{{ url_for('profile.edit') }}" class="btn btn-p5 btn-sm">{{ 'Add my camp platoon' if not profile.platoon else 'Update platoon' }}</a>

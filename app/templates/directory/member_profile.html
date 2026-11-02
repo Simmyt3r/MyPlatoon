@@ -11,6 +11,11 @@
              class="rounded-circle mb-3" width="160" height="160" style="object-fit:cover;"
              alt="Photo of {{ profile.user.full_name }}">
         <h4 class="fw-bold mb-0">{{ profile.user.full_name }}</h4>
+        {% if is_elected_leader %}
+        <div class="my-2"><span class="badge bg-primary"><i class="fa-solid fa-crown me-1"></i>Platoon Leader</span>
+          <span class="d-block small text-muted">Valid until {{ leader_term_end.strftime('%d %b %Y') }}</span>
+        </div>
+        {% endif %}
         {% if profile.nickname %}<p class="text-muted mb-1">"{{ profile.nickname }}"</p>{% endif %}
         <p class="text-success fw-semibold">{{ profile.profession or APP_MEMBER_LABEL }}</p>
         <p class="small fw-semibold">{{ profile.platoon_label }}</p>
