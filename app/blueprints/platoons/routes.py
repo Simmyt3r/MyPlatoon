@@ -79,3 +79,8 @@ def rate(platoon_id):
     log_action(current_user, "platoon.rating", "Platoon", cohort.id)
     flash("Your platoon rating is saved. One rating per eligible member.", "success")
     return redirect(url_for("platoons.rankings"))
+
+
+# Extend the existing platoons blueprint with competition/election routes.
+from app.blueprints.platoons.games import register_game_routes
+register_game_routes(bp)
