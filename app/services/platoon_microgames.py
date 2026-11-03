@@ -16,7 +16,7 @@ from app.services.platoon_games import (
 )
 
 MICRO_GAMES = (
-    ("daily-login", "Daily Roll Call", "Sign in each day to count once for your platoon.", "automatic", "daily"),
+    ("daily-login", "Daily Roll Call", "Sign in or check in once per day for your platoon.", "tap", "daily"),
     ("goal-rush", "GOAL Rush", "Tap GOAL while the competition is live — one cheer per day.", "tap", "daily"),
     ("course-complete", "Academy Graduate", "Earn a new Silabs Academy course certificate.", "automatic", "daily"),
     ("lesson-sprint", "Lesson Sprint", "Finish a video lesson after the required 90 seconds.", "automatic", "daily"),
