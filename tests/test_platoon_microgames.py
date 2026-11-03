@@ -41,7 +41,7 @@ def test_ten_real_microgames_and_leaderboard_not_manual_results(client, db, monk
     res = client.get(f"/platoons/games?platoon_id={a.id}")
     assert res.status_code == 200
     assert len(micro.MICRO_GAMES) == 10
-    assert b"Tap GOAL!" in res.data
+    assert b"GOAL Rush" in res.data
     assert b"NYSC Camp Quiz" in res.data
     assert b"Academy Graduate" in res.data
     assert b"Submit for review" not in res.data
@@ -147,7 +147,9 @@ def test_only_eligible_serving_members_during_live_round(client, db, monkeypatch
     member.profile.service_stage = "serving"
     member.is_suspended = True
     db.session.commit()
-    assert play(client, "goal-rush").status_code == 403
+    # Flask-Login may redirect a newly suspended session to sign-in.
+    assert play(client, "goal-rush").status_code in (302, 403)
+    assert PlatoonGameActivity.query.filter_by(game_key="goal-rush").count() == 0
     member.is_suspended = False
     member.profile.status = "rejected"
     db.session.commit()
