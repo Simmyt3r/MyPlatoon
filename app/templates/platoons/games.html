@@ -104,7 +104,8 @@
             <form method="POST" action="{{ url_for('platoons.play_microgame', game_key=key) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn {{ 'btn-p5' if key == 'goal-rush' else 'btn-p5-outline' }} btn-sm">
-                {% if key == 'goal-rush' %}⚽ Tap GOAL!
+                {% if key == 'daily-login' %}✅ Check in today
+                {% elif key == 'goal-rush' %}⚽ Tap GOAL!
                 {% elif key == 'team-cheer' %}📣 Cheer for my platoon
                 {% elif key == 'profile-ready' %}Check my profile
                 {% else %}Check my photo{% endif %}
