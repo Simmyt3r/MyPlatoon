@@ -154,7 +154,7 @@ def test_games_display_ten_digital_challenges_not_physical_placements(
     assert b"GOAL Rush" in response.data
     assert b"Daily Roll Call" in response.data
     assert b"Submit for review" not in response.data
-    assert b"Leader elections" in response.data
+    assert b"10 quick on-platform challenges" in response.data
 
 
 def test_manual_physical_placement_submission_is_retired(
