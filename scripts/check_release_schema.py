@@ -13,7 +13,7 @@ from sqlalchemy import inspect, text
 from app import create_app
 from app.extensions import db
 
-EXPECTED_REVISION = "h50d2e9a7c14"
+EXPECTED_REVISION = "j61a7f3d9c02"
 REQUIRED_COLUMNS = {
     "site_secrets": {"key", "ciphertext", "updated_at", "updated_by_id"},
     "learning_courses": {"id", "slug", "title", "published"},
@@ -22,6 +22,7 @@ REQUIRED_COLUMNS = {
     "platoon_leader_candidates": {"id", "platoon_id", "user_id", "term_start"},
     "platoon_leader_votes": {"id", "platoon_id", "candidate_id", "voter_id", "term_start"},
     "platoon_game_results": {"id", "period_start", "game_key", "platoon_id", "placement", "status"},
+    "platoon_game_activities": {"id", "period_start", "game_key", "platoon_id", "user_id", "score_day"},
     "learning_watch": {"id", "user_id", "lesson_id", "watched_seconds", "session_id", "last_seen_at", "last_position"},
     "learning_certificates": {"id", "code", "user_id", "course_id", "issued_at"},
     "users": {"id", "email", "role", "is_suspended"},

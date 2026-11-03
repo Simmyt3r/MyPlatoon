@@ -155,6 +155,7 @@ def complete_lesson(slug, lesson_id):
     progress = LearningProgress.query.filter_by(
         user_id=current_user.id, lesson_id=lesson.id,
     ).first()
+    first_completion = progress is None
     if progress is None:
         seconds = watch_time(current_user.id, lesson.id)
         if seconds < REQUIRED_WATCH_SECONDS:
@@ -171,7 +172,17 @@ def complete_lesson(slug, lesson_id):
             user_id=current_user.id, lesson_id=lesson.id,
         ))
         db.session.commit()
+    # Only fresh lesson/course completions count, never replayed POSTs.
+    from app.services.platoon_microgames import automatic_activity
+    if first_completion:
+        automatic_activity(current_user, "lesson-sprint")
+    from app.models.learning import LearningCertificate
+    already_certified = LearningCertificate.query.filter_by(
+        user_id=current_user.id, course_id=course.id,
+    ).first() is not None
     certificate = issue_certificate_if_complete(current_user, course)
+    if certificate and not already_certified:
+        automatic_activity(current_user, "course-complete")
     if certificate:
         flash("Course complete! Your Silabs certificate is ready.", "success")
         return redirect(url_for("learning.my_certificates"))

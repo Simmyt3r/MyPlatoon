@@ -92,6 +92,10 @@ def login():
         user.last_login_at = datetime.utcnow()
         db.session.commit()
         log_action(user, "auth.login", "User", user.id)
+        # A successful login earns a single roll-call credit for today only
+        # during live interplatoon rounds (eligible serving members only).
+        from app.services.platoon_microgames import automatic_activity
+        automatic_activity(user, "daily-login")
 
         next_page = request.args.get("next")
         if not _safe_next_path(next_page):
