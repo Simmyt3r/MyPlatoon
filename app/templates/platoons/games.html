@@ -1,104 +1,121 @@
 {% extends "base.html" %}
-{% block title %}Interplatoon Games{% endblock %}
+{% block title %}Interplatoon Digital Games{% endblock %}
 {% block content %}
-<div class="container my-4" style="max-width:1120px">
+<div class="container my-4" style="max-width:1140px">
   <header class="p5-card p-4 mb-4">
-    <div class="small fw-bold text-success text-uppercase">Independent MyPlatoon community competitions</div>
+    <div class="small text-success fw-bold text-uppercase">MyPlatoon · Digital Camp Challenge</div>
     <h1 class="h3 fw-bold my-2">Interplatoon Games</h1>
-    <p class="text-muted mb-2">Ten competitions inspired by NYSC orientation camp. Each round runs from the 15th to the 30th in February, May, August, and November (February ends on the 28th or 29th).</p>
-    <div class="d-flex flex-wrap align-items-center gap-2">
-      <span class="badge text-bg-light border">{{ period.strftime('%d %b') }}–{{ end.strftime('%d %b %Y') }}</span>
-      <span class="badge {{ 'bg-success' if live else 'text-bg-light border' }}">{{ 'Competition live' if live else ('Upcoming' if today < period else 'Closed') }}</span>
-      <a href="{{ url_for('platoons.rankings') }}" class="btn btn-p5-outline btn-sm">Community rankings</a>
-      {% if platoon %}<a class="btn btn-p5-outline btn-sm" href="{{ url_for('platoons.leaders', platoon_id=platoon.id) }}">Leader elections &amp; badges</a>{% endif %}
+    <p class="text-muted">Represent your platoon by completing short activities on MyPlatoon. No physical matches or leader-entered scores: participation is recorded automatically.</p>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge text-bg-light border">{{ period.strftime('%d %b') }} – {{ end.strftime('%d %b %Y') }}</span>
+      <span class="badge {{ 'bg-success' if live else 'text-bg-light border' }}">{{ 'Games LIVE' if live else ('Upcoming round' if today < period else 'Round closed') }}</span>
+      <a href="{{ url_for('platoons.rankings') }}" class="btn btn-p5-outline btn-sm">Platoon rankings</a>
+      {% if my_platoon %}<a href="{{ url_for('platoons.leaders', platoon_id=my_platoon.id) }}" class="btn btn-p5-outline btn-sm">Leader elections</a>{% endif %}
     </div>
-    <p class="small text-muted mt-2 mb-0">These are MyPlatoon-managed events, not official NYSC competitions. Results must be verified by an administrator.</p>
+    <p class="small text-muted mt-3 mb-0">Quarterly: February, May, August and November, starting on the 15th and closing on the 30th (or February's final day). One contribution per member per day for daily games; profile/photo achievements count once per round.</p>
   </header>
+  {% if not current_user.is_authenticated %}
+  <div class="alert alert-info">Sign in and join your real NYSC platoon to play for your team.
+    <a href="{{ url_for('auth.login', next=request.path) }}">Sign in</a></div>
+  {% elif not my_platoon %}
+  <div class="alert alert-info">Set your NYSC platoon and serving status in <a href="{{ url_for('profile.edit') }}">Edit Profile</a> to participate.</div>
+  {% elif not eligible and live %}
+  <div class="alert alert-warning">Only active serving corps members with an approved profile and assigned platoon can earn game points.</div>
+  {% endif %}
+
   {% if platoon %}
-  <form class="p5-card p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="GET">
+  <form class="p5-card p-3 mb-4 d-flex flex-wrap align-items-end gap-3" method="GET" action="{{ url_for('platoons.games') }}">
     <div class="flex-grow-1">
-      <label for="camp-platoon" class="form-label small fw-semibold">Orientation camp / platoon</label>
-      <select class="form-select" name="platoon_id" id="camp-platoon">
-        {% for p in cohort %}
-        <option value="{{ p.id }}" {{ 'selected' if p.id == platoon.id }}>{{ p.label }}</option>
-        {% endfor %}
+      <label class="form-label fw-semibold small" for="game-platoon">View a platoon from the same NYSC batch and stream</label>
+      <select id="game-platoon" class="form-select" name="platoon_id">
+        {% for p in cohort %}<option value="{{ p.id }}" {{ 'selected' if p.id == platoon.id }}>{{ p.label }}</option>{% endfor %}
       </select>
     </div>
     <input type="hidden" name="period" value="{{ period.isoformat() }}">
-    <button type="submit" class="btn btn-p5">View</button>
+    <button class="btn btn-p5" type="submit">View scores</button>
   </form>
-  <div class="mb-3">
-    <h2 class="h5 fw-bold">Verified competition standings · {{ platoon.state }} {{ platoon.service_year }} Batch {{ platoon.batch }} Stream {{ platoon.stream }}</h2>
-    <p class="small text-muted mb-0">10 points for 1st, 9 for 2nd, down to 1 for 10th. Unverified reports never affect the scoreboard.</p>
-  </div>
-  <div class="p5-card p-3 mb-4 table-responsive">
-    <table class="table table-sm align-middle mb-0">
-      <thead><tr><th>Platoon</th><th class="text-end">Verified games</th><th class="text-end">Total points</th><th></th></tr></thead>
-      <tbody>
-      {% for row in table %}
-      <tr><td><strong>Platoon {{ row.platoon.number }}</strong></td>
-      <td class="text-end">{{ row.events }}</td><td class="text-end fw-bold">{{ row.points }}</td>
-      <td class="text-end"><a href="{{ url_for('platoons.leaders', platoon_id=row.platoon.id) }}" class="small">Leader</a></td></tr>
-      {% else %}<tr><td colspan="4">No platoons registered for this camp yet.</td></tr>{% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <section class="mb-4">
+    <h2 class="h5 fw-bold">Live platoon leaderboard</h2>
+    <p class="small text-muted">Platoons compete only within the same NYSC state, service year, batch and stream. Each game ranks platoons by recorded contributions; 1st earns 10 competition points, 2nd earns 9, and so on. Equal participation earns equal points. No participation earns zero.</p>
+    <div class="p5-card p-3 table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Position</th><th>Platoon</th><th class="text-end">Total contributions</th><th class="text-end">Competition points</th></tr></thead>
+        <tbody>
+          {% for row in table %}
+          <tr class="{{ 'table-success' if my_platoon and row.platoon.id == my_platoon.id }}">
+            <td>{{ loop.index }}</td><td class="fw-semibold">Platoon {{ row.platoon.number }}</td>
+            <td class="text-end">{{ row.actions }}</td><td class="text-end fw-bold">{{ row.points }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted">No platoons registered for this camp yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
   {% else %}
-  <div class="alert alert-info">
-    Choose a registered camp from <a href="{{ url_for('platoons.rankings') }}">Platoon Power Rankings</a>
-    or add your NYSC platoon in your profile to see camp-specific scores and elections.
-  </div>
+  <div class="alert alert-info">Complete your NYSC platoon details to see camp-specific standings.</div>
   {% endif %}
-  <h2 class="h5 fw-bold mt-4">Ten camp-style events</h2>
+
+  <h2 class="h5 fw-bold mb-3">10 quick on-platform challenges</h2>
   <div class="row g-3 mb-4">
-  {% for key, title, description in games %}
-  <div class="col-md-6 col-lg-4">
-    <article class="p5-card p-3 h-100">
-      <span class="small text-success fw-semibold">Event {{ loop.index }}/10</span>
-      <h3 class="h5 mt-1">{{ title }}</h3>
-      <p class="small text-muted mb-3">{{ description }}</p>
-      {% if can_submit and platoon %}
-      <form method="POST" action="{{ url_for('platoons.submit_game', platoon_id=platoon.id) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="period" value="{{ period.isoformat() }}">
-        <input type="hidden" name="game" value="{{ key }}">
-        <label class="form-label small fw-semibold" for="placement-{{ key }}">Platoon placement</label>
-        <select class="form-select form-select-sm mb-2" name="placement" id="placement-{{ key }}" required>
-          {% for rank in range(1, 11) %}<option value="{{ rank }}">{{ rank }}{{ 'st' if rank==1 else ('nd' if rank==2 else ('rd' if rank==3 else 'th')) }}</option>{% endfor %}
-        </select>
-        <label class="form-label small" for="details-{{ key }}">Results / evidence notes</label>
-        <textarea name="details" id="details-{{ key }}" class="form-control form-control-sm mb-2" rows="2" maxlength="500" placeholder="How did the team perform?"></textarea>
-        <button type="submit" class="btn btn-p5 btn-sm">Submit for review</button>
-      </form>
-      {% endif %}
-    </article>
-  </div>
-  {% endfor %}
-  </div>
-  {% if platoon %}
-  <h2 class="h5 fw-bold">Reported results</h2>
-  <div class="p5-card p-3 table-responsive">
-    <table class="table table-sm align-middle mb-0">
-      <thead><tr><th>Event</th><th>Platoon</th><th>Placement</th><th>Status</th>{% if current_user.is_authenticated and current_user.is_admin %}<th>Admin verification</th>{% endif %}</tr></thead>
-      <tbody>
-      {% for entry in entries %}
-      <tr>
-        <td>{{ entry.game_key|replace('-', ' ')|title }}</td><td>{{ entry.platoon.number }}</td>
-        <td>{{ entry.placement }}</td><td>{{ entry.status|capitalize }}</td>
-        {% if current_user.is_authenticated and current_user.is_admin %}
-        <td><form method="POST" action="{{ url_for('platoons.review_game', result_id=entry.id) }}" class="d-flex flex-wrap gap-2">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn-success btn-sm" type="submit" name="decision" value="verified">Verify</button>
-          <button class="btn btn-outline-danger btn-sm" type="submit" name="decision" value="rejected">Reject</button>
-        </form></td>
+    {% for key, title, description, mode, cadence in micro_games %}
+    <div class="col-md-6 col-lg-4">
+      <article class="p5-card p-4 h-100 d-flex flex-column">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+          <span class="text-success small fw-semibold">Challenge {{ loop.index }}/10</span>
+          <span class="badge text-bg-light border">{{ 'Once per day' if cadence == 'daily' else 'Once per round' }}</span>
+        </div>
+        <h3 class="h5 fw-bold">{{ title }}</h3>
+        <p class="text-muted small">{{ description }}</p>
+        {% if platoon and table %}
+          {% set selected = table|selectattr('platoon.id', 'equalto', platoon.id)|list %}
+          {% if selected %}
+            <div class="small text-muted mb-3">Platoon {{ platoon.number }}: {{ selected[0].results[key].count }} contributions · {{ selected[0].results[key].points }} points</div>
+          {% endif %}
         {% endif %}
-      </tr>
-      {% else %}
-      <tr><td colspan="5" class="text-muted">No results reported for this round yet.</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+        <div class="mt-auto">
+          {% if done.get(key) %}
+          <span class="badge bg-success">You contributed {{ 'this round' if cadence == 'round' else 'today' }} ✓</span>
+          {% elif not eligible %}
+          <span class="small text-muted">{{ 'Competition opens on ' ~ period.strftime('%d %b') if not live else 'Serving members only' }}</span>
+          {% elif mode == 'automatic' %}
+            {% if key == 'daily-login' %}
+            <span class="small text-muted">Automatically counts when you sign in during a live round.</span>
+            {% elif key == 'course-complete' %}
+            <a class="btn btn-p5-outline btn-sm" href="{{ url_for('learning.catalog') }}">Complete an Academy course</a>
+            {% else %}
+            <a class="btn btn-p5-outline btn-sm" href="{{ url_for('learning.catalog') }}">Finish an Academy lesson</a>
+            {% endif %}
+          {% elif mode == 'quiz' and key in quizzes %}
+            {% set question = quizzes[key] %}
+            <form method="POST" action="{{ url_for('platoons.play_microgame', game_key=key) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <p class="small fw-semibold">{{ question[0] }}</p>
+              {% for option in question[1] %}
+              <label class="d-block small mb-2">
+                <input type="radio" name="answer" value="{{ 'ABC'[loop.index0] }}" required>
+                {{ option }}
+              </label>
+              {% endfor %}
+              <button type="submit" class="btn btn-p5 btn-sm">Submit answer</button>
+            </form>
+          {% else %}
+            <form method="POST" action="{{ url_for('platoons.play_microgame', game_key=key) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn {{ 'btn-p5' if key == 'goal-rush' else 'btn-p5-outline' }} btn-sm">
+                {% if key == 'goal-rush' %}⚽ Tap GOAL!
+                {% elif key == 'team-cheer' %}📣 Cheer for my platoon
+                {% elif key == 'profile-ready' %}Check my profile
+                {% else %}Check my photo{% endif %}
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </article>
+    </div>
+    {% endfor %}
   </div>
-  {% endif %}
+  <p class="small text-muted">Events are counted from authenticated user actions, not manual reports. The leaderboard shows participation, not official NYSC awards. Rapid repeated taps, replayed course completions and repeated quiz submissions do not create extra points for the same member/day.</p>
 </div>
 {% endblock %}
