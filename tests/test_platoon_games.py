@@ -141,108 +141,31 @@ def test_rejected_pcm_suspended_and_reassigned_members_cannot_win_or_vote(
     assert svc.elected_leader(own.id) is None
 
 
-def test_games_have_ten_cards_and_cohort_scoped_verified_scores(
-    client, db, admin_user, monkeypatch,
+def test_games_display_ten_digital_challenges_not_physical_placements(
+    client, db, monkeypatch,
 ):
-    own, rival, outsider = camp(db)
-    leader = member(db, "event-leader@example.com", own)
-    voter = member(db, "event-voter@example.com", own)
-    fake_date(monkeypatch, date(2026, 11, 2))
-    login(client, leader.email)
-    client.post(f"/platoons/{own.id}/leaders/nominate")
-    nomination = PlatoonLeaderCandidate.query.one()
-    client.post("/auth/logout")
-    login(client, voter.email)
-    client.post(f"/platoons/{own.id}/leaders/vote",
-                data={"candidate_id": nomination.id})
-    client.post("/auth/logout")
-
+    from app.services.platoon_microgames import MICRO_GAMES
+    own, _, _ = camp(db)
     fake_date(monkeypatch, date(2026, 11, 16))
-    login(client, leader.email)
-    page = client.get(f"/platoons/games?platoon_id={own.id}")
-    assert page.status_code == 200
-    for _, title, _ in svc.GAMES:
-        assert escape(title).encode() in page.data
-    assert b"Submit for review" in page.data
-    route = f"/platoons/games/{own.id}/submit"
-    result = client.post(route, data={
-        "period": "2026-11-15", "game": "football",
-        "placement": "1", "details": "Won the final.",
-    })
-    assert result.status_code == 302
-    entry = PlatoonGameResult.query.one()
-    assert entry.status == "pending"
-    assert svc.verified_scoreboard(own, date(2026, 11, 15))[0]["points"] == 0
-    client.post("/auth/logout")
-
-    login(client, admin_user.email)
-    assert client.post(f"/platoons/games/results/{entry.id}/review",
-                       data={"decision": "verified"}).status_code == 302
-    assert entry.status == "verified"
-    assert svc.verified_scoreboard(own, date(2026, 11, 15))[0]["points"] == 10
-    # An unrelated state and cohort cannot be mixed into this scoreboard.
-    db.session.add(PlatoonGameResult(
-        period_start=date(2026, 11, 15), platoon_id=outsider.id,
-        game_key="football", placement=1, details="Other state",
-        status="verified", submitted_by_id=admin_user.id,
-    ))
-    db.session.commit()
-    assert sum(row["points"] for row in
-               svc.verified_scoreboard(own, date(2026, 11, 15))) == 10
-    assert client.get(f"/platoons/games?platoon_id={own.id}").status_code == 200
+    response = client.get(f"/platoons/games?platoon_id={own.id}")
+    assert response.status_code == 200
+    for _, title, *_ in MICRO_GAMES:
+        assert escape(title).encode() in response.data
+    assert b"GOAL Rush" in response.data
+    assert b"Daily Roll Call" in response.data
+    assert b"Submit for review" not in response.data
+    assert b"Leader elections" in response.data
 
 
-def test_cannot_forge_game_placements_or_approve_duplicate_ranks(
+def test_manual_physical_placement_submission_is_retired(
     client, db, admin_user, monkeypatch,
 ):
-    first, second, _ = camp(db)
-    regular = member(db, "regular@example.com", first)
+    own, _, _ = camp(db)
     fake_date(monkeypatch, date(2026, 11, 16))
-    login(client, regular.email)
-    assert client.post(f"/platoons/games/{first.id}/submit", data={
-        "period": "2026-11-15", "game": "football", "placement": "1",
-    }).status_code == 403
-    client.post("/auth/logout")
     login(client, admin_user.email)
-    for platoon in (first, second):
-        assert client.post(f"/platoons/games/{platoon.id}/submit", data={
-            "period": "2026-11-15", "game": "football", "placement": "1",
-        }).status_code == 302
-    entries = PlatoonGameResult.query.order_by(PlatoonGameResult.id).all()
-    client.post(f"/platoons/games/results/{entries[0].id}/review",
-                data={"decision": "verified"})
-    rejected = client.post(
-        f"/platoons/games/results/{entries[1].id}/review",
-        data={"decision": "verified"}, follow_redirects=True,
-    )
-    assert rejected.status_code == 200
-    assert b"already holds that verified placement" in rejected.data
-    assert entries[1].status == "pending"
-    client.post("/auth/logout")
-    login(client, regular.email)
-    assert client.post(
-        f"/platoons/games/results/{entries[1].id}/review",
-        data={"decision": "verified"},
-    ).status_code == 403
-
-
-def test_results_window_and_elections_closed_outside_appointed_dates(
-    client, db, admin_user, monkeypatch,
-):
-    first, _, _ = camp(db)
-    fake_date(monkeypatch, date(2026, 11, 2))
-    login(client, admin_user.email)
-    assert client.post(f"/platoons/games/{first.id}/submit", data={
+    assert client.post(f"/platoons/games/{own.id}/submit", data={
         "period": "2026-11-15", "game": "football", "placement": "1",
-    }).status_code == 403
-    assert client.post(f"/platoons/games/{first.id}/submit", data={
-        "period": "2026-11-15", "game": "unknown", "placement": "1",
-    }).status_code == 400
-    fake_date(monkeypatch, date(2026, 11, 30))
-    assert client.post(f"/platoons/games/{first.id}/submit", data={
-        "period": "2026-11-15", "game": "football", "placement": "1",
-    }).status_code == 302
-    fake_date(monkeypatch, date(2026, 12, 1))
-    assert client.post(f"/platoons/games/{first.id}/submit", data={
-        "period": "2026-11-15", "game": "volleyball", "placement": "1",
-    }).status_code == 403
+    }).status_code == 410
+    assert client.post("/platoons/games/results/9999/review", data={
+        "decision": "verified",
+    }).status_code == 410
