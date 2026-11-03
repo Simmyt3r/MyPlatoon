@@ -255,3 +255,38 @@ def test_unsupported_game_and_employer_cannot_submit(client, db, monkeypatch):
     assert play(client, "fake-game").status_code == 404
     assert play(client, "course-complete").status_code == 403
     assert PlatoonGameActivity.query.count() == 0
+
+
+def test_login_still_succeeds_if_games_migration_is_outstanding(
+    client, db, monkeypatch,
+):
+    from app.models.platoon_microgames import PlatoonGameActivity
+    a, _, _ = camp(db)
+    user = serving(db, "before-migration@example.com", a)
+    freeze(monkeypatch, date(2026, 11, 16))
+    # Simulate Production being redeployed before the operator has
+    # applied the reviewed Games migration.
+    PlatoonGameActivity.__table__.drop(db.engine)
+    response = login(client, user.email)
+    assert response.status_code == 200
+    assert response.request.path == "/profile/dashboard"
+
+
+def test_game_posts_retain_global_csrf_requirement(
+    client, db, app, monkeypatch,
+):
+    import re
+    a, _, _ = camp(db)
+    member = serving(db, "csrf-goal@example.com", a)
+    freeze(monkeypatch, date(2026, 11, 16))
+    login(client, member.email)
+    app.config["WTF_CSRF_ENABLED"] = True
+    assert play(client, "goal-rush").status_code == 400
+    page = client.get(f"/platoons/games?platoon_id={a.id}")
+    match = re.search(rb'name="csrf_token" value="([^"]+)"', page.data)
+    assert match is not None
+    allowed = client.post("/platoons/games/play/goal-rush", data={
+        "csrf_token": match.group(1).decode(),
+    })
+    assert allowed.status_code == 302
+    assert PlatoonGameActivity.query.filter_by(game_key="goal-rush").count() == 1
