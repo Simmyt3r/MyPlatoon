@@ -335,52 +335,49 @@ be necessary to independently certify attention or skill acquisition.
 then run **/setup → Apply reviewed migrations** as admin. Do not
 run automatically on incoming requests.
 
-## Interplatoon games, quarterly schedule and elected leaders
+## Digital interplatoon microgames (replaces physical placement reports)
 
-MyPlatoon has ten **camp-inspired community competitions**, not official
-NYSC events or online simulations of physical sports: football,
-volleyball, table tennis, cooking, sanitation, parade/drill,
-tug of war, drama, cultural dance, and athletics/relay.
-See `/platoons/games` or the **Interplatoon Games** sidebar link.
+The Games page at `/platoons/games` now hosts **ten small,
+server-scored activities completed inside MyPlatoon**:
 
-The first round starts **15 November 2026**. Subsequent rounds run
-every three months: **February 15–28/29, May 15–30, August 15–30, and
-November 15–30**. The round and results are calculated using Nigeria
-local dates (`Africa/Lagos`). Scores are separate for each **NYSC
-state, service year, batch and stream**; platoons in other cohorts
-cannot contaminate the standings. Rankings show only results verified
-by an admin. Event placements 1–10 score 10 to 1 point respectively.
+1. **Daily Roll Call** — a successful daily login or Check In button.
+2. **GOAL Rush** — members tap **GOAL!** during a live competition.
+3. **Academy Graduate** — a newly completed Silabs Academy course.
+4. **Lesson Sprint** — a newly completed Academy lesson (subject to the
+   existing 90-second playback requirement).
+5. **Profile Ready** — verify a MyPlatoon profile is at least 50% complete.
+6. **Photo Finish** — verify a Cloudinary profile photograph is present.
+7. **NYSC Camp Quiz** — one correct camp-knowledge question daily.
+8. **Tech Trivia** — one correct safety/technology question daily.
+9. **Number Sprint** — solve a brief arithmetic problem each day.
+10. **Team Cheer** — submit one cheer daily.
 
-Only an elected platoon leader can submit results for their own
-platoon during the active round; an administrator may submit on
-behalf of a platoon. Each submission is **pending** until an admin
-verifies or rejects it. Duplicate verified placements in the same
-camp/game are blocked. Decisions are auditable. Unreviewed claims
-never count towards the competition table.
+Participation records are created on real authenticated actions, never
+submitted on behalf of a team leader. Daily game contributions are
+**capped at one per eligible user per game per Nigeria calendar day**;
+profile/photo milestones count **once per round**. Member state, serving
+status and platoon are checked on the server. Answers are validated
+server-side; source-driven events cannot be forged via the Games UI.
 
-Leadership uses automatic, continuous **14-day terms**, beginning
-at the fixed anchor 1 January 2026. Nominations and voting open
-during the **seven days before each new term**. Active approved
-**serving** corps members may nominate themselves and cast **one
-ballot per term**, exclusively for their own assigned platoon.
-At the term start, the nominee with the most eligible votes receives
-a **Platoon Leader** badge on their profile and on the platoon
-elections page. Ties use earliest nomination as a deterministic
-tie-break, and nominees with zero votes do not become leaders.
-The badge expires automatically after 14 calendar days.
-Members who leave a platoon or are suspended/rejected lose
-eligibility; old votes from ineligible members are ignored.
+The competition calendar still begins **15 November 2026** and repeats
+every three months on 15 February, May, August and November until the
+30th (or February's last day). Scores are segregated by state, service
+year, batch and stream. Each game ranks platoons by accumulated member
+contributions, awarding 10 points for the leading platoon, 9 for second
+and so forth. Equal positive contribution totals share a rank and
+score; zero contributions earn zero. Both contribution counts and
+competition points are displayed.
 
-The standalone game scoring workflow is an **admin-reviewed event
-tracker** for real or community-organised activities, not a claim
-that NYSC authorised the competitions. Existing platform rankings
-remain independent of reported event placements.
+Historical **physical-event result submissions have been disabled (HTTP
+410)** and no longer appear on the Games page or contribute to this
+new digital leaderboard. Elected leaders, voting rules and the 14-day
+badge system remain intact.
 
-**Production DB action required:** Alembic revision
-`h50d2e9a7c14` follows learning watch-time revision
-`f49a1d8e2c90` and creates
-`platoon_leader_candidates`, `platoon_leader_votes` and
-`platoon_game_results`. Deploy and back up Aiven first, then
-apply the reviewed migrations via **Admin /setup**. No background
-cron, new environment variable or live database changes occur
-from merging this code.
+**Operator action:** Migration `j61a7f3d9c02` follows
+`h50d2e9a7c14` and adds `platoon_game_activities` with a database
+uniqueness constraint to prevent duplicate daily/round participation.
+Back up the production database, deploy the new code and apply the
+reviewed migration via `/setup` before enabling the Games page.
+Existing manual event rows are retained for data preservation but
+not used for the new digital scoring.
+
