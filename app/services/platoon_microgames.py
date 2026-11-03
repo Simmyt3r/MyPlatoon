@@ -6,7 +6,8 @@ from an eligible serving member, and once per user/game/calendar day
 """
 from collections import defaultdict
 from datetime import date, timedelta
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from flask import current_app
 
 from app.extensions import db
 from app.models.platoon_microgames import PlatoonGameActivity
@@ -81,20 +82,28 @@ def earned(user, game_key, on=None):
     if not profile or not profile.platoon_id or not member_is_eligible(user, profile.platoon_id):
         return False
     scored_day = today if game[4] == "daily" else period
-    if PlatoonGameActivity.query.filter_by(
-        period_start=period, game_key=game_key, user_id=user.id,
-        score_day=scored_day,
-    ).first():
-        return False
-    db.session.add(PlatoonGameActivity(
-        period_start=period, game_key=game_key, user_id=user.id,
-        platoon_id=profile.platoon_id, score_day=scored_day,
-    ))
     try:
+        if PlatoonGameActivity.query.filter_by(
+            period_start=period, game_key=game_key, user_id=user.id,
+            score_day=scored_day,
+        ).first():
+            return False
+        db.session.add(PlatoonGameActivity(
+            period_start=period, game_key=game_key, user_id=user.id,
+            platoon_id=profile.platoon_id, score_day=scored_day,
+        ))
         db.session.commit()
         return True
     except IntegrityError:
         db.session.rollback()
+        return False
+    except SQLAlchemyError as exc:
+        # A still-pending production migration must not break login or
+        # Academy completion. Award zero game points, and log only the class.
+        db.session.rollback()
+        current_app.logger.warning(
+            "Interplatoon game tracking unavailable (%s)", type(exc).__name__,
+        )
         return False
 
 
