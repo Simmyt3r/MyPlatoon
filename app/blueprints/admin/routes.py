@@ -317,3 +317,8 @@ def dating_remove_persona(persona_id):
                detail=f"removed persona belonging to {owner_name}")
     flash(f"Removed the dating persona belonging to {owner_name}.", "info")
     return redirect(url_for("admin.dating_moderation"))
+
+
+# Private, read-only recruitment pilot dashboard.
+from app.blueprints.admin.insights import register_insights_routes
+register_insights_routes(bp)
