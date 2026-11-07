@@ -44,6 +44,15 @@ REQUIRED_COLUMNS = {
     "gig_termination_requests": {"id", "deal_id", "status", "proposer_id"},
     "audit_logs": {"id", "user_id", "action"},
 }
+REQUIRED_UNIQUE_CONSTRAINTS = {
+    # A missing uniqueness constraint permits two concurrent requests to award
+    # the same member/game/day twice, even when application checks pass.
+    "platoon_game_activities": {
+        "uq_platoon_microgame_member_day": (
+            "period_start", "game_key", "user_id", "score_day"
+        ),
+    },
+}
 REQUIRED_INDEXES = {
     "gig_dispute_evidence": {"ix_gig_dispute_evidence_dispute_id"},
     "gig_dispute_events": {"ix_gig_dispute_events_dispute_id"},
@@ -70,6 +79,18 @@ def validate_schema(connection):
         columns = {col["name"] for col in inspector.get_columns(table)}
         for column in sorted(required - columns):
             problems.append("Missing column: {}.{}".format(table, column))
+    for table, named_constraints in REQUIRED_UNIQUE_CONSTRAINTS.items():
+        if table not in tables:
+            continue
+        existing = {
+            constraint.get("name"): tuple(constraint.get("column_names") or ())
+            for constraint in inspector.get_unique_constraints(table)
+        }
+        for name, columns in named_constraints.items():
+            # Names may differ between engines, but column sets cannot.
+            if not any(set(actual) == set(columns) and len(actual) == len(columns)
+                       for actual in existing.values()):
+                problems.append("Missing unique constraint: {}.{}".format(table, name))
     for table, indexes in REQUIRED_INDEXES.items():
         if table not in tables:
             continue
