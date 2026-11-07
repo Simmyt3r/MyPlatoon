@@ -75,6 +75,7 @@ def _init_extensions(app):
 
 def _register_blueprints(app):
     from app.blueprints.main.routes import bp as main_bp
+    from app.blueprints.main.health import bp as health_bp
     from app.blueprints.auth.routes import bp as auth_bp
     from app.blueprints.profile.routes import bp as profile_bp
     from app.blueprints.business.routes import bp as business_bp
@@ -90,6 +91,7 @@ def _register_blueprints(app):
     from app.blueprints.learning.routes import bp as learning_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(profile_bp, url_prefix="/profile")
     app.register_blueprint(business_bp, url_prefix="/business")
@@ -272,7 +274,7 @@ def _register_context_processors(app):
         # The marketing landing is deliberately standalone: this template
         # needs no app-shell variables, login-manager user lookup, database
         # or deployment-specific branding. Keep "/" usable before setup.
-        if request.endpoint in ("main.index", "setup.setup"):
+        if request.endpoint in ("main.index", "setup.setup", "health.live", "health.ready"):
             return {}
         from flask_login import current_user
         from app.services.notification_service import unread_count
