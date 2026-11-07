@@ -2,7 +2,8 @@ import logging
 import os
 
 from flask import Flask, render_template, request, jsonify, Response
-from sqlalchemy import or_, and_\nfrom sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_, and_
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import CONFIG_MAP
 from app.extensions import db, migrate, login_manager, csrf, limiter
