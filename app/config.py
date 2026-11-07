@@ -10,6 +10,7 @@ basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
 class BaseConfig:
+    IS_PRODUCTION = False
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-key-not-secure-change-me")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
@@ -110,6 +111,7 @@ class TestingConfig(BaseConfig):
 
 
 class ProductionConfig(BaseConfig):
+    IS_PRODUCTION = True
     DEBUG = False
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
