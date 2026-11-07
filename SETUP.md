@@ -291,7 +291,7 @@ claims, add a verified assessment workflow.
 
 The Silabs logo mark is included at
 `app/static/img/silabs-academy-logo.svg`, and the PDF is branded
-**SILAB & CO TECHNOLOGIES LTD.**, matching the supplied logo.
+**SILABS & CO TECHNOLOGIES LTD.**.
 Set `APP_BASE_URL=https://myplatoon.vercel.app` in Vercel Production for
 QR codes to resolve reliably to the correct public hostname. No Cloudinary
 configuration is needed for YouTube lessons or certificate PDFs.
@@ -377,7 +377,10 @@ badge system remain intact.
 `h50d2e9a7c14` and adds `platoon_game_activities` with a database
 uniqueness constraint to prevent duplicate daily/round participation.
 Back up the production database, deploy the new code and apply the
-reviewed migration via `/setup` before enabling the Games page.
+reviewed migration via `/setup` before enabling the Games page. The
+read-only release schema check also verifies that the uniqueness constraint
+on `(period_start, game_key, user_id, score_day)` exists, so concurrent
+submissions cannot silently double-credit one game/day.
 Existing manual event rows are retained for data preservation but
 not used for the new digital scoring.
 
