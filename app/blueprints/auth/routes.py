@@ -104,6 +104,9 @@ def login():
         if user.is_suspended:
             flash("This account has been suspended. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
+        if not user.is_active_account:
+            flash("This account is inactive. Contact an administrator.", "danger")
+            return render_template("auth/login.html", form=form)
 
         if user.role != "employer":
             from app.services.profile_service import ensure_profile
