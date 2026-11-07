@@ -111,6 +111,14 @@
     {% else %}
       <p class="small text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>In-memory rate limits are not shared across Vercel instances. Set a shared Redis-compatible RATELIMIT_STORAGE_URI before a public pilot.</p>
     {% endif %}
+    {% if security.shared_ratelimiter_configured and security.strict_ratelimiter_enforced %}
+      <p class="small text-success"><i class="fa-solid fa-check me-1"></i>Strict shared rate limiting is enabled in configuration. A separate live Redis PING is still required.</p>
+    {% elif security.shared_ratelimiter_configured %}
+      <p class="small text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i>Redis URI configured, but strict enforcement is disabled. Set REQUIRE_SHARED_RATELIMIT=true after testing connectivity.</p>
+    {% else %}
+      <p class="small text-warning"><i class="fa-solid fa-triangle-exclamation me-1"></i>Strict Redis enforcement cannot be enabled until shared storage is configured.</p>
+    {% endif %}
+    <p class="small text-muted">Operator verification: run <code>python scripts/check_shared_ratelimit.py</code> in a trusted environment with production variables. This dashboard never displays Redis credentials or performs remote connectivity tests.</p>
     <p class="small mb-1">Authenticated browser session lifetime: <strong>{{ security.session_hours }} hours</strong></p>
     <p class="small mb-1">Optional remember-me cookie lifetime: <strong>{{ security.remember_cookie_days }} days</strong></p>
     <p class="small mb-1">Revenue collection: <strong>Not implemented or verified</strong></p>
