@@ -8,7 +8,7 @@ from flask import Blueprint, current_app, jsonify
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.extensions import db
+from app.extensions import db, limiter
 
 bp = Blueprint("health", __name__)
 
@@ -56,12 +56,14 @@ def _response(body, status=200):
 
 
 @bp.get("/health/live")
+@limiter.exempt
 def live():
     """No DB, Redis, authentication, user session or Jinja dependency."""
     return _response({"status": "alive"})
 
 
 @bp.get("/health/ready")
+@limiter.exempt
 def ready():
     """Fail readiness safely when required services are not healthy."""
     db_ok = _probe_database()
