@@ -99,9 +99,9 @@ def recruitment_metrics(now=None):
 def security_readiness(config):
     """Classify configuration without returning secrets or connection URLs."""
     uri = str(config.get("RATELIMIT_STORAGE_URI") or "memory://").lower()
-    shared_limiter = not (
-        uri.startswith("memory://") or uri in ("", "none", "null")
-    )
+    # This release installs a Redis driver, not a generic persistence
+    # backend. Other/mistyped URIs should never show a green readiness flag.
+    shared_limiter = uri.startswith(("redis://", "rediss://"))
     return {
         "shared_ratelimiter_configured": shared_limiter,
         "strict_ratelimiter_enforced": bool(config.get("REQUIRE_SHARED_RATELIMIT")),
