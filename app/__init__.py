@@ -1,8 +1,8 @@
 import logging
 import os
 
-from flask import Flask, render_template, request
-from sqlalchemy import or_, and_
+from flask import Flask, render_template, request, jsonify, Response
+from sqlalchemy import or_, and_\nfrom sqlalchemy.exc import SQLAlchemyError
 
 from app.config import CONFIG_MAP
 from app.extensions import db, migrate, login_manager, csrf, limiter
@@ -192,6 +192,63 @@ def _register_error_handlers(app):
     @app.errorhandler(429)
     def rate_limited(e):
         return _render(429)
+
+    def temporary_unavailable():
+        """Safe degraded response without DB-backed templates or session context.
+
+        Crucially, an unavailable dependency must never be interpreted as
+        permission to skip authentication, CSRF or rate limiting.
+        """
+        headers = {
+            "Cache-Control": "no-store",
+            "Retry-After": "60",
+        }
+        wants_json = (
+            request.is_json
+            or request.accept_mimetypes.best == "application/json"
+            or request.headers.get("X-Requested-With") == "fetch"
+        )
+        if wants_json:
+            response = jsonify(
+                error="service_unavailable",
+                message="This service is temporarily unavailable. Please retry shortly.",
+            )
+        else:
+            response = Response(
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                '<title>Temporarily unavailable - MyPlatoon</title></head>'
+                '<body style="font-family:system-ui,sans-serif;max-width:40rem;'
+                'padding:3rem 1rem;margin:auto;line-height:1.6">'
+                '<h1>This service is temporarily unavailable</h1>'
+                '<p>We could not complete this request right now. Your action '
+                'has not been confirmed. Please check before submitting it again.</p>'
+                '<p>You can return to the <a href="/">MyPlatoon homepage</a> '
+                'or try again later.</p></body></html>',
+                mimetype="text/html",
+            )
+        response.status_code = 503
+        response.headers.update(headers)
+        return response
+
+    @app.errorhandler(SQLAlchemyError)
+    def database_unavailable(e):
+        # Do not log raw DB exceptions: drivers may embed connection strings.
+        app.logger.error("Database request failed: %s", type(e).__name__)
+        try:
+            db.session.rollback()
+        except Exception:
+            app.logger.warning("Database session rollback unavailable")
+        return temporary_unavailable()
+
+    # A lost Redis backend must never silently disable abuse controls or
+    # switch to per-process counters. Keep write actions unavailable.
+    from redis.exceptions import RedisError
+
+    @app.errorhandler(RedisError)
+    def redis_unavailable(e):
+        app.logger.error("Redis request failed: %s", type(e).__name__)
+        return temporary_unavailable()
 
     @app.errorhandler(500)
     def server_error(e):
