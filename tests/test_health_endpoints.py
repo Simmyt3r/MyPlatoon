@@ -30,12 +30,14 @@ def test_readiness_succeeds_with_dev_database(client, monkeypatch):
     res = client.get("/health/ready")
     assert res.status_code == 200
     assert res.json == {
-        "status": "ready", "database": "ok", "rate_limits": "not_required",
+        "status": "ready", "database": "ok", "schema": "ok",
+        "rate_limits": "not_required",
     }
 
 
 def test_production_readiness_flags_absent_shared_limiter(app, client, monkeypatch):
     monkeypatch.setattr(health, "_probe_database", lambda: True)
+    monkeypatch.setattr(health, "_probe_schema", lambda: True)
     app.config.update(
         IS_PRODUCTION=True,
         REQUIRE_SHARED_RATELIMIT=False,
@@ -81,3 +83,27 @@ def test_health_database_probe_sanitizes_driver_failure(app, monkeypatch):
         # without opening an actual network connection.
         monkeypatch.setattr(type(db), "engine", property(lambda self: BadEngine()))
         assert health._probe_database() is False
+
+
+def test_production_not_ready_when_schema_outdated(app, client, monkeypatch):
+    monkeypatch.setattr(health, "_probe_database", lambda: True)
+    monkeypatch.setattr(health, "_probe_schema", lambda: False)
+    monkeypatch.setattr(health, "_probe_redis", lambda uri: True)
+    app.config.update(
+        IS_PRODUCTION=True,
+        REQUIRE_SHARED_RATELIMIT=True,
+        RATELIMIT_STORAGE_URI="rediss://user:SECRET@redis.example.com:6380/0",
+    )
+    response = client.get("/health/ready")
+    assert response.status_code == 503
+    assert response.json["database"] == "ok"
+    assert response.json["schema"] == "not_ready"
+    assert response.json["rate_limits"] == "ok"
+    assert "SECRET" not in response.get_data(as_text=True)
+
+
+def test_schema_probe_handles_unversioned_database_safely(app):
+    # The normal testing fixture creates tables without Alembic stamping.
+    # Readiness must never stamp or migrate such a database automatically.
+    with app.app_context():
+        assert health._probe_schema() is False
