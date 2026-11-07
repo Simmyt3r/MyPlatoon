@@ -163,3 +163,17 @@ def test_security_dashboard_never_exposes_shared_redis_credentials(app):
     assert "PRIVATE_PASSWORD" not in str(readiness)
     config["RATELIMIT_STORAGE_URI"] = "memory://"
     assert security_readiness(config)["shared_ratelimiter_configured"] is False
+
+
+def test_inactive_account_is_rejected_before_session_creation(
+    client, db, member_user,
+):
+    member_user.is_active_account = False
+    db.session.commit()
+    response = client.post("/auth/login", data={
+        "email": member_user.email, "password": "Password123",
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    assert b"This account is inactive" in response.data
+    with client.session_transaction() as saved:
+        assert "_user_id" not in saved
