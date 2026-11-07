@@ -45,6 +45,32 @@ instance has already been provisioned.
 
 ---
 
+## Graceful dependency failure policy
+
+User experience and security have different fallback requirements:
+
+| Dependency failure | User-facing behavior | Security rule |
+| --- | --- | --- |
+| Aiven database unreachable or a SQL query fails | HTML or JSON 503, `Retry-After: 60`, no-store, link to the public landing | Never invent account state, credentials, saved changes, certificate progress, or deal history |
+| Shared Redis temporarily unreachable | HTML or JSON 503 for requests hitting the limiter | Never fall back silently to per-instance memory counters or skip protections on login and state-changing requests |
+| Cloudinary photo upload unavailable | Existing validated form displays a retry message; unrelated profile fields can still be saved | Do not persist an invalid photo URL or falsely announce an upload |
+| YouTube playback blocked | Lesson stays incomplete until verified server-side watch progress is sufficient | Do not issue an unearned certificate |
+| Production migration missing | Admin should run the reviewed backup-and-migration procedure; release gate fails | No automatic schema modification by ordinary user requests |
+
+The outage page is generated without the standard database-backed layout or
+context processors, so a failed query cannot recursively crash the error UI.
+The public landing at `/` intentionally remains database-independent.
+Do not use an expired or speculative cache to fill privacy-sensitive member,
+application, financial, assessment, or authentication data.
+
+**Recovery verification:** reproduce dependency failures in a test environment
+and check that the user gets a safe 503 (or explicit upload error), no private
+configuration is returned, no unconfirmed write is reported as successful,
+and the feature works once the dependency is restored. Do not simulate
+database or Redis failure against live users.
+
+---
+
 ## First-time setup on Vercel
 
 The MyPlatoon Flask app cannot persist boot-critical environment variables
