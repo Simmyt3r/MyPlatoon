@@ -1,5 +1,50 @@
 # MyPlatoon: secure Aiven setup and ongoing migrations
 
+## Production shared rate limiting (Vercel / Redis)
+
+MyPlatoon uses Flask-Limiter. The default `memory://` backend is **not shared**
+between serverless instances and must not be considered adequate protection
+for a public launch. Redis is already a Python dependency.
+
+1. Provision a managed Redis service that can be reached from your deployed
+   Vercel functions. Prefer `rediss://` (TLS) when offered by your provider.
+   Use the provider's actual URI, including credentials, port and database;
+   never store it in GitHub or paste it in an issue.
+2. In Vercel Production environment variables, set
+   `RATELIMIT_STORAGE_URI` to the secret Redis URI. Leave
+   `REQUIRE_SHARED_RATELIMIT=false` initially, and redeploy.
+3. From a trusted operator environment that has the production Redis URI,
+   test network connectivity with a Redis client. A URL being configured
+   does **not** prove that Redis is reachable from Vercel.
+4. Set `REQUIRE_SHARED_RATELIMIT=true` in Vercel, then redeploy.
+   The application rejects startup if a Redis storage URI is not configured.
+   Do this only after the service is provisioned and reachable.
+5. In an operator environment with those same two variables exported, run:
+
+   ```bash
+   python scripts/check_shared_ratelimit.py
+   ```
+
+   Exit code 0 confirms the URI is valid, strict enforcement is enabled,
+   and Redis responded to a time-bounded PING **from the machine running
+   the check**. This does not certify Vercel's own network access or
+   multi-instance counter consistency.
+6. In Admin → Recruitment & Growth Insights, confirm both the Redis URI
+   and strict enforcement indicators. Exercise a test-only rate-limited
+   endpoint from separate Vercel instances to verify shared counters,
+   then review login, registration and reset routes for unexpected
+   429 responses. Do not hammer production login endpoints.
+7. Keep a rollback plan: if Redis becomes unavailable, investigate provider
+   health and network reachability. Do not silently fall back to per-instance
+   counters while claiming global protection.
+
+**Status wording matters:** configured, reachable, strictly enforced and
+confirmed across instances are four different levels of confidence.
+The public site and this documentation do not claim that a managed Redis
+instance has already been provisioned.
+
+---
+
 ## First-time setup on Vercel
 
 The MyPlatoon Flask app cannot persist boot-critical environment variables
