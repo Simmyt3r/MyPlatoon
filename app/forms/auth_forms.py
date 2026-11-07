@@ -46,5 +46,5 @@ class RegistrationForm(FlaskForm):
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
-    remember_me = BooleanField("Keep me signed in", default=True)
+    remember_me = BooleanField("Keep me signed in for 14 days", default=False)
     submit = SubmitField("Log In")
