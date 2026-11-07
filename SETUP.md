@@ -45,6 +45,41 @@ instance has already been provisioned.
 
 ---
 
+## Liveness versus readiness monitoring
+
+Monitoring should make a distinction between **a Python function that responds**
+and **a deployment that is safe to receive user traffic**.
+
+- `GET /health/live`: returns `200 {"status":"alive"}` without connecting to
+  PostgreSQL, Redis, user sessions, or the application layout. This probe may
+  stay green during database outages and must **not** be treated as proof that
+  registration, payments, or game scoring are working.
+- `GET /health/ready`: uses a read-only `SELECT 1` to check PostgreSQL.
+  In production it also requires strict shared rate-limit configuration and
+  a time-bounded Redis `PING`. Return `200` only when all required dependencies
+  pass; otherwise return `503` with a sanitized `degraded` response.
+- Both endpoints set `Cache-Control: no-store`. Degraded readiness includes
+  `Retry-After: 60`. Neither discloses credentials, connection hostnames, user
+  information, or stack traces. Redis checks can incur a network connection,
+  so monitor readiness on a moderate cadence rather than on every page request.
+
+Example check:
+
+```bash
+curl -i https://myplatoon.vercel.app/health/live
+curl -i https://myplatoon.vercel.app/health/ready
+```
+
+**Rollout warning:** Existing production deployments without Redis may return
+`503` from **readiness only** even though their public homepage and other
+features still work. This is intentional: the readiness probe must not claim
+that security prerequisites have been met. A `503` does not automatically
+cause Vercel to block traffic unless you explicitly wire it to traffic
+routing or an external load balancer. Review your monitoring/alert behavior
+before integrating the readiness endpoint into deployment gates.
+
+---
+
 ## Graceful dependency failure policy
 
 User experience and security have different fallback requirements:
