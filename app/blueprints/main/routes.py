@@ -19,6 +19,7 @@ def _wants_json():
 
 
 @bp.route("/")
+@limiter.exempt
 def index():
     """Static marketing landing: no database, auth or deployment setup required.
 
