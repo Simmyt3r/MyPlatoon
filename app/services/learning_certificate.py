@@ -8,7 +8,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 
-ISSUER = "SILAB & CO TECHNOLOGIES LTD."
+ISSUER = "SILABS & CO TECHNOLOGIES LTD."
 
 
 def _fit(c, text, font, max_size, max_width):
@@ -54,7 +54,7 @@ def render_certificate(certificate):
     pdf.circle(cx, cy, 43, stroke=1, fill=1)
     pdf.setFillColor(blue)
     pdf.setFont("Helvetica-Bold", 5.3)
-    pdf.drawCentredString(cx, cy + 30, "SILAB & CO.")
+    pdf.drawCentredString(cx, cy + 30, "SILABS & CO.")
     pdf.setFillColor(navy)
     pdf.drawCentredString(cx, cy - 33, "TECHNOLOGIES LTD.")
     shape = pdf.beginPath()
