@@ -55,9 +55,12 @@ and **a deployment that is safe to receive user traffic**.
   stay green during database outages and must **not** be treated as proof that
   registration, payments, or game scoring are working.
 - `GET /health/ready`: uses a read-only `SELECT 1` to check PostgreSQL.
-  In production it also requires strict shared rate-limit configuration and
-  a time-bounded Redis `PING`. Return `200` only when all required dependencies
+  In production it also checks the installed Alembic revision against the
+  checked-in migration head and requires strict shared rate-limit configuration
+  plus a time-bounded Redis `PING`. Return `200` only when all required dependencies
   pass; otherwise return `503` with a sanitized `degraded` response.
+  A database that accepts connections but lacks migrations is **not ready**;
+  the health check never runs, stamps or repairs migrations itself.
 - Both endpoints set `Cache-Control: no-store`. Degraded readiness includes
   `Retry-After: 60`. Neither discloses credentials, connection hostnames, user
   information, or stack traces. Redis checks can incur a network connection,
