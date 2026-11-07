@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Recruitment &amp; Growth Insights{% endblock %}
+{% block body_class %}app-shell-focused{% endblock %}
+{% block content %}
+<div class="container my-4" style="max-width:1180px">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
+    <div>
+      <div class="small text-success text-uppercase fw-bold">Admin only · Pilot operations</div>
+      <h1 class="h3 fw-bold mb-1">Recruitment &amp; Growth Insights</h1>
+      <p class="small text-muted mb-0">Database counts as of {{ metrics.as_of.strftime('%d %b %Y %H:%M UTC') }}. No external tracking or personal activity history.</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-p5-outline">Back to Admin</a>
+  </div>
+  <div class="alert alert-info small">
+    <strong>Read these metrics correctly:</strong> The 7-day login figure counts accounts whose <em>latest login</em> was in the last seven days.
+    It is not weekly active users, page views or retention. Application statuses show their <em>current</em> state,
+    not a historical transition funnel. Revenue is not available because MyPlatoon has no verified billing integration.
+  </div>
+  {% set k = metrics.kpis %}
+  <h2 class="h5 fw-bold">Member acquisition</h2>
+  <div class="row g-3 mb-4">
+    {% for label, amount in (
+      ('Total registered members', k.members_total),
+      ('New members · 30 days', k.member_registrations_30d),
+      ('Last login within 7 days', k.member_last_login_7d)
+    ) %}
+    <div class="col-md-4"><div class="p5-card p-3 h-100">
+      <div class="small text-muted">{{ label }}</div>
+      <div class="display-6 fw-bold">{{ amount }}</div>
+    </div></div>
+    {% endfor %}
+  </div>
+
+  <h2 class="h5 fw-bold">Recruitment supply</h2>
+  <div class="row g-3 mb-4">
+    {% for label, amount in (
+      ('Employers registered', k.employers_total),
+      ('Approved employers', k.employers_approved),
+      ('Pending employer reviews', k.employers_pending),
+      ('Approved schools', k.schools_approved),
+      ('Vacancies currently open', k.vacancies_open),
+      ('Published listings (all time)', k.listings_published),
+      ('Listings created · 30 days', k.listings_created_30d),
+      ('Listings awaiting review', k.listings_pending)
+    ) %}
+    <div class="col-6 col-md-3"><div class="p5-card p-3 h-100">
+      <div class="small text-muted">{{ label }}</div>
+      <div class="h2 fw-bold mt-2 mb-0">{{ amount }}</div>
+    </div></div>
+    {% endfor %}
+  </div>
+
+  <h2 class="h5 fw-bold">Candidate outcomes</h2>
+  <div class="row g-3 mb-4">
+    {% for label, amount in (
+      ('Applications · all time', k.applications_total),
+      ('Applications · last 30 days', k.applications_30d),
+      ('Currently shortlisted', k.applications_current_shortlisted),
+      ('Currently marked hired', k.applications_current_hired)
+    ) %}
+    <div class="col-6 col-md-3"><div class="p5-card p-3 h-100">
+      <div class="small text-muted">{{ label }}</div>
+      <div class="h2 fw-bold mt-2 mb-0">{{ amount }}</div>
+    </div></div>
+    {% endfor %}
+  </div>
+
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold mb-2">Four weeks of acquisition activity</h2>
+    <p class="small text-muted">Weekly counts are based on registration and application creation dates.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Rolling week (UTC)</th><th class="text-end">New members</th><th class="text-end">Applications</th></tr></thead>
+        <tbody>
+          {% for week in metrics.activity_weeks %}
+          <tr><td>{{ week.label }}</td><td class="text-end">{{ week.new_members }}</td>
+            <td class="text-end">{{ week.applications }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold mb-2">Employer pilot pipeline</h2>
+    <p class="small text-muted">Top 20 employers by submitted applications. Confirm actual hires with employers; a recorded “hired” status is not independently verified.</p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Employer</th><th>Type</th><th>Status</th><th class="text-end">Listings</th><th class="text-end">Applications</th><th class="text-end">Marked hired</th></tr></thead>
+        <tbody>
+          {% for record in metrics.employers %}
+          <tr>
+            <td class="fw-semibold">{{ record.name }}</td><td>{{ record.kind|capitalize }}</td>
+            <td>{{ record.status|capitalize }}</td>
+            <td class="text-end">{{ record.listing_count }}</td>
+            <td class="text-end">{{ record.application_count }}</td>
+            <td class="text-end">{{ record.hired_count or 0 }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-muted">No employers registered. Begin by recruiting pilot partners.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="p5-card p-4 mb-4">
+    <h2 class="h5 fw-bold">Security and commercial readiness</h2>
+    {% if security.shared_ratelimiter_configured %}
+      <p class="small text-success"><i class="fa-solid fa-circle-check me-1"></i>Shared rate-limit storage URI configured (live connectivity not tested).</p>
+    {% else %}
+      <p class="small text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>In-memory rate limits are not shared across Vercel instances. Set a shared Redis-compatible RATELIMIT_STORAGE_URI before a public pilot.</p>
+    {% endif %}
+    <p class="small mb-1">Authenticated browser session lifetime: <strong>{{ security.session_hours }} hours</strong></p>
+    <p class="small mb-1">Optional remember-me cookie lifetime: <strong>{{ security.remember_cookie_days }} days</strong></p>
+    <p class="small mb-1">Revenue collection: <strong>Not implemented or verified</strong></p>
+    <p class="small text-muted mb-0">No employer subscription or featured-listing fee is charged by this dashboard. Pilot pricing requires a separate business and payment agreement.</p>
+  </section>
+</div>
+{% endblock %}

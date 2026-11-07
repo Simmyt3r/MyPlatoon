@@ -24,6 +24,21 @@ def create_app(config_name: str = None):
                 "Production requires a unique SECRET_KEY of at least 32 characters. "
                 "Set it in the deployment environment before starting MyPlatoon."
             )
+        # Enable the strict switch only once Redis has been connected in
+        # Vercel. Otherwise warn loudly but do not interrupt sign-ins during
+        # the rollout from the previous per-process in-memory limiter.
+        ratelimit_uri = str(app.config.get("RATELIMIT_STORAGE_URI") or "")
+        shared_redis = ratelimit_uri.startswith(("redis://", "rediss://"))
+        if app.config.get("REQUIRE_SHARED_RATELIMIT") and not shared_redis:
+            raise RuntimeError(
+                "REQUIRE_SHARED_RATELIMIT=true requires a shared redis:// or "
+                "rediss:// RATELIMIT_STORAGE_URI in Production."
+            )
+        if not shared_redis:
+            app.logger.warning(
+                "Production rate limiting is not backed by shared Redis. "
+                "Set RATELIMIT_STORAGE_URI and enable REQUIRE_SHARED_RATELIMIT."
+            )
 
     _init_extensions(app)
     _register_blueprints(app)

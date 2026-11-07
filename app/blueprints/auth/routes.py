@@ -1,4 +1,6 @@
 from datetime import datetime
+import hashlib
+import hmac
 from urllib.parse import unquote, urlsplit
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, current_app
@@ -10,6 +12,7 @@ from app.models import User, Profile
 from app.services.platoon_membership import assign_platoon
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
+from flask_limiter.util import get_remote_address
 
 bp = Blueprint("auth", __name__)
 
@@ -63,8 +66,25 @@ def register():
     return render_template("auth/register.html", form=form)
 
 
+def _account_login_rate_key():
+    """Hash the normalized attempted email to slow distributed guessing.
+
+    No raw email address enters the limiter's storage keys. Combined with
+    the existing IP limit; distributed protection requires shared storage.
+    """
+    email = (request.form.get("email") or "").strip().lower()[:255]
+    if not email:
+        return "no-email:" + get_remote_address()
+    secret = current_app.secret_key
+    if isinstance(secret, str):
+        secret = secret.encode("utf-8")
+    digest = hmac.new(secret, email.encode("utf-8"), hashlib.sha256).hexdigest()
+    return "account:" + digest
+
+
 @bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("15 per 15 minutes")
+@limiter.limit("10 per hour", key_func=_account_login_rate_key, methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("jobs.employer_dashboard" if current_user.role == "employer" else "profile.dashboard"))
@@ -75,12 +95,17 @@ def login():
 
         if user is None or not user.check_password(form.password.data):
             flash("Invalid email or password.", "danger")
+            # Minimize PII in audit records; per-account throttling uses a
+            # non-reversible keyed hash instead of persisting attempted emails.
             log_action(None, "auth.login_failed", "User", None,
-                       detail=f"attempted email={form.email.data.lower().strip()}")
+                       detail="invalid_credentials")
             return render_template("auth/login.html", form=form)
 
         if user.is_suspended:
             flash("This account has been suspended. Contact an administrator.", "danger")
+            return render_template("auth/login.html", form=form)
+        if not user.is_active_account:
+            flash("This account is inactive. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
 
         if user.role != "employer":

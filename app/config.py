@@ -20,13 +20,10 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.environ.get("FLASK_ENV") == "production"
-    # "Persistent login" -- once logged in, members stay logged in for a long
-    # time (like a mobile app), not just the browser-session default. Login
-    # defaults remember_me to True (see LoginForm) and marks the session
-    # permanent, so both of these durations are what's actually in effect
-    # for most visitors.
-    PERMANENT_SESSION_LIFETIME = timedelta(days=365)
-    REMEMBER_COOKIE_DURATION = timedelta(days=365)
+    # Short-lived authenticated sessions. Remember-me is explicit opt-in
+    # (never checked by default) and lasts only two weeks.
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
+    REMEMBER_COOKIE_DURATION = timedelta(days=14)
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SECURE = os.environ.get("FLASK_ENV") == "production"
 
@@ -65,6 +62,12 @@ class BaseConfig:
 
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_DEFAULT = "200 per hour"
+    # Opt-in enforcement after a shared Redis URL has been deployed. Keeping
+    # the default false avoids breaking existing users during rollout, while
+    # admin Insights warns whenever the instance-local fallback remains.
+    REQUIRE_SHARED_RATELIMIT = (
+        os.environ.get("REQUIRE_SHARED_RATELIMIT", "false").lower() == "true"
+    )
 
     SETUP_TOKEN = os.environ.get("SETUP_TOKEN")
     ADMIN_INIT_EMAIL = os.environ.get("ADMIN_INIT_EMAIL")

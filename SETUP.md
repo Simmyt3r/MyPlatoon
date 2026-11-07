@@ -381,3 +381,42 @@ reviewed migration via `/setup` before enabling the Games page.
 Existing manual event rows are retained for data preservation but
 not used for the new digital scoring.
 
+
+
+## Recruitment pilot insights and safer sign-in defaults (November 2026)
+
+Open **Admin → Recruitment & Growth Insights** (`/admin/insights`) to
+review live database counts: registrations, recent login timestamps,
+employers and approved schools, published/open vacancies, applications,
+shortlists and recorded hires, plus rolling weekly trends. No new
+database migration is needed. This **admin-only, no-store** dashboard
+exposes aggregated recruitment data without applicant phone numbers,
+emails or cover notes. Revenue is **not** displayed because no paid
+billing provider or verified payment records are connected. Follow
+`PILOT_RECRUITMENT.md` for a strictly limited first paid-product test.
+
+**Session security:** Flask session persistence is reduced from 365 days
+to **12 hours**. Remember-me is **unchecked by default** and, when
+explicitly selected, creates a cookie lasting at most **14 days**.
+Existing remembered sessions may have been issued under the older
+policy; for immediate mass revocation, plan a controlled credential/
+session invalidation strategy rather than rotating SECRET_KEY without
+preparation (encrypted setup credentials also depend on it).
+
+**Distributed rate limiting:** Flask-Limiter's `memory://` backend is
+per-worker and is not reliable behind Vercel serverless instances.
+Set `RATELIMIT_STORAGE_URI` in Vercel Production to the **TLS-protected
+Redis provider URL** (for example `rediss://...`) using a secret
+environment variable. Never commit that URI to GitHub. A Redis client
+dependency is included. Test a real rate-limited endpoint from multiple
+instances after deployment. The admin Insights page warns when there
+is no configured shared storage, but cannot certify Redis connectivity.
+
+When Redis is confirmed and login/register requests have been tested,
+set `REQUIRE_SHARED_RATELIMIT=true` in Vercel. That opt-in production
+startup gate rejects missing/non-Redis storage and prevents future
+silent fallbacks. Keep it false only during the transition.
+An additional **keyed-hash per-account login throttle** complements
+the IP rate limit; attempted email values are no longer copied into
+failed-login audit details. Until Redis is configured, neither limit
+is globally shared and this remains an unresolved security risk.
