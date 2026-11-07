@@ -4,6 +4,8 @@ Liveness means Flask can handle a request. Readiness means DB responds and
 the configured production rate-limiter is safely usable. Neither probes
 mutate user data or disclose service URLs or exception messages.
 """
+from pathlib import Path
+
 from flask import Blueprint, current_app, jsonify
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -23,6 +25,37 @@ def _probe_database():
         return False
     except Exception as exc:
         current_app.logger.warning("Health database check unavailable (%s)", type(exc).__name__)
+        return False
+
+
+def _probe_schema():
+    """Require the deployed Alembic head without mutating the database.
+
+    Reading the migration files avoids a stale hard-coded revision in this
+    readiness endpoint. Do not use this probe to apply upgrades or stamp DBs.
+    """
+    try:
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+
+        repo_root = Path(__file__).resolve().parents[3]
+        config = Config(str(repo_root / "migrations" / "alembic.ini"))
+        config.set_main_option("script_location", str(repo_root / "migrations"))
+        heads = set(ScriptDirectory.from_config(config).get_heads())
+        if len(heads) != 1:
+            current_app.logger.warning("Health schema check: ambiguous migration heads")
+            return False
+        with db.engine.connect() as connection:
+            versions = {
+                row[0] for row in connection.execute(
+                    text("SELECT version_num FROM alembic_version")
+                ).all()
+            }
+        return versions == heads
+    except Exception as exc:
+        current_app.logger.warning(
+            "Health schema check unavailable (%s)", type(exc).__name__
+        )
         return False
 
 
@@ -72,6 +105,7 @@ def ready():
     uri = str(config.get("RATELIMIT_STORAGE_URI") or "")
     configured = uri.startswith(("redis://", "rediss://"))
     production = bool(config.get("IS_PRODUCTION", False))
+    schema = "ok" if (not production or (db_ok and _probe_schema())) else "not_ready"
 
     if strict and configured:
         redis_ok = _probe_redis(uri)
@@ -83,9 +117,10 @@ def ready():
     else:
         rate_limits = "not_required"
 
-    ready = db_ok and (rate_limits in ("ok", "not_required"))
+    ready = db_ok and schema == "ok" and (rate_limits in ("ok", "not_required"))
     return _response({
         "status": "ready" if ready else "degraded",
         "database": "ok" if db_ok else "unavailable",
+        "schema": schema,
         "rate_limits": rate_limits,
     }, 200 if ready else 503)
