@@ -135,3 +135,40 @@ def test_login_does_not_reverse_rejection_or_suspension(client, db):
     assert b"suspended" in response.data.lower()
     assert suspended.profile.status == "suspended"
     assert suspended.is_suspended is True
+
+
+def test_registration_survives_optional_welcome_notification_failure(
+    client, db, monkeypatch,
+):
+    """A persisted signup remains successful if the welcome inbox is down."""
+    from sqlalchemy.exc import OperationalError
+    from app.models import User
+
+    def broken_notification(*args, **kwargs):
+        raise OperationalError("INSERT INTO notifications", {},
+                               RuntimeError("private service offline"))
+
+    monkeypatch.setattr(
+        "app.blueprints.auth.routes.notify", broken_notification,
+    )
+    response = client.post("/auth/register", data={
+        "full_name": "Welcome Retry Test",
+        "email": "welcome-fallback@example.com",
+        "password": "StrongPass1",
+        "confirm_password": "StrongPass1",
+    })
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/auth/login")
+    user = User.query.filter_by(email="welcome-fallback@example.com").one()
+    assert user.profile.status == "approved"
+    assert user.check_password("StrongPass1")
+    assert db.session.is_active
+    # Do not retry account creation just because an optional notice failed.
+    duplicate = client.post("/auth/register", data={
+        "full_name": "Second Account",
+        "email": "welcome-fallback@example.com",
+        "password": "StrongPass1",
+        "confirm_password": "StrongPass1",
+    })
+    assert duplicate.status_code == 200
+    assert User.query.filter_by(email="welcome-fallback@example.com").count() == 1
