@@ -13,6 +13,7 @@ from app.services.platoon_membership import assign_platoon
 from app.services.audit_service import log_action
 from app.services.notification_service import notify
 from flask_limiter.util import get_remote_address
+from sqlalchemy.exc import SQLAlchemyError
 
 bp = Blueprint("auth", __name__)
 
@@ -58,8 +59,18 @@ def register():
         db.session.commit()
 
         log_action(user, "user.register", "User", user.id)
-        notify(user, f"Welcome to {current_app.config['APP_SHORT_NAME']}! "
-                     "Complete your profile to get started.")
+        # Welcome notifications are optional: an outage must not turn a
+        # committed registration into an apparent failure and cause a
+        # duplicate submission. The user account is already durable here.
+        try:
+            notify(user, f"Welcome to {current_app.config['APP_SHORT_NAME']}! "
+                         "Complete your profile to get started.")
+        except SQLAlchemyError as exc:
+            db.session.rollback()
+            current_app.logger.warning(
+                "Optional welcome notification unavailable (%s)",
+                type(exc).__name__,
+            )
         flash("Your account is ready! Please log in.", "success")
         return redirect(url_for("auth.login"))
 
