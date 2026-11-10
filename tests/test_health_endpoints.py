@@ -51,6 +51,9 @@ def test_production_readiness_flags_absent_shared_limiter(app, client, monkeypat
 
 def test_production_readiness_pings_shared_redis(app, client, monkeypatch):
     monkeypatch.setattr(health, "_probe_database", lambda: True)
+    # SQLite test fixtures are created without Alembic stamping. Isolate
+    # the Redis behavior by explicitly simulating an up-to-date schema.
+    monkeypatch.setattr(health, "_probe_schema", lambda: True)
     app.config.update(
         IS_PRODUCTION=True,
         REQUIRE_SHARED_RATELIMIT=True,
